@@ -171,7 +171,7 @@ let layer = {
 			});
 
 			window.vs_editor = Editor.monaco.vs_editor = this.vs_editor = editor;
-
+			
 			// monaco.languages.typescript.javascriptDefaults._compilerOptions.allowJs = false;
 			// monaco.languages.typescript.javascriptDefaults._compilerOptions.target = monaco.languages.typescript.ScriptTarget.ES5;
 			// monaco.languages.typescript.javascriptDefaults.setCompilerOptions(monaco.languages.typescript.javascriptDefaults._compilerOptions);
@@ -180,8 +180,13 @@ let layer = {
 			monaco.languages.typescript.typescriptDefaults.setCompilerOptions(monaco.languages.typescript.typescriptDefaults._compilerOptions);
 			monaco.editor.setTheme("vs-dark")
 
-			
-			callback();
+			setTimeout(()=>{
+				monaco.editor.setModelLanguage(this.vs_editor.getModel(), "typescript");
+				monaco.languages.typescript.getTypeScriptWorker().then((func)=>{func().then((tsWr)=>{
+					this.tsWr = tsWr;// ts文件静态解析器
+					callback();
+				})})
+			},100)
 		})
 	},
 
@@ -794,26 +799,25 @@ let layer = {
 		{
 			let fsPath = is_url_type ? Editor.remote.assetdb.urlToFspath(file_path) : file_path;
 			let js_text = fs.readFileSync(fsPath).toString();
-			let str_uri   = 'file://model/' + file_name;
 			if (!fe.isFileExit(fsPath)) return;
 
-			if (isJs || (!is_url_type && isTs) ) 
-			{
-				// 解析项目生成api提示字符串
-				if (is_url_type) {
-					js_text = tools.parseJavaScript(js_text, file_name.substr(0, file_name.lastIndexOf('.')));
-				}
-				if (js_text) {
-					this.monaco.languages.typescript.javascriptDefaults.addExtraLib(js_text,'lib://model/' + file_name);
-					this.loadVsModel(file_path,extname,is_url_type);
-				}
-			}
+			// if (isJs || (!is_url_type && isTs) ) 
+			// {
+			// 	// 解析项目生成api提示字符串
+			// 	if (is_url_type) {
+			// 		js_text = tools.parseJavaScript(js_text, file_name.substr(0, file_name.lastIndexOf('.')));
+			// 	}
+			// 	if (js_text) {
+			// 		this.monaco.languages.typescript.javascriptDefaults.addExtraLib(js_text,'lib://model/' + file_name);
+			// 		this.loadVsModel(file_path,extname,is_url_type);
+			// 	}
+			// }
 
-			if (isTs) {
+			// if (isTs) {
 				this.loadVsModel(file_path,extname,is_url_type);
-			}else{
-				// this.monaco.languages.typescript.typescriptDefaults.addExtraLib(js_text, 'lib://model/' + file_name);
-			}
+			// }else{
+			// 	// this.monaco.languages.typescript.typescriptDefaults.addExtraLib(js_text, 'lib://model/' + file_name);
+			// }
 			// 插入模块名字提示
 			let word = file_name.substr(0,file_name.lastIndexOf('.'))
 			this.addCustomCompleter(word,word,file_name,this.monaco.languages.CompletionItemKind.Reference);
@@ -833,7 +837,7 @@ let layer = {
 		{
 			let fsPath = is_url_type ? Editor.remote.assetdb.urlToFspath(file_path) : file_path;
 			let file_name = file_path.substr(file_path.lastIndexOf('/') + 1)
-			let model = this.monaco.editor.getModel(this.monaco.Uri.parse('file://model/' + file_name));
+			let model = this.monaco.editor.getModel(this.monaco.Uri.parse(this.fsPathToModelUrl(fsPath)));
 			let js_text = ""
 			if(model) js_text = model.getValue();
 			else js_text = fs.readFileSync(fsPath).toString();
@@ -860,11 +864,11 @@ let layer = {
 			let fsPath = is_url_type ? Editor.remote.assetdb.urlToFspath(file_path) : file_path;
 			let js_text = isReadText ? fs.readFileSync(fsPath).toString() : "";
 			let file_name = file_path.substr(file_path.lastIndexOf('/') + 1).replace(/ /g,''); // 防止包含空格的路径
-			let str_uri   = 'file://model/' + file_name;
+			let str_uri   = this.fsPathToModelUrl(fsPath)
 			if (!fe.isFileExit(fsPath)) return;
 
 			// 生成vs model缓存
-			let model = this.vs_model_list[file_name] = this.vs_model_list[file_name] || this.monaco.editor.getModel(this.monaco.Uri.parse(str_uri)) ;
+			let model = this.vs_model_list[fsPath] = this.vs_model_list[fsPath] || this.monaco.editor.getModel(this.monaco.Uri.parse(str_uri)) ;
 			if(!model){
 				model = this.monaco.editor.createModel('',file_type,this.monaco.Uri.parse(str_uri))
 				model.onDidChangeContent((e) => this.onVsDidChangeContent(e,model));
@@ -872,9 +876,22 @@ let layer = {
 			if(isReadText) model.setValue(js_text);
 			return model
 		}
-		
 	},
 
+	fsPathToModelUrl(fsPath){
+		let ind = fsPath.indexOf(prsPath);
+		let str_uri 
+		if(ind == -1){
+			str_uri   = 'file://' + (Editor.isWin32 ? fsPath.substr(3).replace(/ /g,'').replace(/\\/g,'/') : fsPath.substr(1) );
+		}else{
+			ind = prsPath.length;
+			if(ind == -1) Editor.warn("代码编辑器：转换路径异常");
+			let _path = fsPath.substr(ind+1);
+			str_uri   = 'db://' + (Editor.isWin32 ? _path.substr(3).replace(/ /g,'').replace(/\\/g,'/') : _path );
+		}
+		return str_uri;
+	},
+	
 	setTheme(name) {
 		let filePath = Editor.url("packages://simple-code/monaco-editor/custom_thems/") + name + ".json"
 		if (fe.isFileExit(filePath)) {
@@ -1532,8 +1549,8 @@ let layer = {
 					ld_list.push(file_info);
 				}
 			}
-
-			if(isCloseUnmodifiedTabs || ld_list.length == 0) this.closeUnmodifiedTabs();
+			let act = Editor.Selection.curGlobalActivate()
+			if(act && act.id && (isCloseUnmodifiedTabs || ld_list.length == 0)) this.closeUnmodifiedTabs();
 
 			for (let i = 0; i < ld_list.length; i++){
 				ld_list[i].is_lock = ld_list[i]._is_lock;
@@ -1651,6 +1668,12 @@ let layer = {
 	onCurrSceneChildrenInfo(currSceneChildrenInfo) { },
 
 
+	onCodeFileRename(oldFileName,newFileName){
+		this.tsWr.getEditsForFileRename(this.fsPathToModelUrl(oldFileName),this.fsPathToModelUrl(newFileName)).then((info)=>{
+			console.log(info);
+		})
+	},
+
 	// 调用原生JS的定时器
 	setTimeoutToJS(func, time = 1, { count = -1, dt = time } = {}) {
 
@@ -1735,11 +1758,10 @@ let layer = {
 			this.closeTab(id);
 		});
 		
-		for (let i = 0; i < this.vs_model_list ? this.vs_model_list.length : 0; i++) {
-			const model = this.vs_model_list[i];
-			model.dispose();
+		for (const key in this.vs_model_list) {
+			const model = this.vs_model_list[key];
+			if(model) model.dispose();
 		}
-
 
 		//  写入配置
 		// this.cfg = this.editor.getOptions();
@@ -1779,7 +1801,7 @@ let layer = {
 		if (s_i != -1) {
 			extname = name.substr(s_i)
 		}
-		return { name, extname }
+		return { name, extname,url }
 	},
 
 	messages: {
@@ -1884,12 +1906,15 @@ let layer = {
 			if (!info) return;
 
 			info.forEach((v, i) => {
-
+				let urlI = this.getUriInfo(v.url)
+				if(urlI.extname == '.js' || urlI.extname == '.ts'){
+					this.onCodeFileRename(v.srcPath,v.destPath);
+				}
+				
 				// vs编辑信息
 				this.edit_list.forEach((editInfo,id) => 
 				{
 					if (editInfo && editInfo.uuid == v.uuid) {
-						let urlI = this.getUriInfo(v.url)
 						editInfo.path = v.url;
 						editInfo.name = urlI.name;
 						if(editInfo.vs_model)
@@ -1952,16 +1977,18 @@ let layer = {
 		{
 			let uuid;
 			let url_info ;
-			let file_name = info.uri.path ? info.uri.path.substr(1) : info.uri.substr(info.uri.lastIndexOf('/')+1);
+			let file_url = info.uri._formatted;
+			let file_name = info.uri.path ? info.uri.path.substr(info.uri.path.lastIndexOf('/')+1) : info.uri.substr(info.uri.lastIndexOf('/')+1);
 
 			for (let i = 0; i < this.file_list_buffer.length; i++) 
 			{
 				const _file_info = this.file_list_buffer[i];
-				if(_file_info.value == file_name){
+				if(_file_info.meta == file_url){
 					uuid  = _file_info.uuid;
 					break;
 				}
 			}
+			
 			if(uuid){
 				url_info = this.getFileUrlInfoByUuid(uuid) 
 			}else{

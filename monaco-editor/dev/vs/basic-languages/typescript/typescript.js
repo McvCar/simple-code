@@ -2,6 +2,46 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
+
+let cus_keywords_violet = [
+    'as',
+    'break',
+    'case',
+    'catch',
+    'continue',
+    'debugger',
+    'default',
+    'do',
+    'else',
+    'export',
+    'finally',
+    'for',
+    'from',
+    'if',
+    'import',
+    'return',
+    'switch',
+    'throw',
+    'try',
+    'while',
+    'with',
+    'yield',
+    'await',
+];
+
+let cus_keywords_green = [
+    'module',
+    'exports',
+    'namespace',
+    'never',
+    'readonly',
+    'global',
+    'void',
+];
+
+let keywords_str_violet = '\\b('+cus_keywords_violet.join('|')+')\\b'
+let keywords_str_green = '\\b('+cus_keywords_green.join('|')+')\\b'
+
 define('vs/basic-languages/typescript/typescript',["require", "exports", "../fillers/monaco-editor-core"], function (require, exports, monaco_editor_core_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -211,6 +251,8 @@ define('vs/basic-languages/typescript/typescript',["require", "exports", "../fil
             root: [[/[{}]/, 'delimiter.bracket'], { include: 'common' }],
             common: [
                 // identifiers and keywords
+                [new RegExp(keywords_str_green), 'js.keywords.green'], // 函数定义
+                [new RegExp(keywords_str_violet), 'js.keywords.violet'], // 函数定义
                 [
                     /[a-z_$][\w$]*/,
                     {
