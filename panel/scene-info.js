@@ -1,13 +1,15 @@
 'use strict';
 const path 		= require('path');
 const fs 		= require('fs');
-const md5     	= require('md5');
 const fe    	= Editor.require('packages://simple-code/tools/FileTools.js');
 
 // 工作路径
-let prsPath  = Editor.importPath.split('library'+path.sep)[0] ;
+let prsPath  = Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath ;
 
-
+// 模块加载的时候触发的函数
+module.exports.load = function() {};
+// 模块卸载的时候触发的函数
+module.exports.unload = function() {};
 
 var eventFuncs = 
  {
@@ -219,7 +221,7 @@ var eventFuncs =
 	    // if (this.isNewScene()){
 	    //     call(1)
 	    // }else{
-	        Editor.Ipc.sendToPanel('scene', 'scene:new-scene');
+	        Editor.Ipc.sendToAll('scene:new-scene');
 	        setTimeout(()=>
 	        {
 	            if (this.isNewScene())
@@ -266,7 +268,7 @@ var eventFuncs =
 				let canvas = scene.getChildByName("Canvas")
 				if (canvas){
 					canvas.removeAllChildren(true)
-					Editor.Ipc.sendToPanel("scene","scene:create-nodes-by-uuids",[uuid],canvas.uuid,{unlinkPrefab:null},(err,e)=>{
+					Editor.Ipc.sendToAll("scene:create-nodes-by-uuids",[uuid],canvas.uuid,{unlinkPrefab:null},(err,e)=>{
 						call(1)
 					});
 				}else{
@@ -396,17 +398,6 @@ var eventFuncs =
 		event.reply(null,{uuids:this.getActiveUuid()});
 	},
 
-
-	// 文件外部打开
-	'open-file-by-outside': function (event) {
-		let id = this.getActiveUuid()[0]
-		if (id){
-			Editor.Ipc.sendToMain('assets:open-text-file',id);
-		}else{
-			Editor.info("当前活动面板没有发现可打开的资源")
-		}
-	},
-
 	// 获取场景内所有子节点信息
 	'scene-children-info': function (event) {
 		event.reply(null,JSON.stringify(this.getSceneChildrensInfo()))	
@@ -419,7 +410,7 @@ var eventFuncs =
 	},
 
 	// 运行命令
-	'run-command-code': function (event,args) {
+	'runCommandLine': function (event,args) {
 		let require = cc.require;
 		var scene  = cc.director.getScene();
 		var node   = this.findNode( Editor.Selection.curSelection('node')[0])
@@ -478,13 +469,7 @@ var eventFuncs =
 		// 引擎需要开放这个才有动画效果
 		cc.engine._animatingInEditMode = 1
 		cc.engine.animatingInEditMode = 1
-		if (args.type == "scene")
-		{
-			this.testEditorScene();
-		}else if(args.uuid){
-			this['run-js-file'](null,args);// 执行代码脚本
-		}
-
+		this['run-js-file'](null,args);// 执行代码脚本
 	},
 
 	'run-js-file'(event,args){
@@ -505,217 +490,6 @@ var eventFuncs =
 			})
 		})
 	},
-
-	testEditorScene(){
-
-		if (!cc.director._changeCocosFunc){
-			cc.director._changeCocosFunc = true
-
-			// 通过uuid加载场景
-			cc.director._loadSceneByUuid_temp = (uuid, onLaunched, onUnloaded)=>{
-		        cc.AssetLibrary.loadAsset(uuid, function (error, sceneAsset) {
-		            var self = cc.director;
-		            self._loadingScene = '';
-		            if (error) {
-		                error = 'Failed to load scene: ' + error;
-		                cc.error(error);
-		            }
-		            else {
-		                if (sceneAsset instanceof cc.SceneAsset) {
-		                    var scene = sceneAsset.scene;
-		                    scene._id = sceneAsset._uuid;
-		                    scene._name = sceneAsset._name;
-
-                            self.runSceneImmediate(scene, onUnloaded, onLaunched);
-		                    return;
-		                }
-		                else {
-		                    error = 'The asset ' + uuid + ' is not a scene';
-		                    cc.error(error);
-		                }
-		            }
-		            if (onLaunched) {
-		                onLaunched(error);
-		            }
-		        });
-			}
-
-			cc.director.loadScene = (sceneName,c1,c2,c3)=>{
-				Editor.assetdb.deepQuery( (err, results)=> {
-					for (let i = 0; i < results.length; i++) 
-					{
-						let result = results[i];
-						if (result.extname == ".fire" && result.name.indexOf(sceneName) != -1){
-							cc.director._loadSceneByUuid_temp(result.uuid,c1,c2,c3);
-							return
-						}
-					}
-					cc.warn("调试未发现场景:",sceneName)
-				})
-			}
-
-
-			// let old_func = cc.loader._getResUuid.bind(cc.loader);
-			// cc.loader._getResUuid =  (url, type, quiet) =>
-			// {
-			// 	let uuid = old_func(url,type,quiet)
-			//     if (uuid != "") {
-			//         return uuid;
-			//     }
-
-			//     // Ignore parameter
-			//     var index = url.indexOf('?');
-			//     if (index !== -1)
-			//         url = url.substr(0, index);
-			 	
-			//  	if(this._assetList){
-			//  		for (var i = 0; i < this._assetList.length; i++) {
-			//  			let info = this._assetList[i]
-			//  			let infoUrl = Editor.remote.assetdb.uuidToUrl(info.uuid);
-			//  			if (infoUrl.indexOf(url) != -1){
-			//  				uuid = info.uuid;
-			//  				break
-			//  			}
-			//  		}
-			//  	}
-			   	
-			//     return uuid;
-			// };
-		}
-		
-		// // 缓存资源列表
-		// Editor.assetdb.deepQuery( (err, results)=> {
-		// 	this._assetList = results;
-		// })	
-
-		this.getCurrSceneUrl((url,isScene,uuid)=>{
-			this.openDebugScene(uuid,isScene,(isSucceed)=>{
-				if (isSucceed){
-					setTimeout(()=>this['run-node-js'](),1)
-				}
-			})
-		})
-	},
-
-	// 运行场景所有节点绑定的脚本
-	'run-node-js': function (event,args) {
-		// mm.prototype.constructor._executeInEditMode = true; mm.prototype.constructor._playOnFocus = true
-	   let node = cc.director.getScene() // this.findNode( children[0] );
-	   if (node == null){
-	   		return Editor.log("调试节点脚本:没有发现运行的场景")
-	   }
-
-	   let dt = 0.01
-	   let stopRuncFunc = ()=>{
-	   		if (this._run_scene_update_times_id){
-	   			this._run_scene_update_times_id()
-	   			delete this._run_scene_update_times_id;
-				CC_EDITOR = true
-				Editor.info("调试节点脚本:已停止模拟运行环境调试")
-	   		}
-	   }
-
-	   if(this._run_scene_update_times_id){
-		   	stopRuncFunc();
-	   		return 
-	   } 
-
-	   // 忽略组件
-	   let ignore_list = {
-	   		"cc.Camera" :{"onEnable":1,"onDisable":1,"onLoad":1,"start":1,"update":1},
-	   		"cc.Canvas" :{"onEnable":1,"onDisable":1,"onLoad":1,"start":1,"update":1},
-	   		"cc.MeshRenderer" :{"onEnable":1,"onDisable":1,"onLoad":1,"start":1,"update":1},
-	   		"cc.Sprite" :{"onEnable":1,"onDisable":1,"onLoad":1,"start":1,"update":1},
-	   		"cc.Label" :{"onEnable":1,"onDisable":1,"onLoad":1,"start":1,"update":1},
-	   		"cc.Label" :{"onEnable":1,"onDisable":1,"onLoad":1,"start":1,"update":1},
-	   }
-
-	   let runCompFunc = (v,funcName,args,isOneRun=true)=>
-	   {
-			//let comps = getComponents(cc.Component)
-			v._components.forEach((jsComp)=>
-			{
-				if(jsComp && jsComp.enabled && (ignore_list[jsComp.__classname__] == null || ignore_list[jsComp.__classname__][funcName] == null) )//|| !jsComp.__proto__.constructor._executeInEditMode) )
-				{
-					let hasName = funcName+jsComp.name+"_is_run_testScene_";
-					if(jsComp[funcName] && (!isOneRun || !v[hasName])) {
-						v[hasName] = true
-						CC_EDITOR = jsComp.__classname__ && jsComp.__classname__.indexOf("cc.") == -1;// 使用引擎的方法
-						// console.log(jsComp.__classname__,funcName)
-						jsComp[funcName](args)
-						CC_EDITOR = true
-					}
-				}
-			})
-		}
-
-		Editor.info("调试节点脚本:开始模拟运行环境调试")
-		this._run_scene_update_times_id = this.setTimeoutToJS(()=>
-		{
-			try{
-				if (!node.isValid) return stopRuncFunc();
-				this.getNodeReChildren(node,(v)=>
-				{
-					if (v.isValid && ( v == node || v.activeInHierarchy) )
-					{
-						if(v._scene_test_loop_count == null)
-						{
-							v._scene_test_loop_count = 1;
-
-							v.on("child-added",(event)=>{
-								// runCompFunc(event.detail,"onLoad");
-								// if (event.detail.activeInHierarchy()
-								// runCompFunc(event.detail,"start");
-							})
-
-							v.on("active-in-hierarchy-changed",(event)=>{
-								let child = event.detail || event
-								if (child.active){
-									runCompFunc(child,"onEnable",null,false);
-								}
-							})
-
-							v.on("child-removed",(event)=>{
-								let child = event.detail || event
-								runCompFunc(child,"onDisable",null,false);
-							})
-							runCompFunc(v,"onLoad");
-							runCompFunc(v,"onEnable",null,false);
-
-						}else if(v._scene_test_loop_count == 1){
-							v._scene_test_loop_count = 2
-							runCompFunc(v,"start");
-						}else if(v._scene_test_loop_count == 2){
-							runCompFunc(v,"update",dt,false);
-						}
-					}
-				})
-				cc.engine._animatingInEditMode = 1
-				cc.engine.animatingInEditMode = 1
-			}catch(t){
-				Editor.error("调试脚本ERROR:\n",t)
-				stopRuncFunc();
-			}
-
-		},dt,{count:-1})
-
-		// node.on("child-added",(event)=>{
-		// 	let v = event.detail
-		// 	if (v.activeInHierarchy)
-		// 	{
-		// 		Editor.log(v.name)
-		// 		let comps = v.getComponents(cc.Component)
-		// 		comps.forEach((jsComp)=>{
-		// 			if(jsComp){
-		// 				if(jsComp.onLoad) jsComp.onLoad()
-		// 				if(jsComp.start) jsComp.start()
-		// 			}
-		// 		})
-		// 	}
-	 //   })
-	},
-
-	
 	
 	'new-js-file': function(event)
 	{
@@ -732,6 +506,7 @@ var eventFuncs =
 				alert("该节点已经存在js脚本,不再创建脚本"); 
 			}else
 			{
+				const md5     	= require('md5');
 				let uuid       = node.uuid;
 				let jsFileName = "a_" + node.name +"_"+ md5(node.uuid).substr(0,6); 
 				let data       = fs.readFileSync(this.getJsTemplatePath(uuid,file_type)); 
@@ -806,4 +581,16 @@ let fileList 	= fe.getDirAllFiles(Editor.url("packages://simple-code/panel/edito
 eventFuncs 		= info.messages
 
 
-module.exports = eventFuncs;
+module.exports.methods = eventFuncs;
+
+// 模块加载的时候触发的函数
+exports.load = function() {};
+// 模块卸载的时候触发的函数
+exports.unload = function() {};
+// 模块内定义的方法
+exports.methods = {
+    log(str) {
+        console.log(str);
+        return true;
+    },
+};

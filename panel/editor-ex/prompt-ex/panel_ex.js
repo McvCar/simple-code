@@ -4,12 +4,14 @@
 */
 'use strict';
 const path 		= require('path');
-const md5     	= require('md5');
 const fs 		= require('fs');
+const { async } = require('../../../tools/runtime');
 const fe 		= Editor.require('packages://simple-code/tools/FileTools.js');
 const cfg 		= Editor.require('packages://simple-code/config.js');
 const exec 		= require('child_process').exec
 const inputType = {"text":1,"password":1,"number":1,"date":1,"color":1,"range":1,"month":1,"week":1,"time":1,"email":1,"search":1,"url":1,"textarea":1}
+const prsPath = Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.projectPath;
+
 module.exports = {
 
 		// 面板初始化
@@ -23,6 +25,7 @@ module.exports = {
 			// 不是输入状态是时
 			if ( !this.inputTypeChk(e) && this.openRename()){
 				e.preventDefault();// 吞噬捕获事件
+				e.stopPropagation();
 			}
 		},0)
 
@@ -32,6 +35,7 @@ module.exports = {
 			if ( !this.inputTypeChk(e) && Editor.Selection.curSelection("node").length> 0){
 				this.openodeCompList();
 				e.preventDefault();// 吞噬捕获事件
+				e.stopPropagation();
 			}
 		},0)
 
@@ -42,29 +46,64 @@ module.exports = {
 			if ( !this.inputTypeChk(e) && Editor.Selection.curSelection("node").length> 0){
 				this.openPrefabList();
 				e.preventDefault();// 吞噬捕获事件
+				e.stopPropagation();
 			}
 		},0)
-
 
 		// 键盘事件：切换场景
 		this.parent.addKeybodyEvent([["v"]],(e)=>
 		{
+		    let activeInfo  = Editor.Selection.curGlobalActivate() // 检测面板焦点在资源管理器还是层级管理器
 			if ( !this.inputTypeChk(e)){
 				this.searchCmd("findFileAndOpen");
 				e.preventDefault();// 吞噬捕获事件
+				e.stopPropagation();
 			}
 		},0)
 
+		// 绑定页面全局快捷键事件,注意: 区分大小写 Control = ctrl
+		this.parent.addKeybodyEvent([[Editor.isWin32 ? "Ctrl" : "Meta","p"]],(e)=>
+		{
+			// 搜索转跳
+			this.searchCmd("findJsFileAndOpen");
+			e.preventDefault();// 吞噬捕获事件
+			e.stopPropagation();
+			return false;
+		},2)
 
 		// 键盘事件：搜索节点
-		this.parent.addKeybodyEvent([["f"]],(e)=>
+		// this.parent.addKeybodyEvent([["f"]],(e)=>
+		// {
+		// 	if ( !this.inputTypeChk(e)){
+		// 		setTimeout(()=>{
+		// 			this.openFindNode()
+		// 		},1)
+		// 	}
+		// },0);
+
+		// 绑定页面全局快捷键事件,注意: 区分大小写 Ctrl = ctrl
+		this.parent.addKeybodyEvent([[Editor.isWin32 ? "Ctrl" : "Meta","o"],["Control","v"]],(e)=>
 		{
-			if ( !this.inputTypeChk(e)){
-				setTimeout(()=>{
-					this.openFindNode()
-				},1)
-			}
-		},0);
+			// 搜索场景转跳
+			this.searchCmd("findFileAndOpen")
+			e.preventDefault();// 吞噬捕获事件
+			e.stopPropagation();
+			return false;
+		},2)
+
+		if (!Editor.isWin32){
+
+			// 绑定页面全局快捷键事件,注意: 区分大小写 Control = ctrl
+			this.parent.addKeybodyEvent([["Control","f"]],(e)=>
+			{
+				// 搜索转跳
+				this.searchCmd("findFileGoto")
+				e.preventDefault();// 吞噬捕获事件
+				e.stopPropagation();
+				return false;
+			},2)
+		}
+			
 	},
 
 	// 不是输入状态是时
@@ -94,11 +133,11 @@ module.exports = {
 				if (data.item.extname == ".prefab") {
 					Editor.Ipc.sendToAll('scene:enter-prefab-edit-mode', data.item.uuid);
 				}
-				if (data.item.extname == ".fire") {
+				if (data.item.extname == ".scene") {
 					Editor.Ipc.sendToAll('scene:open-by-uuid', data.item.uuid);
 				}else{
 					Editor.Selection.select('asset', data.item.uuid)
-					setTimeout(()=>this.parent.openActiveFile(true),50) 
+					setTimeout(()=>this.parent.openActiveFile(true,false),50) 
 				}
 			}
 		}
@@ -116,7 +155,7 @@ module.exports = {
 			{
 				// 过滤文件: 特定的文件才能打开
 				let extname = v.extname.substr(1);
-				if (extname == "prefab" || extname == "fire" || this.parent.FILE_OPEN_TYPES[extname]){
+				if (extname == "prefab" || extname == "scene" || this.parent.FILE_OPEN_TYPES[extname]){
 					fileList.push(v)
 				}
 			});
@@ -221,13 +260,14 @@ module.exports = {
 				// 重命名节点
 				list.forEach((info)=>{
 					let rename = info.value;
-					Editor.Ipc.sendToPanel('scene', 'scene:set-property',{
-						id: info.args.uuid,
+					Editor.Ipc.sendToPanel('scene', 'set-property',{
+						uuid: info.args.uuid.value,
 						path: "name",//要修改的属性
-						type: "String",
-						value: rename,
-						isSubProp: false,
-					});
+						dump:{
+							type: "string",
+							value: rename,
+						}
+					});	
 				})
 			}
 			
@@ -264,67 +304,94 @@ module.exports = {
 		{
 			// 获得选中的资源
 			let asset_list = Editor.Selection.curSelection("asset");
-			asset_list.forEach((uuid)=>
+
+			let call = async ()=>
 			{
-				let info = Editor.remote.assetdb.assetInfoByUuid(uuid);
-				if (!info) return;
-				
-				let file = this.getFileName(info.url);
-				info.suffix = file.suffix;
-				info.name   = file.name
-				info.dir_path   = file.dir_path
-				// 加载资源列表
-				list.push( this.parent.getItem(file.name,info.url,0,info) );
-			})
-			this.showRenameBox(activeInfo.type,list)
+				for (let i = 0; i < asset_list.length; i++) 
+				{
+					const uuid = asset_list[i];
+					let info = await Editor.assetdb.assetInfoByUuid(uuid);
+					if (!info) return;
+					
+					let file = this.getFileName(info.url);
+					info.suffix = file.suffix;
+					info.name   = file.name
+					info.dir_path   = file.dir_path
+					// 加载资源列表
+					list.push( this.parent.getItem(file.name,info.url,0,info) );
+				}
+				this.showRenameBox(activeInfo.type,list);
+			}
+			call();
 			isOpen = list.length > 0
 		}
 		else if(activeInfo.type == "node")
 		{
 			// 获得选中的节点
-			Editor.Scene.callSceneScript('simple-code', 'get-select-node-info' ,"", (err, args)=>
+			let uuids = Editor.Selection.curSelection("node");
+
+			let call = async ()=>
 			{
-				// 加载节点列表
-				args.forEach((info)=>{
-					list.push( this.parent.getItem(info.name,info.path,0,info) );
-				})
+				for (let i = 0; i < uuids.length; i++) 
+				{
+					const uuid = uuids[i];
+					let node = await Editor.Message.request("scene",'query-node',uuid);
+					if(node != null){
+						list.push( this.parent.getItem(node.name.value,node.name.value,0,node) );
+					}
+				}
 				this.showRenameBox(activeInfo.type,list)
-			});
-			isOpen = Editor.Selection.curSelection("node").length> 0
+			}
+			call();
+			isOpen = uuids.length> 0
 		}
 
 		return isOpen;
 	},
 
 	// 打开组件列表
-	openodeCompList(){
+	async openodeCompList(){
+		let node_list = Editor.Selection.curSelection("node");
+		if(node_list.length == 0) return console.log("请选中Node后再继续操作");
+		
 		// 下拉框选中后操作事件
 		let onSearchAccept = (data)=>
 		{
-			// 获得选中的节点
-			Editor.Scene.callSceneScript('simple-code', 'set-node-comp' ,data.item.value, (err, args)=>
-			{
-			});
+			for (let i = 0; i < node_list.length; i++) {
+				const uuid = node_list[i];
+				Editor.Message.request("scene",'create-component',{uuid:uuid,component:data.value});
+			}
 		}
 
-		Editor.Scene.callSceneScript('simple-code', 'get-comps' ,"", (err, args)=>
+		let comps = await Editor.Message.request('scene','query-components');
+		let list = []
+		for (let i = 0; i < comps.length; i++) 
 		{
-			// 打开搜索框: 文件定位转跳
-			let list = JSON.parse(args)
-			this.parent.openSearchBox("",list,(data)=>onSearchAccept(data));
-		});
+			let comp = comps[i];
+			list.push( this.parent.getItem(comp.name,comp.path,0) );
+		}
+		// 打开搜索框: 文件定位转跳
+		this.parent.openSearchBox("",list,(data)=>onSearchAccept(data));
 	},
 
 
 	// 打开预制节点列表
 	openPrefabList(){
+		let node_list = Editor.Selection.curSelection("node");
+		if(node_list.length == 0) return console.log("请选中Node后再继续操作");
+
 		// 下拉框选中后操作事件
 		let onSearchAccept = (data)=>
 		{
-			// 获得选中的节点
-			Editor.Scene.callSceneScript('simple-code', 'add-prefab' ,data.item, (err, args)=>
-			{
-			});
+			for (let i = 0; i < node_list.length; i++) {
+				const uuid = node_list[i];
+				Editor.Message.request("scene",'create-node',{
+					type: "cc.Prefab",
+					name:data.item.value,
+					parent:uuid,
+					assetUuid:data.item.uuid
+				});
+			}
 		}
 
 		let list = []
@@ -406,8 +473,10 @@ module.exports = {
 		// 下拉框选中后操作事件
 		let onSearchAccept = (data,cmdLine)=>
 		{
-			if(is_has && data.item) Editor.Ipc.sendToPanel('simple-code','vs-open-file-tab',{uri:data.item.uri,selection:data.item.range});
-			else this.openGlobalSearch()
+			if(is_has && data.item) 
+				Editor.monaco.vs_editor._domElement.dispatchEvent(new CustomEvent('vs-open-file-tab',{detail:{uri:data.item.uri,selection:data.item.range}}))
+			else 
+				this.openGlobalSearch()
 		}
 		// 修改搜索框时，通过该函数读取显示的实时显示下拉列表内容, cmdLine为输入文本框对象
 		let onCompletionsFunc = (cmdLine)=>{
@@ -417,6 +486,61 @@ module.exports = {
 		this.parent.openSearchBox(searchText,[],(data,cmdLine)=>onSearchAccept(data,cmdLine),(cmdLine)=>onCompletionsFunc(cmdLine))
 	},
 
+	openProject(type)
+	{
+		// 下拉框选中后操作事件
+		let onSearchAccept = (data)=>
+		{
+			let dir_path = data.item.meta
+			if (type == "dir")
+			{
+				// 打开目录
+				exec( (Editor.isWin32 ? "start " : "open ")+dir_path )
+			}else if (type == "editor")
+			{
+				// 打开项目到外部代码编辑器
+				exec( (Editor.isWin32 ? '"'+cfg.editorPath.win+'"' :'"'+ cfg.editorPath.mac+'"')+" "+path.join(dir_path,"assets"))
+
+				// 打开项目从新creator
+				if (Editor.isWin32){ 
+					exec('"'+cfg.editorPath.win+'" '+dir_path)
+				}else{
+					// Mac
+					exec("\""+cfg.editorPath.mac+"\" "+dir_path+"");
+				}
+			}else if (type == "creator")
+			{
+				// 打开项目从新creator
+				if (Editor.isWin32){
+					let appPath = Editor.appPath.substr(0,Editor.appPath.lastIndexOf(path.sep)) 
+					appPath = appPath.substr(0,appPath.lastIndexOf(path.sep))
+					appPath = '"'+ appPath + path.sep+'CocosCreator3D.exe"'+ ' --path '
+					exec( appPath+dir_path)
+				}else{
+					// Mac
+					let appPath = Editor.appPath.substr(0,Editor.appPath.lastIndexOf(path.sep)) 
+					appPath.substr(0,appPath.lastIndexOf(path.sep))
+					exec("nohup "+appPath+" "+dir_path+" >/dev/null 2>&1 &")
+				}
+			}
+			Editor.log("正在执行打开操作:"+dir_path)
+		}
+
+		// 获得总项目目录位置: 当前项目上级目录
+		let root_path 	= prsPath
+		root_path 		= root_path.substr(0,root_path.lastIndexOf(path.sep))
+
+
+		// 所有项目的列表
+		let dirList 	= fe.getDirList(root_path,[]);
+		let list 		= []
+		dirList.forEach((dir_path)=>
+		{
+			list.push( this.parent.getItem( dir_path.substr(dir_path.lastIndexOf(path.sep)+1) ,dir_path,0) )
+		})
+		// 打开搜索框: 文件定位转跳
+		this.parent.openSearchBox("",list,(data)=>onSearchAccept(data));
+	},
 	/*************  事件 *************/  
 
 	messages:{
@@ -434,87 +558,39 @@ module.exports = {
 
 
 		// 通过项目目录打开新项目
-		'openProject'(event,type){
-
-			// 下拉框选中后操作事件
-			let onSearchAccept = (data)=>
-			{
-				let dir_path = data.item.meta
-				if (type == "dir")
-				{
-					// 打开目录
-					exec( (Editor.isWin32 ? "start " : "open ")+dir_path )
-				}else if (type == "editor")
-				{
-					// 打开项目到外部代码编辑器
-					exec( (Editor.isWin32 ? '"'+cfg.editorPath.win+'"' :'"'+ cfg.editorPath.mac+'"')+" "+dir_path)
-
-					// 打开项目从新creator
-					if (Editor.isWin32){ 
-						exec('"'+cfg.editorPath.win+'" '+dir_path)
-					}else{
-						// Mac
-						exec("\""+cfg.editorPath.mac+"\" "+dir_path+"");
-					}
-				}else if (type == "creator")
-				{
-					// 打开项目从新creator
-					if (Editor.isWin32){
-						let appPath = Editor.appPath.substr(0,Editor.appPath.lastIndexOf(path.sep)) 
-						appPath = appPath.substr(0,appPath.lastIndexOf(path.sep))
-						appPath = '"'+ appPath + path.sep+'CocosCreator.exe"'+ ' --path '
-						exec( appPath+dir_path)
-					}else{
-						// Mac
-						let appPath = Editor.appPath.substr(0,Editor.appPath.lastIndexOf(path.sep)) 
-						appPath.substr(0,appPath.lastIndexOf(path.sep))
-						exec("nohup "+appPath+" "+dir_path+" >/dev/null 2>&1 &")
-					}
-				}
-				Editor.log("正在执行打开操作:"+dir_path)
-			}
-
-			// 获得总项目目录位置: 当前项目上级目录
-			let root_path 	= Editor.url("db://assets/")
-			root_path 		= root_path.substr(0,root_path.lastIndexOf(path.sep))
-			root_path 		= root_path.substr(0,root_path.lastIndexOf(path.sep))
-
-
-			// 所有项目的列表
-			let dirList 	= fe.getDirList(root_path,[]);
-			let list 		= []
-			dirList.forEach((dir_path)=>
-			{
-				list.push( this.parent.getItem( dir_path.substr(dir_path.lastIndexOf(path.sep)+1) ,dir_path,0) )
-			})
-			// 打开搜索框: 文件定位转跳
-			this.parent.openSearchBox("",list,(data)=>onSearchAccept(data));
+		'openProjectDir'(event,type){
+			this.openProject('dir')
 		},
 
+		// 通过项目目录打开新项目
+		'openProjectEditor'(event,type){
+			this.openProject("editor")
+		},
+
+		// 通过项目目录打开新项目
+		'openProjectCreator'(event,type){
+			this.openProject("creator")
+		},
+		
 		// 下拉框批量重命名
 		'rename'(event,info)
 		{
 			this.openRename()
 		},
 
-		// 快捷键打开当前选中文件/节点进入编辑
-		'custom-cmd' (event,info) {
-			if(info.cmd == "findFileAndOpen")
-			{
-				// 下拉框打开场景或预制节点
-				this.searchCmd(info.cmd)
-			}else if(info.cmd == "findFileGoto")
-			{
-				// 下拉框转跳资源管理器
-				this.searchCmd(info.cmd)
-			}else if(info.cmd == "findJsFileAndOpen")
-			{
-				// 下拉框转跳资源管理器
-				this.searchCmd(info.cmd)
-			}
+		'findFileAndOpen'(){
+			this.searchCmd("findFileAndOpen")
 		},
 
-		'open-global-search'(){
+		'findFileGoto'(){
+			this.searchCmd("findFileGoto")
+		},
+
+		'findJsFileAndOpen'(){
+			this.searchCmd("findJsFileAndOpen")
+		},
+
+		'openGlobalSearch'(){
 			this.openGlobalSearch();
 		},
 

@@ -1,12 +1,11 @@
-let fs = require("fire-fs");
-let path = require("fire-path");
+let fs = require("fs");
+let path = require("path");
 let esprima = require("./esprima/esprima");
 
 let espJsMap = {CallExpression:'{},',FunctionExpression:'()=>{},',ArrayExpression:'[],',Literal:'"0",',ArrowFunctionExpression:'()=>{}',}
 let patt = new RegExp('([0-9a-zA-Z_]+)[ =]*[ ]*[(].*[)][ \n=>]*{','g'); 
 
 module.exports = {
-
 	 copyToClipboard(str){
 		var input = str;
 		const el = document.createElement('textarea');

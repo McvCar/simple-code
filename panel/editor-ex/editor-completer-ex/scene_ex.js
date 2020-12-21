@@ -5,7 +5,6 @@
 'use strict';
 var path 	= require('path');
 var fs 		= require('fs');
-var md5     = require('md5');
 const fe 	= Editor.require('packages://simple-code/tools/FileTools.js');
 
 

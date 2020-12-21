@@ -1,144 +1,288 @@
 {
 	"name": "simple-code",
-	"scene-script": "panel/scene-info.js",
-	"version": "2.1.2",
+	"version": "3.0.0",
 	"description": "内置代码编辑器",
 	"author": "MCV",
-	"main": "main.js",
-	"main-menu": {
-		"i18n:代码编辑器/打开": {
-			"message": "simple-code:open",
-			"accelerator": "CmdOrCtrl+alt+f12"
-		},
-		"i18n:代码编辑器/预览": {
-			"message": "simple-code:openPreview",
-			"accelerator": "F11"
-		},
-		"i18n:代码编辑器/设置": {
-			"message": "simple-code:setting",
-			"accelerator": "F10"
-		},
-		"i18n:代码编辑器/搜索/打开资源 (V)": {
-			"message": "simple-code:findFileAndOpen",
-			"accelerator": "alt+V"
-		},
-		"i18n:代码编辑器/搜索/跳转文件 (F)": {
-			"message": "simple-code:findFileGoto",
-			"accelerator": "alt+F"
-		},
-		"i18n:代码编辑器/搜索/全局文件搜索": {
-			"message": "simple-code:open-global-search",
-			"accelerator": "CmdOrCtrl+shift+F" 
-		},
-		"i18n:代码编辑器/搜索/在资源管理器高亮未使用的资源": {
-			"message": "simple-code:cleanFile",
-			"accelerator": "alt+L"
-		},
-		"i18n:代码编辑器/调试/执行命令": {
-			"message": "simple-code:runCommandLine",
-			"accelerator": "alt+R"
-		},
-		"i18n:代码编辑器/调试/刷新预览页面": {
-			"message": "simple-code:refresh-preview",
-			"accelerator": "CmdOrCtrl+shift+r"
-		},
-		"i18n:代码编辑器/调试/执行场景所有节点绑定的脚本": {
-			"message": "simple-code:run-node-js",
-			"accelerator": "alt+shift+e"
-		},
-		"i18n:代码编辑器/编辑/打开外部编辑": {
-			"message": "simple-code:openNodeFileByOutside",
-			"accelerator": "f4"
-		},
-		"i18n:代码编辑器/编辑/批量重命名 (D)": {
-			"message": "simple-code:rename",
-			"accelerator": "alt+enter"
-		},
-		"i18n:代码编辑器/编辑/批量节点绑定组件 (G)": {
-			"message": "simple-code:addNodeComp",
-			"accelerator": "alt+shift+enter"
-		},
-		"i18n:代码编辑器/编辑/批量插入预制节点 (A)": {
-			"message": "simple-code:addPrefab",
-			"accelerator": "alt+shift+i"
-		},
-		"i18n:代码编辑器/编辑/批量选中同名节点 (S)": {
-			"message": "simple-code:selectNode",
-			"accelerator": "alt+d"
-		},
-		"i18n:代码编辑器/编辑/批量搜索|选中节点 (F)": {
-			"message": "simple-code:selectNode",
-			"accelerator": ""
-		},
-		"i18n:代码编辑器/编辑/新建脚本绑定Node": {
-			"message": "simple-code:newFile",
-			"accelerator": "f3"
-		},
-		"i18n:代码编辑器/编辑/打开代码|解锁编辑": {
-			"message": "simple-code:openNodeFile",
-			"accelerator": "f1"
-		},
-		"i18n:代码编辑器/编辑/文件夹绑定快捷键 (alt+0~9)": {
-			"message": "",
-			"accelerator": ""
-		},
-		"i18n:代码编辑器/编辑/文件夹转跳快捷键 (0~9)": {
-			"message": "",
-			"accelerator": ""
-		},
-		"i18n:代码编辑器/编辑/剪切文件 (X)": {
-			"message": "simple-code:selectNode",
-			"accelerator": ""
-		},
-		"i18n:代码编辑器/编辑/粘贴文件 (C)": {
-			"message": "simple-code:selectNode",
-			"accelerator": ""
-		},
-		"i18n:代码编辑器/编辑/删除选中节点与绑定的脚本": {
-			"message": "simple-code:removeNodeAndScript",
-			"accelerator": "alt+delete"
-		},
-		"i18n:代码编辑器/项目管理/打开项目目录": {
-			"message": "simple-code:openProjectDir",
-			"accelerator": "alt+f1"
-		},
-		"i18n:代码编辑器/项目管理/打开项目到外部编辑器": {
-			"message": "simple-code:openProjectEditor",
-			"accelerator": "alt+f2"
-		},
-		"i18n:代码编辑器/项目管理/打开项目到Creator": {
-			"message": "simple-code:openProjectCreator",
-			"accelerator": "alt+f3"
-		},
-		"i18n:代码编辑器/项目管理/配置扩展模块": {
-			"message": "simple-code:openConfigExtendDir",
-			"accelerator": ""
-		},
-		"i18n:代码编辑器/项目管理/配置新建模板": {
-			"message": "simple-code:newFileDir",
-			"accelerator": ""
-		},
-		"i18n:代码编辑器/项目管理/配置功能快捷键": {
-			"message": "simple-code:openConfig",
-			"accelerator": ""
-		},
-		"i18n:代码编辑器/项目管理/配置代码输入提示": {
-			"message": "simple-code:openConfigHitn",
-			"accelerator": ""
-		}
-	},
-	"panel": {
-		"main": "panel/index.js",
-		"type": "dockable",
-		"title": "代码编辑器",
-		"width": 400,
-		"height": 300
-	},
-	"panel.preview": {
-		"main": "panel/preview.js",
-		"type": "dockable",
-		"title": "预览器",
-		"width": 400,
-		"height": 300
-	}
+	"main": "./main.js",
+	"contributions": {
+    "scene": {
+       "script": "./panel/scene-info.js"
+    },
+    "menu":[
+     {
+      "path"    :"代码编辑器",
+      "label"    :"打开",
+      "message"  : "open"
+    },
+     {
+      "path":"代码编辑器",
+      "label"    :"预览",
+      "message": "openPreview"
+    },
+     {
+      "path":"代码编辑器",
+      "label"    :"设置",
+      "message": "setting"
+    },
+     {
+      "path":"代码编辑器/搜索",
+      "label"    :"打开资源 (V)",
+      "message": "findFileAndOpen"
+    },
+     {
+      "path":"代码编辑器/搜索",
+      "label"    :"跳转文件 (F)",
+      "message": "findFileGoto"
+    },
+     {
+      "path":"代码编辑器/搜索",
+      "label"    :"全局文件搜索",
+      "message": "openGlobalSearch"
+    },
+     {
+      "path":"代码编辑器/搜索",
+      "label"    :"在资源管理器高亮未使用的资源(开发中...)",
+      "message": "cleanFile"
+    },
+     {
+      "path":"代码编辑器/调试",
+      "label"    :"执行命令(开发中...)",
+      "message": "runCommandLine"
+    },
+     {
+      "path":"代码编辑器/调试",
+      "label"    :"刷新预览页面",
+      "message": "refreshPreview"
+    },
+     {
+      "path":"代码编辑器/编辑",
+      "label"    :"批量重命名 (D)",
+      "message": "rename"
+    },
+     {
+      "path":"代码编辑器/编辑",
+      "label"    :"批量节点绑定组件 (G)",
+      "message": "addNodeComp"
+    },
+     {
+      "path":"代码编辑器/编辑",
+      "label"    :"批量插入预制节点 (A)",
+      "message": "addPrefab"
+    },
+     {
+      "path":"代码编辑器/编辑",
+      "label"    :"批量选中同名节点 (S)",
+      "message": "selectNode"
+    },
+     {
+      "path":"代码编辑器/编辑",
+      "label"    :"新建脚本绑定Node(开发中..)",
+      "message": "newFile"
+    },
+     {
+      "path":"代码编辑器/编辑",
+      "label"    :"打开代码|解锁编辑",
+      "message": "openNodeFile"
+    },
+     {
+      "path":"代码编辑器/编辑",
+      "label"    :"文件夹绑定快捷键 (alt+0~9)",
+      "message": ""
+    },
+     {
+      "path":"代码编辑器/编辑",
+      "label"    :"文件夹转跳快捷键 (0~9)",
+      "message": ""
+    },
+     {
+      "path":"代码编辑器/编辑",
+      "label"    :"剪切文件 (X)",
+      "message": "selectNode"
+    },
+     {
+      "path":"代码编辑器/编辑",
+      "label"    :"粘贴文件 (C)",
+      "message": "selectNode"
+    },
+     {
+      "path":"代码编辑器/项目管理",
+      "label"    :"打开项目目录",
+      "message": "openProjectDir"
+    },
+     {
+      "path":"代码编辑器/项目管理",
+      "label"    :"打开项目到外部编辑器",
+      "message": "openProjectEditor"
+    },
+     {
+      "path":"代码编辑器/项目管理",
+      "label"    :"打开项目到Creator",
+      "message": "openProjectCreator"
+    },
+     {
+      "path":"代码编辑器/项目管理",
+      "label"    :"配置扩展模块",
+      "message": "openConfigExtendDir"
+    },
+     {
+      "path":"代码编辑器/项目管理",
+      "label"    :"配置新建模板",
+      "message": "newFileDir"
+    },
+     {
+      "path":"代码编辑器/项目管理",
+      "label"    :"配置功能快捷键",
+      "message": "openConfig"
+    },
+     {
+      "path":"代码编辑器/项目管理",
+      "label"    :"配置代码输入提示",
+      "message": "openConfigHitn"
+    }],
+
+
+    "shortcuts": [
+     {
+      "message"  : "open",
+      "win": "f1",
+      "mac": "f1"
+    },
+     {
+      "message": "setting",
+      "win": "",
+      "mac": ""
+    },
+     {
+      "message": "findFileAndOpen",
+      "win": "alt+V",
+      "mac": "alt+V"
+    },
+     {
+      "message": "findFileGoto",
+      "win": "alt+F",
+      "mac": "alt+F"
+    },
+     {
+      "message": "openGlobalSearch",
+      "win": "ctrl+shift+F",
+      "mac": "cmd+shift+F"
+    },
+     {
+      "message": "cleanFile",
+      "win": "alt+L",
+      "mac": "alt+L"
+    },
+     {
+      "message": "runCommandLine",
+      "win": "alt+R",
+      "mac": "alt+R"
+    },
+     {
+      "message": "refreshPreview",
+      "win": "ctrl+shift+r",
+      "mac": "cmd+shift+r"
+    },
+     {
+      "message": "rename",
+      "win": "alt+enter",
+      "mac": "alt+enter"
+    },
+     {
+      "message": "addNodeComp",
+      "win": "alt+shift+enter",
+      "mac": "alt+shift+enter"
+    },
+     {
+      "message": "addPrefab",
+      "win": "alt+shift+i",
+      "mac": "alt+shift+i"
+    },
+     {
+      "message": "selectNode",
+      "win": "alt+d",
+      "mac": "alt+d"
+    },
+     {
+      "message": "newFile",
+      "win": "f3",
+      "mac": "f3"
+    },
+     {
+      "message": "openNodeFile",
+      "win": "f1",
+      "mac": "f1"
+    },
+     {
+      "message": "openProjectDir",
+      "win": "alt+f1",
+      "mac": "alt+f1"
+    },
+     {
+      "message": "openProjectEditor",
+      "win": "alt+f2",
+      "mac": "alt+f2"
+    },
+     {
+      "message": "openProjectCreator",
+      "win": "alt+f3",
+      "mac": "alt+f3"
+    }],
+
+    "messages":{
+
+      "scene:save":{"methods":["vsEditor.sceneSave"]},
+      "scene:ready":{"methods":["vsEditor.sceneReady"]},
+      "selection:select":{"methods":["vsEditor.selectionSelect"]},
+      "asset-db:asset-change":{"methods":["vsEditor.assetChange"]},
+      "asset-db:asset-add":{"methods":["vsEditor.assetsAdd"]},
+      "asset-db:asset-delete":{"methods":["vsEditor.assetsDeleted"]},
+      
+      "open":{"methods":["open"]},
+      "openPreview":{"methods":["openPreview"]},
+      "setting":{"methods":["vsEditor.setting"]},
+
+      "findFileAndOpen":{"methods":["open","vsEditor.findFileAndOpen"]},
+      "findFileGoto":{"methods":["open","vsEditor.findFileGoto"]},
+      "findJsFileAndOpen":{"methods":["open","vsEditor.findJsFileAndOpen"]},
+
+      "openGlobalSearch":{"methods":["vsEditor.openGlobalSearch"]},
+      "cleanFile":{"methods":["vsEditor.cleanFile"]},
+      "runCommandLine":{"methods":["open","vsEditor.runCommandLine"]},
+      "refreshPreview":{"methods":["openPreview","preview.refreshPreview"]},
+      "rename":{"methods":["rename"]},
+      "addNodeComp":{"methods":["vsEditor.addNodeComp"]},
+      "addPrefab":{"methods":["vsEditor.addPrefab"]},
+      "newFile":{"methods":["vsEditor.newFile"]},
+      "openNodeFile":{"methods":["open","vsEditor.openNodeFile"]},
+      "selectNode":{"methods":["vsEditor.selectNode"]},
+
+      "openProjectDir":{"methods":["vsEditor.openProjectDir"]},
+      "openProjectEditor":{"methods":["vsEditor.openProjectEditor"]},
+      "openProjectCreator":{"methods":["vsEditor.openProjectCreator"]},
+      "openConfigExtendDir":{"methods":["openConfigExtendDir"]},
+      "newFileDir":{"methods":["newFileDir"]},
+      "openConfig":{"methods":["vsEditor.openConfig"]},
+      "openConfigHitn":{"methods":["openConfigHitn"]}
+      }
+      
+  },
+  
+  "panels":
+  {
+    "vsEditor": {
+      "main": "./panel/index.js",
+      "type": "dockable",
+      "title": "代码编辑器",
+      "width": 400,
+      "height": 300
+    },
+    
+    "preview": {
+      "main": "./panel/preview.js",
+      "type": "dockable",
+      "title": "预览器",
+      "width": 400,
+      "height": 300
+    }
+  }
 }

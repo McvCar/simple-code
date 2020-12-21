@@ -1,5 +1,5 @@
-let fs = require("fire-fs");
-let path = require("fire-path");
+let fs = require("fs");
+let path = require("path");
 
 let self = module.exports = {
 
@@ -72,7 +72,8 @@ let self = module.exports = {
         let files = fs.readdirSync(dirPath);
         files.forEach((val, index) => {
             let fPath = path.join(dirPath, val);
-            if (fs.existsSync(fPath) && fs.statSync(fPath).isDirectory()) {
+            let stats = fs.statSync(fPath);
+            if (stats.isDirectory()) {
                 result.push(fPath);
             }
         });
@@ -84,24 +85,29 @@ let self = module.exports = {
         let files = fs.readdirSync(dirPath);
         files.forEach((val, index) => {
             let fPath = path.join(dirPath, val);
-            if (fs.existsSync(fPath) && fs.statSync(fPath).isFile()) {
+            let stats = fs.statSync(fPath);
+            if (stats.isFile()) {
                 result.push(fPath);
             }
         });
         return result;
     },
 
-    isDirectory(fPath){
-        return fs.existsSync(fPath) && fs.statSync(fPath).isDirectory()
+    isDirectory(path){
+        let stats = fs.statSync(path);
+        if (stats.isDirectory()) {
+            return true
+        }
     },
     
     getDirAllFiles(dirPath, result) {
         let files = fs.readdirSync(dirPath);
         files.forEach((val, index) => {
             let fPath = path.join(dirPath, val);
-            if (fs.existsSync(fPath) && fs.statSync(fPath).isDirectory()) {
+            let stats = fs.statSync(fPath);
+            if (stats.isDirectory()) {
                 this.getDirAllFiles(fPath, result);
-            } else if (fs.statSync(fPath).isFile()) {
+            } else if (stats.isFile()) {
                 result.push(fPath);
             }
         });

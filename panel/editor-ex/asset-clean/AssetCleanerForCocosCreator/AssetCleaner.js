@@ -10,7 +10,7 @@ let ResType = {
     Anim: 3, // 动画文件
     Spine: 4, // Spine
     Prefab: 5, // prefab
-    Fire: 6, // 场景文件
+    Scene: 6, // 场景文件
     Code: 7, // js代码 
     Fnt: 8 // 位图
 };
@@ -271,9 +271,9 @@ let AssetCleaner = {
                     this.destMap.set(curPath, { data, type:ResType.Anim });
                     break;
 
-                case '.fire':
+                case '.Scene':
                     data = FileHelper.getFileString(curPath);
-                    this.destMap.set(curPath, { data, type:ResType.Fire });
+                    this.destMap.set(curPath, { data, type:ResType.Scene });
                     break;
                     
                 case '.png':

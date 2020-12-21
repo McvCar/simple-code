@@ -1,8 +1,8 @@
 'use strict';
 
-const fe 			= Editor.require('packages://simple-code/tools/FileTools.js');
+const fe 			= require('../tools/FileTools.js');
 const fs            = require('fs');
-const path 			= require("fire-path");
+const path 			= require("path");
 
 
 var eventFuncs = 

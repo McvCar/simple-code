@@ -1,5 +1,20 @@
 // panel/index.js, this filename needs to match the one registered in package.json
-Editor.Panel.extend({
+
+
+let upPreview = (dom)=>{
+  let url = 'http://localhost:7456/'
+  if(document.getElementById("toolbar"))
+  {
+    url = 'http://'+document.getElementById("toolbar").__vue__.$data.url;
+  }else if(document.getElementById("playButtons"))
+  {
+    url = 'http://'+document.getElementById("playButtons").dataHost.previewURL;
+  }
+  dom.$.games_view.src = url;
+}
+
+
+module.exports =  {
   // css style for panel
   style: `
     :host { margin: 5px; }
@@ -9,7 +24,7 @@ Editor.Panel.extend({
 
   // html template for panel
   template: `
-      <iframe id = "games_view" src="http://localhost:7456/" />
+      <iframe id = "games_view" src="" />
   `,
 
   // element and variable binding
@@ -19,25 +34,17 @@ Editor.Panel.extend({
 
   // method executed when template and styles are successfully loaded and initialized
   ready () {
-    setTimeout(()=>this.upPreview(),1000)
+    this.isRead = 1
+    setTimeout(5000,()=>{
+      if(this && this.isRead)
+          upPreview(this)
+    });
   },
 
-  upPreview(){
-    let url = 'http://localhost:7456/'
-    if(document.getElementById("toolbar"))
-    {
-      url = 'http://'+document.getElementById("toolbar").__vue__.$data.url;
-    }else if(document.getElementById("playButtons"))
-    {
-      url = 'http://'+document.getElementById("playButtons").dataHost.previewURL;
-    }
-    this.$games_view.src = url;
-  },
-
-  // register your ipc messages here
-  messages: {
-    'refresh-preview' (event,msg) {
-      this.upPreview()
+  // register your ipc methods here
+  methods: {
+    'refreshPreview' (event,msg) {
+      upPreview(this)
     }
   }
-});
+};

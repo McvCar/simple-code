@@ -5,7 +5,6 @@
 'use strict';
 var path 	= require('path');
 var fs 		= require('fs');
-var md5     = require('md5');
 
 
 
@@ -54,12 +53,6 @@ module.exports = {
 	{
 		if(!this.parent) return;
 		// 写入提示
-		currSceneChildrenInfo.forEach((info)=>
-		{
-			// 动态添加当前场景所有节点的name输入提示
-			// 名字，名字，节点路径深度描述，类型图标，是否覆盖
-			this.parent.addCustomCompleter(info.name,info.name,info.path,12,true)
-		})
 	},
 
 	// 面板销毁

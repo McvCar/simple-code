@@ -5,7 +5,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports["default"] = void 0;
 
-const vsLoader = Editor.require('packages://simple-code/monaco-editor/dev/vs/loader.js');
+const vsLoader = require('../../../monaco-editor/dev/vs/loader.js');
 var _monacoEditor = vsLoader.require("vs/editor/editor.main");
 
 var _cursorTypeOperations = vsLoader.require("vs/editor/common/controller/cursorTypeOperations");

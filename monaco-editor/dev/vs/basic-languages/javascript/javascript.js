@@ -35,6 +35,7 @@ let cus_keywords_green = [
     'namespace',
     'never',
     'readonly',
+    'require',
     'global',
     'void',
 ];

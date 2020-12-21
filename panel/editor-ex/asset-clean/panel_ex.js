@@ -5,7 +5,6 @@
 'use strict';
 const path 			= require('path');
 const fs 			= require('fs');
-const md5			= require('md5');
 const fe 			= Editor.require('packages://simple-code/tools/FileTools.js');
 const AssetCleaner 	= Editor.require('packages://simple-code/panel/editor-ex/asset-clean/AssetCleanerForCocosCreator/AssetCleaner');
 const prsPath 		= Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
@@ -92,19 +91,20 @@ module.exports = {
 
 		'cleanFile'()
 		{
-			if(!this.noBindMap) Editor.info("初次搜索未使用的资源,期间会卡顿几秒,请稍等...");
-			setTimeout(()=>
-			{
-				is_lock = !is_lock;
-				this.search();
+			Editor.info("creator3d版该功能未实现，正在开发中...");
+			// if(!this.noBindMap) Editor.info("初次搜索未使用的资源,期间会卡顿几秒,请稍等...");
+			// setTimeout(()=>
+			// {
+			// 	is_lock = !is_lock;
+			// 	this.search();
 
-				// 锁定选中状态
-				if(this.sch_id) clearInterval(this.sch_id)
-				if(is_lock) {
-					this.sch_id = setInterval(this.search.bind(this),2000);
-					Editor.success("已锁定选中状态，若取消锁定 请再次按下'高亮未使用资源'快捷键");
-				}
-			},this.noBindMap ? 1:500);
+			// 	// 锁定选中状态
+			// 	if(this.sch_id) clearInterval(this.sch_id)
+			// 	if(is_lock) {
+			// 		this.sch_id = setInterval(this.search.bind(this),2000);
+			// 		Editor.success("已锁定选中状态，若取消锁定 请再次按下'高亮未使用资源'快捷键");
+			// 	}
+			// },this.noBindMap ? 1:500);
 		},
 	},
 	
