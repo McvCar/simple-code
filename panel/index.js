@@ -38,7 +38,7 @@ let layer = {
 		#saveBtn {height: 15px;}
 		#resetBtn {height: 15px;}
 		#editorA {width: 0%;height: 0%;}
-		#editorB {width: 100%;height: 100%;overflow:hidden;}
+		#editorB {width: 100%;height: 97%;overflow:hidden;}
 		#title {line-height: 15px;}
 		#layoutTab {}
 		
@@ -167,6 +167,7 @@ let layer = {
 				quickSuggestions:true,			 // 使字符串有代码提示
 				definitionLinkOpensInPeek:false, // ctrl+点击 跳转是否使用小窗口预览
 				cursorSurroundingLines : 5,		 // 撤销后自动滚动页面到光标相对5行的位置
+				scrollPredominantAxis:false,
 			});
 
 			window.vs_editor = Editor.monaco.vs_editor = this.vs_editor = editor;
@@ -1194,10 +1195,13 @@ let layer = {
 				// if(this.refresh_file_list.indexOf(file_info.path) == -1){ 
 				// 	this.refresh_file_list.push(file_info.path);
 				// }
-				Editor.assetdb.saveExists(file_info.path, edit_text, function (err, meta) {
+				Editor.assetdb.saveExists(file_info.path, edit_text, (err, meta)=> {
 					if (err) {
 						fs.writeFileSync(Editor.remote.assetdb.urlToFspath(file_info.path), edit_text); //外部文件
 						Editor.error("保存js失败:", err);
+					}else{
+						// 刚刚保存了，creator还没刷新
+						this.is_save_wait_up = 1;
 					}
 				});
 			}
@@ -1803,7 +1807,8 @@ let layer = {
 		// 选择改变
 		'selection:activated'(event) {
 			if(!this.is_init_finish) return;
-			this.openActiveFile(true);
+			this.openActiveFile(!this.is_save_wait_up,!this.is_save_wait_up);
+			this.is_save_wait_up = 0;// 阻止保存时tab乱切换
 		},
 
 		// 项目资源文件uuid发生改变
