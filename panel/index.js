@@ -145,13 +145,15 @@ let layer = {
 
 	initVsCode(callback) {
 		// Editor.require('packages://simple-code/tools/promise.prototype.finally').shim();
-		Promise.prototype.finally = function (callback) {
-			let P = this.constructor;
-			return this.then(
-				value => P.resolve(callback()).then(() => value),
-				reason => P.resolve(callback()).then(() => { throw reason })
-			);
-		};
+		if(Promise.prototype.finally == null){
+			Promise.prototype.finally = function (callback) {
+				let P = this.constructor;
+				return this.then(
+					value => P.resolve(callback()).then(() => value),
+					reason => P.resolve(callback()).then(() => { throw reason })
+				);
+			};
+		}
 
 		const vsLoader = Editor.require('packages://simple-code/monaco-editor/dev/vs/loader.js');
 		// vs代码路径
@@ -274,14 +276,19 @@ let layer = {
 		this.file_info = {};
 		// 编辑tab列表
 		this.edit_list = [];
-		// vs的models
-		this.vs_model_list = {};
 		// 全局快捷键配置
 		this.key_cfg = [];
 		// 游戏资源路径缓存
 		this.file_list_buffer = [];
 		// 当前场景所有子节点信息缓存
 		this.currSceneChildrenInfo = [];
+		// 重命名缓存
+		this.code_file_rename_buf = {
+			edit_files_map : {},
+			max_count : 0,
+			cur_count : 0,
+			is_use :0,
+		}
 		// 待刷新的文件url
 		// this.refresh_file_list = [];
 		// 编辑代码提示 配置
@@ -348,12 +355,12 @@ let layer = {
 	onVsDidChangeContent(e,model) {
 		let file_info ;
 		if(model == this.file_info.vs_model ){
-			file_info = this.file_info 
+			file_info = this.file_info  
 		}else{
 			file_info = this.edit_list[this.getTabIdByModel(model)];
 		}
 		if (file_info && file_info.uuid) {
-			file_info.new_data = this.vs_editor.getValue();
+			file_info.new_data = model.getValue();
 			file_info.is_need_save = file_info.data != file_info.new_data;//撤销到没修改的状态不需要保存了
 			this.upTitle(file_info.id);
 
@@ -862,13 +869,13 @@ let layer = {
 			let isJs = extname == ".js";
 			let isTs = extname == ".ts";
 			let fsPath = is_url_type ? Editor.remote.assetdb.urlToFspath(file_path) : file_path;
+			if (isReadText && !fe.isFileExit(fsPath)) return;
 			let js_text = isReadText ? fs.readFileSync(fsPath).toString() : "";
 			let file_name = file_path.substr(file_path.lastIndexOf('/') + 1).replace(/ /g,''); // 防止包含空格的路径
 			let str_uri   = this.fsPathToModelUrl(fsPath)
-			if (!fe.isFileExit(fsPath)) return;
 
 			// 生成vs model缓存
-			let model = this.vs_model_list[fsPath] = this.vs_model_list[fsPath] || this.monaco.editor.getModel(this.monaco.Uri.parse(str_uri)) ;
+			let model = this.monaco.editor.getModel(this.monaco.Uri.parse(str_uri)) ;
 			if(!model){
 				model = this.monaco.editor.createModel('',file_type,this.monaco.Uri.parse(str_uri))
 				model.onDidChangeContent((e) => this.onVsDidChangeContent(e,model));
@@ -1212,15 +1219,7 @@ let layer = {
 				// if(this.refresh_file_list.indexOf(file_info.path) == -1){ 
 				// 	this.refresh_file_list.push(file_info.path);
 				// }
-				Editor.assetdb.saveExists(file_info.path, edit_text, (err, meta)=> {
-					if (err) {
-						fs.writeFileSync(Editor.remote.assetdb.urlToFspath(file_info.path), edit_text); //外部文件
-						Editor.error("保存js失败:", err);
-					}else{
-						// 刚刚保存了，creator还没刷新
-						this.is_save_wait_up = 1;
-					}
-				});
+				this.saveFileByUrl(file_info.path,edit_text);
 			}
 			this.is_need_refresh = true;
 			file_info.is_need_save = false;
@@ -1229,6 +1228,19 @@ let layer = {
 			this.upTitle(id);
 			if(id != 0) this.setLockEdit(true,id);
 		}
+	},
+
+	saveFileByUrl(url,text)
+	{
+		Editor.assetdb.saveExists(url, text, (err, meta)=> {
+			if (err) {
+				fs.writeFileSync(Editor.remote.assetdb.urlToFspath(url), text); //外部文件
+				Editor.error("保存代码出错:", err);
+			}else{
+				// 刚刚保存了，creator还没刷新
+				this.is_save_wait_up = 1;
+			}
+		});
 	},
 
 	// 读取文件到编辑器渲染
@@ -1322,10 +1334,10 @@ let layer = {
 	},
 
 	// 获得页面id
-	getTabIdByModel(model) {
+	getTabIdByModel(vs_model) {
 		for (var i = 0; i < this.edit_list.length; i++) {
 			let v = this.edit_list[i];
-			if (v && v.model == model) {
+			if (v && v.vs_model == vs_model) {
 				return i;
 			}
 		}
@@ -1355,6 +1367,7 @@ let layer = {
 		file_info.enabled_close = true;
 		file_info.scroll_top = this.file_cfg[path] && this.file_cfg[path].scroll_top;
 		file_info.id = id;
+		file_info.can_remove_model = 0;
 		if (!file_info.vs_model) 
 		{
 			let vs_model = this.loadVsModel(path, this.getUriInfo(path).extname , uuid != "outside",false);
@@ -1416,6 +1429,12 @@ let layer = {
 		// 清除页面
 		if(file_info.vs_model) {
 			file_info.vs_model._commandManager.clear();// 清除撤销记录
+			if(file_info.is_need_save){ 
+				file_info.vs_model.setValue(file_info.data)// 撤销到修改前
+			}
+			if(file_info.can_remove_model){
+				file_info.vs_model.dispose();
+			}
 		}
 		delete this.edit_list[id];
 		tabBg.parentNode.removeChild(tabBg);
@@ -1665,13 +1684,89 @@ let layer = {
 		}, -1)
 	},
 
+	// 编译编辑中的代码
+	upCompCodeFile(){
+		let edits = [{
+			range:{startLineNumber:0,startColumn:0,endLineNumber:0,endColumn:0,},
+			text:' ',
+			forceMoveMarkers:false,
+		}]
+		this.edit_list.forEach((editInfo, id) => {
+			if(editInfo && editInfo.vs_model)
+			{
+				editInfo.vs_model.pushStackElement();
+				editInfo.vs_model.pushEditOperations([], edits);
+				editInfo.vs_model.undo()
+			}
+		})
+	},
+
 	onCurrSceneChildrenInfo(currSceneChildrenInfo) { },
 
+	// 重命名文件引用路径
+	loadCodeFileRenameInfo(oldFileName,newFileName,callback)
+	{
+		// 检测需要修改的文件
+		this.tsWr.getEditsForFileRename(this.fsPathToModelUrl(oldFileName),this.fsPathToModelUrl(newFileName)).then((edit_files)=>{
+			// if(!edit_files || edit_files.length == 0) return;
 
-	onCodeFileRename(oldFileName,newFileName){
-		this.tsWr.getEditsForFileRename(this.fsPathToModelUrl(oldFileName),this.fsPathToModelUrl(newFileName)).then((info)=>{
-			console.log(info);
+			// let hint_text = '检测到文件路径被修改，是否同步修改以下代码文件的引用路径:\n';
+			// for (let i = 0; i < edit_files.length; i++) 
+			// {
+			// 	hint_text+=edit_files[i].fileName+"\n";
+			// }
+			// if(!confirm(hint_text)) {
+			// 	return;
+			// }
+
+			callback(edit_files)
 		})
+	},
+
+	setCodeFileRename(edit_files_map)
+	{
+		let hint_text = '检测到文件路径被修改，是否同步修改以下代码文件的引用路径:\n';
+		let has_hint = 0
+		for (const key in edit_files_map) {
+			const edits = edit_files_map[key];
+			has_hint = 1
+			hint_text+=edits.fileName+"\n";
+		}
+		
+		if(has_hint && !confirm(hint_text)) {
+			return;
+		}
+
+		for (const key in edit_files_map) {
+			const edits = edit_files_map[key];
+			
+
+			const url = edits.fileName;
+			const vs_model = this.monaco.editor.getModel(url)
+			if(!vs_model) continue;
+			
+			let text = vs_model.getValue()
+			edits.textChanges.sort((a,b)=>{
+				return b.span.start - a.span.start;
+			})
+			
+			for (let n = 0; n < edits.textChanges.length; n++) 
+			{
+				const edit = edits.textChanges[n];
+				text = text.substr(0,edit.span.start) + edit.newText + text.substr(edit.span.start+edit.span.length)
+			}
+			console.log(edits.textChanges,text)
+			vs_model.setValue(text);
+			// 保存修改
+			let id = this.getTabIdByPath(url);
+			if(id != null)
+			{
+				// this.saveFile(false,id);
+				this.onVsDidChangeContent({},vs_model)
+			}else{
+				this.saveFileByUrl(url,text);
+			}
+		}
 	},
 
 	// 调用原生JS的定时器
@@ -1758,8 +1853,8 @@ let layer = {
 			this.closeTab(id);
 		});
 		
-		for (const key in this.vs_model_list) {
-			const model = this.vs_model_list[key];
+		for (const key in this.monaco.editor.getModels()) {
+			const model = this.monaco.editor.getModels[key];
 			if(model) model.dispose();
 		}
 
@@ -1867,6 +1962,7 @@ let layer = {
 					this.file_list_buffer.push(item)
 					this.loadCompleterLib(item.meta, item.extname, true);
 					this.loadGlobalFunctionCompleter(item.meta, item.extname, true);
+					this.upCompCodeFile();
 				}
 			})
 		},
@@ -1886,45 +1982,114 @@ let layer = {
 				}
 
 				let is_remove = false
-				// 编辑信息
-				this.edit_list.forEach((editInfo) => {
+
+				// 刷新编辑信息
+				let old_url = this.fsPathToModelUrl(v.path);
+				let id = this.getTabIdByPath(old_url);
+				// 正在编辑的tab
+				if(id != null)
+				{
 					// 正在编辑的文件被删
+					let editInfo = this.edit_list[id] 
 					if (editInfo && v.uuid == editInfo.uuid) {
 						editInfo.uuid = "outside";
 						editInfo.path = unescape(Editor.url(editInfo.path));
+						editInfo.can_remove_model = 1;
+						if(editInfo.vs_model)
+						{
+							// 刷新 model 信息，不然函数转跳不正确
+							let text  = editInfo.vs_model.getValue();
+							editInfo.vs_model.dispose()
+							let model = this.loadVsModel(editInfo.path,this.getUriInfo(editInfo.path).extname,false,false)
+							if(model)
+							{
+								let is_show = this.vs_editor.getModel() == editInfo.vs_model;
+								model.setValue(text)
+								editInfo.vs_model = model;
+								if(is_show){
+									this.setTabPage(id);
+								}
+							}
+						}
+
 						this.checkCurrFileChange(editInfo);
 						is_remove = true
 					}
-				})
+				}else{
+					// 清缓存
+					let vs_model = this.monaco.editor.getModel(this.monaco.Uri.parse(old_url))
+					if(vs_model) vs_model.dispose()
+				}
 
 			})
+
+			this.upCompCodeFile();
 		},
 
 		// 项目文件被移动了
-		'asset-db:assets-moved'(event, info) {
+		'asset-db:assets-moved'(event, info) 
+		{
 			if(!this.is_init_finish) return;
 			if (!info) return;
 
+			// 重命名引用路径
 			info.forEach((v, i) => {
 				let urlI = this.getUriInfo(v.url)
 				if(urlI.extname == '.js' || urlI.extname == '.ts'){
-					this.onCodeFileRename(v.srcPath,v.destPath);
+					this.code_file_rename_buf.max_count ++;
+
+					this.loadCodeFileRenameInfo(v.srcPath,v.destPath,(edit_files)=>
+					{
+						for (let i = 0; i < edit_files.length; i++) 
+						{
+							const edits = edit_files[i];
+							if(this.code_file_rename_buf.edit_files_map[edits.fileName])
+							{
+								for (let n = 0; n < edits.textChanges.length; n++) 
+								{
+									const edit = edits.textChanges[n];
+									this.code_file_rename_buf.edit_files_map[edits.fileName].textChanges.push(edit);
+								}
+							}else{
+								this.code_file_rename_buf.edit_files_map[edits.fileName] = edits;
+							}
+						}
+
+						this.code_file_rename_buf.cur_count++;
+						if(this.code_file_rename_buf.cur_count == this.code_file_rename_buf.max_count)
+						{
+							this.setCodeFileRename(this.code_file_rename_buf.edit_files_map);
+							this.code_file_rename_buf.cur_count = 0;
+							this.code_file_rename_buf.max_count = 0;
+							this.code_file_rename_buf.edit_files_map = {};
+						}
+					});
 				}
-				
-				// vs编辑信息
-				this.edit_list.forEach((editInfo,id) => 
+			})
+
+			info.forEach((v, i) => {
+
+				// 刷新编辑信息
+				let urlI = this.getUriInfo(v.url)
+				let old_url = this.fsPathToModelUrl(v.srcPath);
+				let id = this.getTabIdByPath(old_url);
+				// 正在编辑的tab
+				if(id != null)
 				{
+					let editInfo = this.edit_list[id] 
 					if (editInfo && editInfo.uuid == v.uuid) {
 						editInfo.path = v.url;
 						editInfo.name = urlI.name;
 						if(editInfo.vs_model)
 						{
 							// 刷新 model 信息，不然函数转跳不正确
-							let model = this.loadVsModel(editInfo.path,this.getUriInfo(editInfo.path).extname,true)
+							let text  = editInfo.vs_model.getValue();
+							editInfo.vs_model.dispose()
+							let model = this.loadVsModel(editInfo.path,urlI.extname,true)
 							if(model)
 							{
 								let is_show = this.vs_editor.getModel() == editInfo.vs_model;
-								model.setValue(editInfo.vs_model.getValue())
+								model.setValue(text)
 								editInfo.vs_model = model;
 								if(is_show){
 									this.setTabPage(id);
@@ -1933,19 +2098,29 @@ let layer = {
 						}
 						this.upTitle(editInfo.id)
 					}
-				})
+				}else{
+					// 修改缓存
+					let vs_model = this.monaco.editor.getModel(this.monaco.Uri.parse(old_url))
+					if(vs_model) {
+						let text = vs_model.getValue();
+						vs_model.dispose()
+						let model = this.loadVsModel(v.url,urlI.extname,true)
+						model.setValue(text);
+					}
+				}
 
 				for (let i = 0; i < this.file_list_buffer.length; i++) {
 					let item = this.file_list_buffer[i];
 					if (item.uuid == v.uuid) {
-						let urlI = this.getUriInfo(v.url)
 						item.extname = urlI.extname
 						item.value = urlI.name
 						item.meta = v.url
 						break;
 					}
 				}
-			})
+			});
+
+			this.upCompCodeFile();
 		},
 
 		// vs功能:在文件夹打开文件
