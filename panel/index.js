@@ -145,15 +145,15 @@ let layer = {
 
 	initVsCode(callback) {
 		// Editor.require('packages://simple-code/tools/promise.prototype.finally').shim();
-		if(Promise.prototype.finally == null){
-			Promise.prototype.finally = function (callback) {
-				let P = this.constructor;
-				return this.then(
-					value => P.resolve(callback()).then(() => value),
-					reason => P.resolve(callback()).then(() => { throw reason })
-				);
-			};
-		}
+		// if(Promise.prototype.finally == null){
+		// 	Promise.prototype.finally = function (callback) {
+		// 		let P = this.constructor;
+		// 		return this.then(
+		// 			value => P.resolve(callback()).then(() => value),
+		// 			reason => P.resolve(callback()).then(() => { throw reason })
+		// 		);
+		// 	};
+		// }
 
 		const vsLoader = Editor.require('packages://simple-code/monaco-editor/dev/vs/loader.js');
 		// vs代码路径
@@ -1706,6 +1706,7 @@ let layer = {
 	// 重命名文件引用路径
 	loadCodeFileRenameInfo(oldFileName,newFileName,callback)
 	{
+		console.log("start load")
 		// 检测需要修改的文件
 		this.tsWr.getEditsForFileRename(this.fsPathToModelUrl(oldFileName),this.fsPathToModelUrl(newFileName)).then((edit_files)=>{
 			// if(!edit_files || edit_files.length == 0) return;
@@ -2037,7 +2038,7 @@ let layer = {
 				let urlI = this.getUriInfo(v.url)
 				if(urlI.extname == '.js' || urlI.extname == '.ts'){
 					this.code_file_rename_buf.max_count ++;
-
+					cc.engine._animatingInEditMode = 1
 					this.loadCodeFileRenameInfo(v.srcPath,v.destPath,(edit_files)=>
 					{
 						for (let i = 0; i < edit_files.length; i++) 
@@ -2056,12 +2057,14 @@ let layer = {
 						}
 
 						this.code_file_rename_buf.cur_count++;
+
 						if(this.code_file_rename_buf.cur_count == this.code_file_rename_buf.max_count)
 						{
 							this.setCodeFileRename(this.code_file_rename_buf.edit_files_map);
 							this.code_file_rename_buf.cur_count = 0;
 							this.code_file_rename_buf.max_count = 0;
 							this.code_file_rename_buf.edit_files_map = {};
+							cc.engine._animatingInEditMode = 0
 						}
 					});
 				}
