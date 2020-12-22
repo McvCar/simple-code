@@ -164,7 +164,7 @@ let layer = {
 			this.monaco = Editor.monaco = monaco;
 			var editor = monaco.editor.create(this.$editorB, {
 				value: ``,
-				language: 'javascript',
+				language: 'javascript',			 // 预热 javascript模块
 				mouseWheelZoom: true,			 // 鼠标可以缩放字体大小
 				quickSuggestions:true,			 // 使字符串有代码提示
 				definitionLinkOpensInPeek:false, // ctrl+点击 跳转是否使用小窗口预览
@@ -181,12 +181,23 @@ let layer = {
 			monaco.languages.typescript.typescriptDefaults.setCompilerOptions(monaco.languages.typescript.typescriptDefaults._compilerOptions);
 			monaco.editor.setTheme("vs-dark")
 
-			setTimeout(()=>{
-				monaco.editor.setModelLanguage(this.vs_editor.getModel(), "typescript");
+			setTimeout(()=>
+			{
+				monaco.editor.setModelLanguage(this.vs_editor.getModel(), "typescript"); // 预热 typescript模块
+
 				monaco.languages.typescript.getTypeScriptWorker().then((func)=>{func().then((tsWr)=>{
 					this.tsWr = tsWr;// ts文件静态解析器
-					this.tsWr.getEditsForFileRename('inmemory://model/1','inmemory://model/2')
-					callback();
+					this.tsWr.getEditsForFileRename('inmemory://model/1','inmemory://model/2');// 预热模块
+					if(this.tsWr && this.jsWr){
+						callback();
+					}
+				})})
+				monaco.languages.typescript.getJavaScriptWorker().then((func)=>{func().then((jsWr)=>{
+					this.jsWr = jsWr;// js文件静态解析器
+					this.jsWr.getEditsForFileRename('inmemory://model/1','inmemory://model/2')// 预热模块
+					if(this.tsWr && this.jsWr){
+						callback();
+					}
 				})})
 			},100)
 		})
@@ -284,7 +295,7 @@ let layer = {
 		this.currSceneChildrenInfo = [];
 		// 重命名缓存
 		this.code_file_rename_buf = {
-			move_files = [],
+			move_files : [],
 			edit_files_map : {},
 			max_count : 0,
 			cur_count : 0,
@@ -1709,6 +1720,7 @@ let layer = {
 
 	onCurrSceneChildrenInfo(currSceneChildrenInfo) { },
 
+	// 移动 ts/js代码文件
 	onMoveFile(list)
 	{
 		let has_move_code_file = 0
@@ -1763,29 +1775,18 @@ let layer = {
 	},
 	
 	// 重命名文件引用路径
-	loadCodeFileRenameInfo(oldFileName,newFileName,callback)
+	loadCodeFileRenameInfo(oldFileName,newFileName,extname,callback)
 	{
-		console.log("start load")
 		// 检测需要修改的文件
-		this.tsWr.getEditsForFileRename(this.fsPathToModelUrl(oldFileName),this.fsPathToModelUrl(newFileName)).then((edit_files)=>{
-			// if(!edit_files || edit_files.length == 0) return;
-
-			// let hint_text = '检测到文件路径被修改，是否同步修改以下代码文件的引用路径:\n';
-			// for (let i = 0; i < edit_files.length; i++) 
-			// {
-			// 	hint_text+=edit_files[i].fileName+"\n";
-			// }
-			// if(!confirm(hint_text)) {
-			// 	return;
-			// }
-
+		let wr = extname == ".js" ? this.jsWr : this.tsWr;
+		wr.getEditsForFileRename(this.fsPathToModelUrl(oldFileName),this.fsPathToModelUrl(newFileName)).then((edit_files)=>{
 			callback(edit_files)
 		})
 	},
 
 	setCodeFileRename(edit_files_map)
 	{
-		let hint_text = '检测到文件路径被修改，是否同步修改以下代码文件的引用路径:\n';
+		let hint_text = '是否同步以下脚本文件的 import、require路径:\n';
 		let has_hint = 0
 		for (const key in edit_files_map) {
 			const edits = edit_files_map[key];
@@ -1815,7 +1816,7 @@ let layer = {
 				const edit = edits.textChanges[n];
 				text = text.substr(0,edit.span.start) + edit.newText + text.substr(edit.span.start+edit.span.length)
 			}
-			console.log(edits.textChanges,text)
+			
 			vs_model.setValue(text);
 			// 保存修改
 			let id = this.getTabIdByPath(url);
@@ -1954,7 +1955,7 @@ let layer = {
 		s_i = name.lastIndexOf('.');
 		let extname = ""
 		if (s_i != -1) {
-			extname = name.substr(s_i)
+			extname = name.substr(s_i).toLowerCase()
 		}
 		return { name, extname,url }
 	},
@@ -2113,7 +2114,7 @@ let layer = {
 					this.code_file_rename_buf.max_count ++;
 					has_move_code_file = 1;
 					// 异步等待读取重命名信息
-					this.loadCodeFileRenameInfo(v.srcPath,v.destPath,(edit_files)=>
+					this.loadCodeFileRenameInfo(v.srcPath,v.destPath,urlI.extname,(edit_files)=>
 					{
 						for (let i = 0; i < edit_files.length; i++) 
 						{
@@ -2135,7 +2136,7 @@ let layer = {
 						if(this.code_file_rename_buf.cur_count == this.code_file_rename_buf.max_count)
 						{
 							this.setCodeFileRename(this.code_file_rename_buf.edit_files_map);
-							this.onMoveFile(this.code_file_rename_buf.move_files)；
+							this.onMoveFile(this.code_file_rename_buf.move_files);
 							this.code_file_rename_buf.cur_count = 0;
 							this.code_file_rename_buf.max_count = 0;
 							this.code_file_rename_buf.edit_files_map = {};
