@@ -18,7 +18,7 @@ const MEMO_FILE_PATH = prsPath + path.sep + "temp" + path.sep + "备忘录.md";
 const CMD_FILE_PATH = prsPath + path.sep + "temp" + path.sep + "commandLine.js";
 const SCORES = { ".fire": 100, ".prefab": 90 };
 // .d.ts 通用代码提示文件引入位置
-const TS_API_LIB_PATHS = [Editor.url('packages://simple-code/template/api_doc'),prsPath];
+const TS_API_LIB_PATHS = [prsPath,Editor.url('packages://simple-code/template/api_doc')];
 
 let _scripts = [];
 let is_hint = false;
@@ -145,15 +145,15 @@ let layer = {
 
 	initVsCode(callback) {
 		// Editor.require('packages://simple-code/tools/promise.prototype.finally').shim();
-		// if(Promise.prototype.finally == null){
-		// 	Promise.prototype.finally = function (callback) {
-		// 		let P = this.constructor;
-		// 		return this.then(
-		// 			value => P.resolve(callback()).then(() => value),
-		// 			reason => P.resolve(callback()).then(() => { throw reason })
-		// 		);
-		// 	};
-		// }
+		if(Promise.prototype.finally == null){
+			Promise.prototype.finally = function (callback) {
+				let P = this.constructor;
+				return this.then(
+					value => P.resolve(callback()).then(() => value),
+					reason => P.resolve(callback()).then(() => { throw reason })
+				);
+			};
+		}
 
 		const vsLoader = Editor.require('packages://simple-code/monaco-editor/dev/vs/loader.js');
 		// vs代码路径
@@ -177,7 +177,6 @@ let layer = {
 			// monaco.languages.typescript.javascriptDefaults._compilerOptions.allowJs = false;
 			// monaco.languages.typescript.javascriptDefaults._compilerOptions.target = monaco.languages.typescript.ScriptTarget.ES5;
 			// monaco.languages.typescript.javascriptDefaults.setCompilerOptions(monaco.languages.typescript.javascriptDefaults._compilerOptions);
-
 			monaco.languages.typescript.typescriptDefaults._compilerOptions.experimentalDecorators = true;
 			monaco.languages.typescript.typescriptDefaults.setCompilerOptions(monaco.languages.typescript.typescriptDefaults._compilerOptions);
 			monaco.editor.setTheme("vs-dark")
@@ -186,6 +185,7 @@ let layer = {
 				monaco.editor.setModelLanguage(this.vs_editor.getModel(), "typescript");
 				monaco.languages.typescript.getTypeScriptWorker().then((func)=>{func().then((tsWr)=>{
 					this.tsWr = tsWr;// ts文件静态解析器
+					this.tsWr.getEditsForFileRename('inmemory://model/1','inmemory://model/2')
 					callback();
 				})})
 			},100)
@@ -746,6 +746,7 @@ let layer = {
 		});
 
 		// 项目根目录的代码提示文件
+		let load_file_map = {}
 		for (var n = 0; n < TS_API_LIB_PATHS.length; n++) 
 		{
 			let s_path = TS_API_LIB_PATHS[n];
@@ -754,11 +755,15 @@ let layer = {
 			{
 				let file_path = list[i];
 				file_path = file_path.replace(/\\/g,'/')
+				let file_name = file_path.substr(file_path.lastIndexOf('/'));
 				let extname = file_path.substr(file_path.lastIndexOf('.'));
 				// creator.d.ts 文件
-				if (extname == '.ts') {
+				if (extname == '.ts' && !load_file_map[file_name]) {
+					load_file_map[file_name] = 1;
 					this.loadCompleterLib(file_path, extname, false);
 				}
+				
+				
 			}
 		}
 	},
@@ -808,17 +813,17 @@ let layer = {
 			let js_text = fs.readFileSync(fsPath).toString();
 			if (!fe.isFileExit(fsPath)) return;
 
-			// if (isJs || (!is_url_type && isTs) ) 
-			// {
-			// 	// 解析项目生成api提示字符串
-			// 	if (is_url_type) {
-			// 		js_text = tools.parseJavaScript(js_text, file_name.substr(0, file_name.lastIndexOf('.')));
-			// 	}
-			// 	if (js_text) {
-			// 		this.monaco.languages.typescript.javascriptDefaults.addExtraLib(js_text,'lib://model/' + file_name);
-			// 		this.loadVsModel(file_path,extname,is_url_type);
-			// 	}
-			// }
+			if (isTs && !is_url_type) 
+			{
+				// 解析项目生成api提示字符串
+				// if (is_url_type) {
+				// 	js_text = tools.parseJavaScript(js_text, file_name.substr(0, file_name.lastIndexOf('.')));
+				// }
+				if (js_text) {
+					// this.monaco.languages.typescript.javascriptDefaults.addExtraLib(js_text,this.fsPathToModelUrl(fsPath));
+					this.monaco.languages.typescript.javascriptDefaults.addExtraLib(js_text,'lib://model/' + file_name);
+				}
+			}
 
 			// if (isTs) {
 				this.loadVsModel(file_path,extname,is_url_type);
@@ -2149,7 +2154,13 @@ let layer = {
 		{
 			this.vs_editor.focus();
 		},
-
+		
+		// vs功能: 
+		'vs-up-code-file'(event) 
+		{
+			this.upCompCodeFile();
+		},
+		
 		// vs功能:打开文件、转跳到实现、定义
 		'vs-open-file-tab'(event,info) 
 		{
