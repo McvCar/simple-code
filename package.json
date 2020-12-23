@@ -1,7 +1,7 @@
 {
 	"name": "simple-code",
 	"scene-script": "panel/scene-info.js",
-	"version": "2.1.2",
+	"version": "2.1.5",
 	"description": "内置代码编辑器",
 	"author": "MCV",
 	"main": "main.js",
