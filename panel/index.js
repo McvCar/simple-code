@@ -927,7 +927,7 @@ let layer = {
 			ind = prsPath.length;
 			if(ind == -1) Editor.warn("代码编辑器：转换路径异常");
 			let _path = fsPath.substr(ind+1);
-			str_uri   = 'db://' + (Editor.isWin32 ? _path.substr(3).replace(/ /g,'').replace(/\\/g,'/') : _path );
+			str_uri   = 'db://' + (Editor.isWin32 ? _path.replace(/ /g,'').replace(/\\/g,'/') : _path );
 		}
 		return str_uri;
 	},
@@ -1911,7 +1911,7 @@ let layer = {
 				rename_files_map : {},
 				rename_path_map : {},
 			}
-			
+			this.upCompCodeFile()
 		},100)
 	},
 	
