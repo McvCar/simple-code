@@ -34,6 +34,18 @@ let layer = {
 		// ace.editorCss +
 		fs.readFileSync(Editor.url("packages://simple-code/monaco-editor/dev/vs/editor/editor.main.css"), "utf-8") +
 		`
+
+		.turn{
+			animation:turn 1s linear infinite;      
+		  }
+		@keyframes turn{
+		0%{-webkit-transform:rotate(0deg);}
+		25%{-webkit-transform:rotate(90deg);}
+		50%{-webkit-transform:rotate(180deg);}
+		75%{-webkit-transform:rotate(270deg);}
+		100%{-webkit-transform:rotate(360deg);}
+		}
+
 		#gotoFileBtn{height: 15px;}
 		#saveBtn {height: 15px;}
 		#resetBtn {height: 15px;}
@@ -84,6 +96,8 @@ let layer = {
 				<div id="layoutTab" class="layout horizontal justified">
 					<div id="tabList" class="layout horizontal">
 						<i class="icon-doc-text"></i> <span></span> <span></span>
+						<div id="waitIco" class="turn">=</div>
+
 
 						<div id="title0" class="closeTab">
 							<div class="title"><nobr>无文件<nobr></div>
@@ -115,6 +129,7 @@ let layer = {
 		title0: '#title0',
 		tabList: '#tabList',
 		box: '#box',
+		waitIco: '#waitIco',
 	},
 
 	initAce() {
@@ -296,10 +311,10 @@ let layer = {
 		// 重命名缓存
 		this.code_file_rename_buf = {
 			move_files : [],
-			edit_files_map : {},
-			max_count : 0,
-			cur_count : 0,
+			cur_count:0,
 			is_use :0,
+			rename_files_map : {},
+			rename_path_map : {},
 		}
 		// 待刷新的文件url
 		// this.refresh_file_list = [];
@@ -361,6 +376,7 @@ let layer = {
 			this.is_init_finish = true;
 			this.openActiveFile();
 			this.runExtendFunc("initSceneData");
+			this.setWaitIconHide(true);
 		},2);
 	},
 
@@ -1428,6 +1444,9 @@ let layer = {
 		return tabBg;
 	},
 
+	setWaitIconHide(isHide){
+		this.$waitIco.hidden = isHide;
+	},
 
 	// 关闭页面tab
 	closeTab(id) {
@@ -1715,63 +1734,185 @@ let layer = {
 				editInfo.vs_model.pushEditOperations([], edits);
 				editInfo.vs_model.undo()
 			}
-		})
+		});
 	},
 
 	onCurrSceneChildrenInfo(currSceneChildrenInfo) { },
 
 	// 移动 ts/js代码文件
-	onMoveFile(list)
+	onMoveFile(v)
 	{
-		let has_move_code_file = 0
-		list.forEach((v, i) => {
-			// 刷新编辑信息
-			let urlI = this.getUriInfo(v.url)
-			let old_url = this.fsPathToModelUrl(v.srcPath);
-			let id = this.getTabIdByPath(old_url);
-			// 正在编辑的tab
-			if (id != null)
-			{
-				let editInfo = this.edit_list[id] 
-				if (editInfo && editInfo.uuid == v.uuid) {
-					editInfo.path = v.url;
-					editInfo.name = urlI.name;
-					if(editInfo.vs_model)
+		// 刷新编辑信息
+		let urlI = this.getUriInfo(v.url)
+		let old_url = this.fsPathToModelUrl(v.srcPath);
+		let id = this.getTabIdByPath(old_url);
+		// 正在编辑的tab
+		if (id != null)
+		{
+			let editInfo = this.edit_list[id] 
+			if (editInfo && editInfo.uuid == v.uuid) {
+				editInfo.path = v.url;
+				editInfo.name = urlI.name;
+				if(editInfo.vs_model)
+				{
+					// 刷新 model 信息，不然函数转跳不正确
+					let text  = editInfo.vs_model.getValue();
+					editInfo.vs_model.dispose()
+					let model = this.loadVsModel(editInfo.path,urlI.extname,true,false)
+					if(model)
 					{
-						// 刷新 model 信息，不然函数转跳不正确
-						let text  = editInfo.vs_model.getValue();
-						editInfo.vs_model.dispose()
-						let model = this.loadVsModel(editInfo.path,urlI.extname,true)
-						if(model)
-						{
-							let is_show = this.vs_editor.getModel() == null;
-							model.setValue(text)
-							editInfo.vs_model = model;
-							if(is_show){
-								this.vs_editor.setModel(editInfo.vs_model);
-								this.setTabPage(id);
-							}
+						let is_show = this.vs_editor.getModel() == null;
+						model.setValue(text)
+						editInfo.vs_model = model;
+						if(is_show){
+							this.vs_editor.setModel(editInfo.vs_model);
+							this.setTabPage(id);
 						}
 					}
-					this.upTitle(editInfo.id)
-					has_move_code_file = 1;
 				}
+				this.upTitle(editInfo.id)
+			}
+		}else{
+			// 修改缓存
+			let vs_model = this.monaco.editor.getModel(this.monaco.Uri.parse(old_url))
+			if(vs_model) {
+				let text = vs_model.getValue();
+				vs_model.dispose()
+				let model = this.loadVsModel(v.url,urlI.extname,true,false)
+				model.setValue(text);
+			}
+		}
+	},
+	
+	upCodeFileRename()
+	{
+		if(this.code_file_rename_buf.is_use){
+			return
+		}
+		let assets_info = this.code_file_rename_buf.move_files[this.code_file_rename_buf.cur_count];
+		if(!assets_info)
+		{
+			// 重命名完成，收尾工作
+			if(this.code_file_rename_buf.cur_count > 0 && this.code_file_rename_buf.cur_count == this.code_file_rename_buf.move_files.length)
+			{
+				this.onCodeFileRenameEnd()
+			}
+			return;
+		};
+		let oldUrl = this.fsPathToModelUrl(assets_info.srcPath);
+		let newUrl = this.fsPathToModelUrl(assets_info.destPath);
+		
+		this.code_file_rename_buf.is_use = 1;
+		this.code_file_rename_buf.cur_count++;
+		this.code_file_rename_buf.rename_path_map[oldUrl] = newUrl;
+		
+		// 异步等待读取重命名信息
+		this.setWaitIconHide(false);
+		this.loadCodeFileRenameInfo(oldUrl,newUrl,assets_info.extname,(edit_files,wrObj)=>
+		{
+			if(edit_files.length>0)
+			{
+				// 缓存路径修改了1
+				if(this.code_file_rename_buf.rename_files_map[oldUrl]){
+					this.code_file_rename_buf.rename_files_map[newUrl] = this.code_file_rename_buf.rename_files_map[oldUrl];
+					delete this.code_file_rename_buf.rename_files_map[oldUrl];
+				}
+
+				for (let i = 0; i < edit_files.length; i++){
+					const edits = edit_files[i];
+					// 修改model选项
+					const convert_info 	=  this.setCodeFileModelRename(edits);
+					// 记录修改引用路径前的文本信息，用于回撤
+					if(convert_info){
+						this.code_file_rename_buf.rename_files_map[convert_info.url] = this.code_file_rename_buf.rename_files_map[convert_info.url] || convert_info.old_text;
+					}
+				}
+
+				// 缓存路径修改了2
+				if(this.code_file_rename_buf.rename_files_map[oldUrl]){
+					this.code_file_rename_buf.rename_files_map[newUrl] = this.code_file_rename_buf.rename_files_map[oldUrl];
+					delete this.code_file_rename_buf.rename_files_map[oldUrl];
+				}
+				
+				// 重新生成vs_model
+				this.onMoveFile(assets_info);
+				// 检测wr线程读取vs_model完成没有
+				let try_count = 0;
+				let isLoadModel = ()=>{
+					wrObj._getModel(assets_info.url).then((model)=>
+					{
+						if(model == null) {
+							isLoadModel(); // 没加载，继续检测
+						}else{
+							this.code_file_rename_buf.is_use = 0;
+							this.upCodeFileRename(); // 加载，继续读取下个文件
+						}
+					});
+				}
+				isLoadModel()
 			}else{
-				// 修改缓存
-				let vs_model = this.monaco.editor.getModel(this.monaco.Uri.parse(old_url))
-				if(vs_model) {
-					let text = vs_model.getValue();
-					vs_model.dispose()
-					let model = this.loadVsModel(v.url,urlI.extname,true)
-					model.setValue(text);
-					has_move_code_file = 1;
-				}
+				this.code_file_rename_buf.is_use = 0;
+				this.upCodeFileRename(); // 继续读取下个文件
 			}
 		});
+	},
 
-		if(has_move_code_file){
-			this.upCompCodeFile();
+	onCodeFileRenameEnd(){
+		let hint_text = '是否同步以下脚本文件的 import、require路径:\n';
+		let has_hint = 0
+		let new_text_map = {}
+		for (const url in this.code_file_rename_buf.rename_files_map) {
+			let old_text = this.code_file_rename_buf.rename_files_map[url]; // 
+			let vs_model = this.monaco.editor.getModel(url);
+			if(!vs_model){
+				continue;
+			}
+			new_text_map[url] = vs_model.getValue();
+			vs_model.setValue(old_text);
+			has_hint = 1
+			hint_text+=url+"\n";
 		}
+
+		this.setWaitIconHide(true);
+		setTimeout(()=>{
+			if(has_hint)
+			{
+				let is_apply = confirm(hint_text);
+				for (const url in this.code_file_rename_buf.rename_files_map) {
+					let old_text = this.code_file_rename_buf.rename_files_map[url]; // 
+					// let new_url = this.code_file_rename_buf.rename_path_map[url]; // 移动后的路径
+					
+					let vs_model = this.monaco.editor.getModel(url);
+					if(!vs_model){
+						continue;
+					}
+	
+					if(is_apply){
+						vs_model.setValue(new_text_map[url])
+						let id = this.getTabIdByPath(url);
+						if(id == null)
+						{
+							this.saveFileByUrl(url,vs_model.getValue()); // 没有打开的文件则自动保存
+						}else{} // 已经打开的文件等用户手动保存
+					}else{
+						if(old_text){
+							vs_model.setValue(old_text)
+						}else{
+							Editor.warn("错误:引用路径重命名回撤失败;")
+						}
+					}
+				}
+			}
+	
+			this.code_file_rename_buf = {
+				move_files : [],
+				cur_count:0,
+				is_use :0,
+				rename_files_map : {},
+				rename_path_map : {},
+			}
+			
+		},100)
 	},
 	
 	// 重命名文件引用路径
@@ -1779,54 +1920,49 @@ let layer = {
 	{
 		// 检测需要修改的文件
 		let wr = extname == ".js" ? this.jsWr : this.tsWr;
-		wr.getEditsForFileRename(this.fsPathToModelUrl(oldFileName),this.fsPathToModelUrl(newFileName)).then((edit_files)=>{
-			callback(edit_files)
+		wr.getEditsForFileRename(oldFileName,newFileName).then((edit_files)=>{
+			callback(edit_files,wr)
+		},()=>{
+			console.warn("代码编辑器:读取重命名文件引用路径失败:"+oldFileName+" to " +newFileName);
+			callback([],wr);
 		})
 	},
 
-	setCodeFileRename(edit_files_map)
+	setCodeFileModelRename(edits)
 	{
-		let hint_text = '是否同步以下脚本文件的 import、require路径:\n';
-		let has_hint = 0
-		for (const key in edit_files_map) {
-			const edits = edit_files_map[key];
-			has_hint = 1
-			hint_text+=edits.fileName+"\n";
-		}
+		const url = edits.fileName;
+		const vs_model = this.monaco.editor.getModel(url)
+		if(!vs_model) return ;
 		
-		if(has_hint && !confirm(hint_text)) {
-			return;
-		}
-
-		for (const key in edit_files_map) {
-			const edits = edit_files_map[key];
-			
-
-			const url = edits.fileName;
-			const vs_model = this.monaco.editor.getModel(url)
-			if(!vs_model) continue;
-			
-			let text = vs_model.getValue()
-			edits.textChanges.sort((a,b)=>{
-				return b.span.start - a.span.start;
-			})
-			
-			for (let n = 0; n < edits.textChanges.length; n++) 
-			{
-				const edit = edits.textChanges[n];
+		let text = vs_model.getValue()
+		let old_text = text;
+		let has_set = 0;
+		edits.textChanges.sort((a,b)=>{
+			return b.span.start - a.span.start;
+		})
+		
+		for (let n = 0; n < edits.textChanges.length; n++) 
+		{
+			const edit = edits.textChanges[n];
+			// 不修改没有路径的引用位置 import test from 'test';
+			let old_import_path = text.substr(edit.span.start,edit.span.length)
+			if(old_import_path.indexOf('/') != -1){
+				has_set = 1
 				text = text.substr(0,edit.span.start) + edit.newText + text.substr(edit.span.start+edit.span.length)
 			}
-			
+		}
+		
+		if(has_set){
 			vs_model.setValue(text);
 			// 保存修改
 			let id = this.getTabIdByPath(url);
 			if(id != null)
 			{
-				// this.saveFile(false,id);
 				this.onVsDidChangeContent({},vs_model)
 			}else{
-				this.saveFileByUrl(url,text);
+				// this.saveFileByUrl(url,text);
 			}
+			return {url,old_text};
 		}
 	},
 
@@ -2088,15 +2224,15 @@ let layer = {
 		},
 
 		// 项目文件被移动了
-		'asset-db:assets-moved'(event, info) 
+		'asset-db:assets-moved'(event, list) 
 		{
 			if(!this.is_init_finish) return;
-			if (!info) return;
+			if (!list) return;
 
-			let has_move_code_file = 0;
-			info.forEach((v, i) => 
+			list.forEach((v, i) => 
 			{
 				let urlI = this.getUriInfo(v.url)
+				v.extname = urlI.extname;
 				
 				// 更新文件缓存
 				for (let i = 0; i < this.file_list_buffer.length; i++) {
@@ -2109,50 +2245,15 @@ let layer = {
 					}
 				}
 				
-				// 重命名引用路径
+				// 重命名后检测引用路径
 				if(urlI.extname == '.js' || urlI.extname == '.ts'){
-					this.code_file_rename_buf.max_count ++;
-					has_move_code_file = 1;
-					// 异步等待读取重命名信息
-					this.loadCodeFileRenameInfo(v.srcPath,v.destPath,urlI.extname,(edit_files)=>
-					{
-						for (let i = 0; i < edit_files.length; i++) 
-						{
-							const edits = edit_files[i];
-							if(this.code_file_rename_buf.edit_files_map[edits.fileName])
-							{
-								for (let n = 0; n < edits.textChanges.length; n++) 
-								{
-									const edit = edits.textChanges[n];
-									this.code_file_rename_buf.edit_files_map[edits.fileName].textChanges.push(edit);
-								}
-							}else{
-								this.code_file_rename_buf.edit_files_map[edits.fileName] = edits;
-							}
-						}
-						
-						// 读取完成
-						this.code_file_rename_buf.cur_count++;
-						if(this.code_file_rename_buf.cur_count == this.code_file_rename_buf.max_count)
-						{
-							this.setCodeFileRename(this.code_file_rename_buf.edit_files_map);
-							this.onMoveFile(this.code_file_rename_buf.move_files);
-							this.code_file_rename_buf.cur_count = 0;
-							this.code_file_rename_buf.max_count = 0;
-							this.code_file_rename_buf.edit_files_map = {};
-							this.code_file_rename_buf.move_files = [];
-						}
-					});
+					this.code_file_rename_buf.move_files.push(v);
+					this.upCodeFileRename();
+				}else{
+					// 不需要检测引用路径的文件
+					this.onMoveFile(v);
 				}
 			})
-
-			if(!has_move_code_file){
-				this.onMoveFile(info)
-			}else{
-				// 缓存等待代码引用路径重命名完成后再修改vs_model的url路径,避免重命名失败
-				info.forEach((v, i)=>{this.code_file_rename_buf.move_files.push(v)}); 
-			}
-			
 		},
 
 		// vs功能:在文件夹打开文件
