@@ -7,11 +7,12 @@ const settings_menu = Editor.require('packages://simple-code/ace/ext-settings_me
 const prompt_ex = Editor.require('packages://simple-code/ace/ext-prompt.js');
 
 const tools = Editor.require('packages://simple-code/tools/tools.js');
-const fe = Editor.require('packages://simple-code/tools/FileTools.js');
-const fs = require('fs');
-const path = require("fire-path");
-const exec = require('child_process').exec;
-const md5 = require('md5');
+const fe 	= Editor.require('packages://simple-code/tools/FileTools.js');
+const fs 	= require('fs');
+const config = Editor.require('packages://simple-code/config.js');
+const path 	= require("fire-path");
+const exec 	= require('child_process').exec;
+const md5 	= require('md5');
 
 const prsPath = Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
 const MEMO_FILE_PATH = prsPath + path.sep + "temp" + path.sep + "备忘录.md";
@@ -177,29 +178,17 @@ let layer = {
 		vsLoader.require(['vs/editor/editor.main'], () => 
 		{
 			this.monaco = Editor.monaco = monaco;
-			var editor = monaco.editor.create(this.$editorB, {
-				value: ``,
-				language: 'javascript',			 // 预热 javascript模块
-				mouseWheelZoom: true,			 // 鼠标可以缩放字体大小
-				quickSuggestions:true,			 // 使字符串有代码提示
-				definitionLinkOpensInPeek:false, // ctrl+点击 跳转是否使用小窗口预览
-				cursorSurroundingLines : 5,		 // 撤销后自动滚动页面到光标相对5行的位置
-				scrollPredominantAxis:false,
-			});
+			config.vsEditorConfig.language = 'javascript';  // 预热 javascript模块
+			config.vsEditorConfig.value = ' '
+			var editor = monaco.editor.create(this.$editorB,config.vsEditorConfig);
 
-			window.vs_editor = Editor.monaco.vs_editor = this.vs_editor = editor;
-			
-			// monaco.languages.typescript.javascriptDefaults._compilerOptions.allowJs = false;
-			// monaco.languages.typescript.javascriptDefaults._compilerOptions.target = monaco.languages.typescript.ScriptTarget.ES5;
-			// monaco.languages.typescript.javascriptDefaults.setCompilerOptions(monaco.languages.typescript.javascriptDefaults._compilerOptions);
-			monaco.languages.typescript.typescriptDefaults._compilerOptions.experimentalDecorators = true;
-			monaco.languages.typescript.typescriptDefaults.setCompilerOptions(monaco.languages.typescript.typescriptDefaults._compilerOptions);
+			Editor.monaco.vs_editor = this.vs_editor = editor;
+			monaco.languages.typescript.typescriptDefaults.setCompilerOptions(config.compilerOptions);
 			monaco.editor.setTheme("vs-dark")
 
 			setTimeout(()=>
 			{
 				monaco.editor.setModelLanguage(this.vs_editor.getModel(), "typescript"); // 预热 typescript模块
-
 				monaco.languages.typescript.getTypeScriptWorker().then((func)=>{func().then((tsWr)=>{
 					this.tsWr = tsWr;// ts文件静态解析器
 					this.tsWr.getEditsForFileRename('inmemory://model/1','inmemory://model/2');// 预热模块
@@ -919,10 +908,10 @@ let layer = {
 	},
 
 	fsPathToModelUrl(fsPath){
-		let ind = fsPath.indexOf(prsPath);
+		let ind = fsPath.indexOf(prsPath+ path.sep + "assets");
 		let str_uri 
 		if(ind == -1){
-			str_uri   = 'file://' + (Editor.isWin32 ? fsPath.substr(3).replace(/ /g,'').replace(/\\/g,'/') : fsPath.substr(1) );
+			str_uri   = 'file://assets/_MAP_PATH/' + (Editor.isWin32 ? fsPath.substr(3).replace(/ /g,'').replace(/\\/g,'/') : fsPath.substr(1) );
 		}else{
 			ind = prsPath.length;
 			if(ind == -1) Editor.warn("代码编辑器：转换路径异常");
