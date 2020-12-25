@@ -37,7 +37,7 @@ let layer = {
 	// 忽略文件
 	IGNORE_FILE: ["png", "jpg", "zip", "labelatlas", "ttf", "mp3", "mp4", "wav", "ogg", "rar", 'scene', 'prefab'],
 	// 打开文件格式对应的类型
-	FILE_OPEN_TYPES: { md: "markdown", js: "javascript", ts: "typescript", effect: "yaml", coffee: "coffeescript", lua: "lua", sql: "mysql", php: "php", xml: "xml", html: "html", css: "css", json: "json", manifest: "json", plist: "xml", gitignore: "gitignore", chunk:'c', glsl: "c",text:"markdown",txt:"markdown",c:"c",cpp:"cpp",h:"cpp" },
+	FILE_OPEN_TYPES: { mtl:"json",md: "markdown", js: "javascript", ts: "typescript", effect: "yaml", coffee: "coffeescript", lua: "lua", sql: "mysql", php: "php", xml: "xml", html: "html", css: "css", json: "json", manifest: "json", plist: "xml", gitignore: "gitignore", chunk:'c', glsl: "c",text:"markdown",txt:"markdown",c:"c",cpp:"cpp",h:"cpp" },
 	// 导入大纲类型
 	TS_USER_NAVIGATION_TYPES:{"class":'Class',"function":'Function',"enum":'Enum',"module":'Module'},
 
