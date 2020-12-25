@@ -706,9 +706,9 @@ module.exports = {
     // allowJs: true,
     // allowSyntheticDefaultImports: true,
     experimentalDecorators: true,
-    // baseUrl: "assets",
+    // rootDirs:["x:/Users/mac/Desktop/MyGame/Live2dForCocosCreator-master/assets"] ,
     // paths: {
-    //   // "@/*": ["src/*"]
+    //   "@/*": ["src/*"]
     // },
     //     paths?: MapLike<string[]>;
     //     allowUmdGlobalAccess?: boolean;

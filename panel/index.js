@@ -179,13 +179,18 @@ let layer = {
 		{
 			this.monaco = Editor.monaco = monaco;
 			config.vsEditorConfig.language = 'javascript';  // 预热 javascript模块
-			config.vsEditorConfig.value = ' '
+			config.vsEditorConfig.value = ``
 			var editor = monaco.editor.create(this.$editorB,config.vsEditorConfig);
 
 			Editor.monaco.vs_editor = this.vs_editor = editor;
-			monaco.languages.typescript.typescriptDefaults.setCompilerOptions(config.compilerOptions);
+			
+			for (const key in config.compilerOptions) {
+				const v = config.compilerOptions[key];
+				monaco.languages.typescript.typescriptDefaults._compilerOptions[key] = v;
+			}
+			monaco.languages.typescript.typescriptDefaults.setCompilerOptions(monaco.languages.typescript.typescriptDefaults._compilerOptions);
 			monaco.editor.setTheme("vs-dark")
-
+			window._test = this;
 			setTimeout(()=>
 			{
 				monaco.editor.setModelLanguage(this.vs_editor.getModel(), "typescript"); // 预热 typescript模块
@@ -901,6 +906,8 @@ let layer = {
 			if(!model){
 				model = this.monaco.editor.createModel('',file_type,this.monaco.Uri.parse(str_uri))
 				model.onDidChangeContent((e) => this.onVsDidChangeContent(e,model));
+				model.fsPath = fsPath;
+				model.dbUrl  = is_url_type ? file_path : undefined;
 			}
 			if(isReadText) model.setValue(js_text);
 			return model
@@ -908,16 +915,16 @@ let layer = {
 	},
 
 	fsPathToModelUrl(fsPath){
-		let ind = fsPath.indexOf(prsPath+ path.sep + "assets");
-		let str_uri 
-		if(ind == -1){
-			str_uri   = 'file://assets/_MAP_PATH/' + (Editor.isWin32 ? fsPath.substr(3).replace(/ /g,'').replace(/\\/g,'/') : fsPath.substr(1) );
-		}else{
-			ind = prsPath.length;
-			if(ind == -1) Editor.warn("代码编辑器：转换路径异常");
-			let _path = fsPath.substr(ind+1);
-			str_uri   = 'db://' + (Editor.isWin32 ? _path.replace(/ /g,'').replace(/\\/g,'/') : _path );
-		}
+		// let ind = fsPath.indexOf(prsPath+ path.sep + "assets");
+		let str_uri = Editor.isWin32 ? fsPath.replace(/ /g,'').replace(/\\/g,'/') : "X:/"+fsPath.substr(1)
+		// if(ind == -1){
+			// str_uri   = 'file://model/' + (Editor.isWin32 ? fsPath.substr(3).replace(/ /g,'').replace(/\\/g,'/') : fsPath.substr(1) );
+		// }else{
+		// 	ind = prsPath.length;
+		// 	if(ind == -1) Editor.warn("代码编辑器：转换路径异常");
+		// 	let _path = fsPath.substr(ind+1);
+		// 	str_uri   = 'db://' + (Editor.isWin32 ? _path.replace(/ /g,'').replace(/\\/g,'/') : _path );
+		// }
 		return str_uri;
 	},
 	
@@ -2280,13 +2287,15 @@ let layer = {
 		{
 			let uuid;
 			let url_info ;
-			let file_url = info.uri._formatted;
-			let file_name = info.uri.path ? info.uri.path.substr(info.uri.path.lastIndexOf('/')+1) : info.uri.substr(info.uri.lastIndexOf('/')+1);
-
+			let vs_model = this.monaco.editor.getModel(info.uri._formatted);
+			if(vs_model == null){
+				return Editor.warn('vs_model == null');
+			}
+			
 			for (let i = 0; i < this.file_list_buffer.length; i++) 
 			{
 				const _file_info = this.file_list_buffer[i];
-				if(_file_info.meta == file_url){
+				if(_file_info.meta == vs_model.dbUrl){
 					uuid  = _file_info.uuid;
 					break;
 				}
@@ -2296,13 +2305,8 @@ let layer = {
 				url_info = this.getFileUrlInfoByUuid(uuid) 
 			}else{
 				// 项目根目录的代码提示文件
-				for (var n = 0; n < TS_API_LIB_PATHS.length; n++) 
-				{
-					let s_path = TS_API_LIB_PATHS[n];
-					let fs_path = path.join(s_path,file_name);
-					if(fe.isFileExit(fs_path)){
-						url_info = this.getFileUrlInfoByFsPath(fs_path);
-					}
+				if(fe.isFileExit(vs_model.fsPath)){
+					url_info = this.getFileUrlInfoByFsPath(vs_model.fsPath);
 				}
 			}
 
