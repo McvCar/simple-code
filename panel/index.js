@@ -45,14 +45,26 @@ let layer = {
 		// ace.editorCss +
 		fs.readFileSync(Editor.url("packages://simple-code/monaco-editor/dev/vs/editor/editor.main.css"), "utf-8") +
 		`
+
+		.turn{
+			animation:turn 1s linear infinite;      
+		  }
+		@keyframes turn{
+		0%{-webkit-transform:rotate(0deg);}
+		25%{-webkit-transform:rotate(90deg);}
+		50%{-webkit-transform:rotate(180deg);}
+		75%{-webkit-transform:rotate(270deg);}
+		100%{-webkit-transform:rotate(360deg);}
+		}
+
 		#gotoFileBtn{height: 15px;}
 		#saveBtn {height: 15px;}
 		#resetBtn {height: 15px;}
-		#editorA {width: 0px;height: 0px;}
-		#editorB {width: 100%;height: 100%;overflow:hidden;}
+		#editorA {width: 0%;height: 0%;}
+		#editorB {width: 100%;height: 97%;overflow:hidden;}
 		#title {line-height: 15px;}
 		#layoutTab {line-height:16px; display: flex;justify-content:space-between;}
-		#box {width: 100%;height: 100%}
+		#box {width: 100%;height: 97%}
 		#tabList {display: flex;}
 
 		.openTab {
@@ -77,7 +89,6 @@ let layer = {
 			cursor:pointer;
 		}
 
-
 		.closeBtn {
 			color:#FF0000;
 			display:inline;
@@ -96,6 +107,10 @@ let layer = {
 			<div id="box">
 				<div id="layoutTab" class="layout horizontal">
 					<div id="tabList" class="layout horizontal">
+						<i class="icon-doc-text"></i> <span></span> <span></span>
+						<div id="waitIco" class="turn">=</div>
+
+
 						<div id="title0" class="closeTab">
 							<div class="title"><nobr>无文件<nobr></div>
 							<div class="closeBtn"><nobr> x <nobr></div>
@@ -127,14 +142,15 @@ let layer = {
 		title0: '#title0',
 		tabList: '#tabList',
 		box: '#box',
+		waitIco: '#waitIco',
 	},
-
 	// 启动事件
 	ready() {
 		// 注意 this != layer
 		layer.$ = this.$;
 		layer.init()
-	},
+ 	},
+
 
 	init(){
 		// 读取配置文件
@@ -148,7 +164,7 @@ let layer = {
 			// 异步执行的函数
 			this.initCustomCompleter();
 			this.initSceneData();
-			// this.runExtendFunc("onLoad", this);
+			this.runExtendFunc("onLoad", this);
 			window._panel = this;
 		});
 	},
@@ -181,13 +197,15 @@ let layer = {
 
 	initVsCode(callback) {
 		// Editor.require('packages://simple-code/tools/promise.prototype.finally').shim();
-		Promise.prototype.finally = function (callback) {
-			let P = this.constructor;
-			return this.then(
-				value => P.resolve(callback()).then(() => value),
-				reason => P.resolve(callback()).then(() => { throw reason })
-			);
-		};
+		if(Promise.prototype.finally == null){
+			Promise.prototype.finally = function (callback) {
+				let P = this.constructor;
+				return this.then(
+					value => P.resolve(callback()).then(() => value),
+					reason => P.resolve(callback()).then(() => { throw reason })
+				);
+			};
+		}
 
 		const vsLoader = Editor.require('packages://simple-code/monaco-editor/dev/vs/loader.js');
 		// vs代码路径
@@ -196,16 +214,36 @@ let layer = {
 		vsLoader.require(['vs/editor/editor.main'],async ()=> 
 		{
 			this.monaco = Editor.monaco = monaco;
+			config.vsEditorConfig.language = 'javascript';  // 预热 javascript模块
+			config.vsEditorConfig.value = ``
 			var editor = monaco.editor.create(this.$.editorB,config.vsEditorConfig);
-			window.vs_editor = Editor.monaco.vs_editor = this.vs_editor = editor;
-			// monaco.languages.typescript.javascriptDefaults._compilerOptions.allowJs = false;
-			// monaco.languages.typescript.javascriptDefaults._compilerOptions.target = monaco.languages.typescript.ScriptTarget.ES5;
-			// monaco.languages.typescript.javascriptDefaults.setCompilerOptions(monaco.languages.typescript.javascriptDefaults._compilerOptions);
 
-			monaco.languages.typescript.typescriptDefaults.setCompilerOptions(config.compilerOptions);
-			monaco.editor.setTheme("vs-dark")
+			Editor.monaco.vs_editor = this.vs_editor = editor;
 			
-			callback();
+			for (const key in config.compilerOptions) {
+				const v = config.compilerOptions[key];
+				monaco.languages.typescript.typescriptDefaults._compilerOptions[key] = v;
+			}
+			monaco.languages.typescript.typescriptDefaults.setCompilerOptions(monaco.languages.typescript.typescriptDefaults._compilerOptions);
+			monaco.editor.setTheme("vs-dark")
+			setTimeout(()=>
+			{
+				monaco.editor.setModelLanguage(this.vs_editor.getModel(), "typescript"); // 预热 typescript模块
+				monaco.languages.typescript.getTypeScriptWorker().then((func)=>{func().then((tsWr)=>{
+					this.tsWr = tsWr;// ts文件静态解析器
+					this.tsWr.getEditsForFileRename('inmemory://model/1','inmemory://model/2');// 预热模块
+					if(this.tsWr && this.jsWr){
+						callback();
+					}
+				})})
+				monaco.languages.typescript.getJavaScriptWorker().then((func)=>{func().then((jsWr)=>{
+					this.jsWr = jsWr;// js文件静态解析器
+					this.jsWr.getEditsForFileRename('inmemory://model/1','inmemory://model/2')// 预热模块
+					if(this.tsWr && this.jsWr){
+						callback();
+					}
+				})})
+			},100)
 		})
 	},
 
@@ -277,14 +315,22 @@ let layer = {
 		this.file_info = {};
 		// 编辑tab列表
 		this.edit_list = [];
-		// vs的models
-		this.vs_model_list = {};
 		// 全局快捷键配置
 		this.key_cfg = [];
 		// 游戏资源路径缓存
 		this.file_list_buffer = [];
 		// 当前场景所有子节点信息缓存
 		this.currSceneChildrenInfo = [];
+		// 重命名缓存
+		this.code_file_rename_buf = {
+			move_files : [],
+			cur_count:0,
+			is_use :0,
+			rename_files_map : {},
+			rename_path_map : {},
+		}
+		// 待刷新的文件url
+		// this.refresh_file_list = [];
 		// 编辑代码提示 配置
 		this._comp_cfg_map = {};
 		this._comp_cfg = [{
@@ -352,18 +398,19 @@ let layer = {
 			this.is_init_finish = true;
 			this.openActiveFile();
 			this.runExtendFunc("initSceneData");
+			this.setWaitIconHide(true);
 		},2);
 	},
 
 	onVsDidChangeContent(e,model) {
 		let file_info ;
 		if(model == this.file_info.vs_model ){
-			file_info = this.file_info 
+			file_info = this.file_info  
 		}else{
 			file_info = this.edit_list[this.getTabIdByModel(model)];
 		}
 		if (file_info && file_info.uuid) {
-			file_info.new_data = this.vs_editor.getValue();
+			file_info.new_data = model.getValue();
 			file_info.is_need_save = file_info.data != file_info.new_data;//撤销到没修改的状态不需要保存了
 			this.upTitle(file_info.id);
 
@@ -383,7 +430,6 @@ let layer = {
 		// this.vs_editor.getModel().onDidChangeContent((e)=> 
 		// {  
 		// });
-
 		//获得焦点
 		this.vs_editor.onDidFocusEditorText((e) => {
 			// if (!this.isWindowMode){
@@ -561,27 +607,26 @@ let layer = {
 			{
 				let uuid;
 				let url_info ;
-				let file_name = info.uri.path ? info.uri.path.substr(1) : info.uri.substr(info.uri.lastIndexOf('/')+1);
+				let vs_model = this.monaco.editor.getModel(info.uri._formatted);
+				if(vs_model == null){
+					return Editor.warn('vs_model == null');
+				}
 
 				for (let i = 0; i < this.file_list_buffer.length; i++) 
 				{
 					const _file_info = this.file_list_buffer[i];
-					if(_file_info.value == file_name){
+					if(_file_info.meta == vs_model.dbUrl){
 						uuid  = _file_info.uuid;
 						break;
 					}
 				}
+
 				if(uuid){
 					url_info = await this.getFileUrlInfoByUuid(uuid) 
 				}else{
 					// 项目根目录的代码提示文件
-					for (var n = 0; n < TS_API_LIB_PATHS.length; n++) 
-					{
-						let s_path = TS_API_LIB_PATHS[n];
-						let fs_path = path.join(s_path,file_name);
-						if(fe.isFileExit(fs_path)){
-							url_info = await this.getFileUrlInfoByFsPath(fs_path);
-						}
+					if(fe.isFileExit(vs_model.fsPath)){
+						url_info = await this.getFileUrlInfoByFsPath(vs_model.fsPath);
 					}
 				}
 
@@ -860,6 +905,7 @@ let layer = {
 			}
 
 			// 项目根目录的代码提示文件
+			let load_file_map = {}
 			for (var n = 0; n < TS_API_LIB_PATHS.length; n++) 
 			{
 				let s_path = TS_API_LIB_PATHS[n];
@@ -868,10 +914,12 @@ let layer = {
 				{
 					let file_path = ts_d_list[i];
 					file_path = file_path.replace(/\\/g,'/')
+					let file_name = file_path.substr(file_path.lastIndexOf('/'));
 					let extname = file_path.substr(file_path.lastIndexOf('.'));
 					// creator.d.ts 文件
-					if (extname == '.ts') {
-						this.loadCompleterLib(file_path, extname, false, true);
+					if (extname == '.ts' && !load_file_map[file_name]) {
+						load_file_map[file_name] = 1;
+						this.loadCompleterLib(file_path, extname, false,true);
 					}
 				}
 			}
@@ -920,31 +968,10 @@ let layer = {
 		if(isJs || isTs)
 		{
 			let fsPath = is_url_type ? await Editor.assetdb.urlToFspath(file_path) : file_path;
-			let js_text = fs.readFileSync(fsPath).toString();
-			let str_uri   = 'file://model/' + file_name;
 			if (!fe.isFileExit(fsPath)) return;
 
-			if (isJs || (!is_url_type && isTs) ) 
-			{
-				// 解析项目生成api提示字符串
-				if (is_url_type) {
-					js_text = tools.parseJavaScript(js_text, file_name.substr(0, file_name.lastIndexOf('.')));
-				}
-				if (js_text) {
-					// this.monaco.languages.typescript.javascriptDefaults.addExtraLib(js_text,'lib://model/' + file_name);s
-					if(isJs) await this.loadVsModel(file_path,extname,is_url_type,true); 
-				}
-			}
+			await this.loadVsModel(file_path,extname,is_url_type,true);
 
-			if (isTs) {
-				// if(is_lib){
-				// 	this.monaco.languages.typescript.typescriptDefaults.addExtraLib(js_text,'lib://model/' + file_name);
-				// }else{
-					await this.loadVsModel(file_path,extname,is_url_type,true);
-				// }
-			}else{
-				// this.monaco.languages.typescript.typescriptDefaults.addExtraLib(js_text, 'lib://model/' + file_name);
-			}
 			// 插入模块名字提示
 			let word = file_name.substr(0,file_name.lastIndexOf('.'))
 			this.addCustomCompleter(word,word,file_name,this.monaco.languages.CompletionItemKind.Reference);
@@ -1023,7 +1050,7 @@ let layer = {
 		{
 			let fsPath = is_url_type ? await Editor.assetdb.urlToFspath(file_path) : file_path;
 			let file_name = file_path.substr(file_path.lastIndexOf('/') + 1)
-			let model = this.monaco.editor.getModel(this.monaco.Uri.parse('file://model/' + file_name));
+			let model = this.monaco.editor.getModel(this.monaco.Uri.parse(this.fsPathToModelUrl(fsPath)));
 			let js_text = ""
 			if(model) js_text = model.getValue();
 			else js_text = fs.readFileSync(fsPath).toString();
@@ -1049,15 +1076,15 @@ let layer = {
 			let isTs = extname == ".ts";
 			let fsPath = is_url_type ? await Editor.assetdb.urlToFspath(file_path) : file_path;
 			let js_text = isReadText ? fs.readFileSync(fsPath).toString() : "";
-			let file_name = file_path.substr(file_path.lastIndexOf('/') + 1).replace(/ /g,''); // 防止包含空格的路径
-			let str_uri   = 'file://model/' + file_name;
-			if (!fe.isFileExit(fsPath)) return;
+			let str_uri   = this.fsPathToModelUrl(fsPath)
 
 			// 生成vs model缓存
-			let model = this.vs_model_list[file_name] = this.vs_model_list[file_name] || this.monaco.editor.getModel(this.monaco.Uri.parse(str_uri)) ;
+			let model =  this.monaco.editor.getModel(this.monaco.Uri.parse(str_uri)) ;
 			if(!model){
 				model = this.monaco.editor.createModel('',file_type,this.monaco.Uri.parse(str_uri))
 				model.onDidChangeContent((e) => this.onVsDidChangeContent(e,model));
+				model.fsPath = fsPath;
+				model.dbUrl  = is_url_type ? file_path : undefined;
 			}
 			if(isReadText) model.setValue(js_text);
 			if(isTs || isJs) this.loadNavigationCompleter(model,isTs);
@@ -1067,6 +1094,20 @@ let layer = {
 		
 	},
 
+	fsPathToModelUrl(fsPath){
+		// let ind = fsPath.indexOf(prsPath+ path.sep + "assets");
+		let str_uri = Editor.isWin32 ? fsPath.replace(/ /g,'').replace(/\\/g,'/') : "X:/"+fsPath.substr(1)
+		// if(ind == -1){
+			// str_uri   = 'file://model/' + (Editor.isWin32 ? fsPath.substr(3).replace(/ /g,'').replace(/\\/g,'/') : fsPath.substr(1) );
+		// }else{
+		// 	ind = prsPath.length;
+		// 	if(ind == -1) Editor.warn("代码编辑器：转换路径异常");
+		// 	let _path = fsPath.substr(ind+1);
+		// 	str_uri   = 'db://' + (Editor.isWin32 ? _path.replace(/ /g,'').replace(/\\/g,'/') : _path );
+		// }
+		return str_uri;
+	},
+	
 	setTheme(name) {
 		let filePath = Editor.url("packages://simple-code/monaco-editor/custom_thems/") + name + ".json"
 		if (fe.isFileExit(filePath)) {
@@ -1127,14 +1168,16 @@ let layer = {
 	},
 
 	// 锁定编辑
-	setLockEdit(is_lock) {
+	setLockEdit(is_lock,id) 
+	{
+		id = id == null ? this.edit_id : id;
+		let info = this.edit_list[id] || {};
 		// 打开文件解除锁定编辑
-		this.$.lockChk.checked = is_lock;
-		this.custom_cfg.is_lock = is_lock;
-		if (this.file_info) this.file_info.is_lock = is_lock;
-		this.vs_editor.updateOptions({ lineNumbers: this.custom_cfg.is_cmd_mode || this.edit_id != 0 ? "on" : 'off' });
-		this.vs_editor.updateOptions({ lineNumbers: this.custom_cfg.is_cmd_mode || this.edit_id != 0 ? "on" : 'off' });
-
+		if (id == this.edit_id) this.$.lockChk.checked = is_lock;
+		info.is_lock = is_lock;
+		this.vs_editor.updateOptions({ lineNumbers: info.is_cmd_mode || id != 0 ? "on" : 'off' });
+		this.vs_editor.updateOptions({ lineNumbers: info.is_cmd_mode || id != 0 ? "on" : 'off' });
+		this.upTitle(id);
 	},
 
 	// 命令模式
@@ -1409,8 +1452,23 @@ let layer = {
 			file_info.data = edit_text;
 			file_info.new_data = edit_text;
 			this.upTitle(id);
+			if(id != 0) this.setLockEdit(true,id);
 		}
 	},
+
+	// async saveFileByUrl(url,text)
+	// {
+	// 	Editor.assetdb.saveExists(url, text, async (err, meta)=>{
+	// 		if (err) {
+	// 			let fsPath = await Editor.assetdb.urlToFspath(url);
+	// 			fs.writeFileSync(fsPath, text); //外部文件
+	// 			Editor.error("保存代码出错:", err);
+	// 		}else{
+	// 			// 刚刚保存了，creator还没刷新
+	// 			this.is_save_wait_up = 1;
+	// 		}
+	// 	});
+	// },
 
 	// 读取文件到编辑器渲染
 	readFile(info) {
@@ -1445,6 +1503,7 @@ let layer = {
 		if (tabBg) {
 			let title = tabBg.getElementsByClassName("title")[0];
 			title.textContent = (info.is_need_save ? info.name + "* " : info.name || "无文件");
+			title.setAttribute('style',info.is_lock || id == 0 ? 'font-style:normal;' : 'font-style:italic;');
 		} else {
 			Editor.warn(id)
 		}
@@ -1502,10 +1561,10 @@ let layer = {
 	},
 
 	// 获得页面id
-	getTabIdByModel(model) {
+	getTabIdByModel(vs_model) {
 		for (var i = 0; i < this.edit_list.length; i++) {
 			let v = this.edit_list[i];
-			if (v && v.model == model) {
+			if (v && v.vs_model == vs_model) {
 				return i;
 			}
 		}
@@ -1535,6 +1594,7 @@ let layer = {
 		file_info.enabled_close = true;
 		file_info.scroll_top = this.file_cfg[path] && this.file_cfg[path].scroll_top;
 		file_info.id = id;
+		file_info.can_remove_model = 0;
 		if (!file_info.vs_model) 
 		{
 			let vs_model = await this.loadVsModel(path, this.getUriInfo(path).extname , uuid != "outside",false);
@@ -1578,6 +1638,9 @@ let layer = {
 		return tabBg;
 	},
 
+	setWaitIconHide(isHide){
+		this.$.waitIco.style.display= isHide ? "none" : '';
+	},
 
 	// 关闭页面tab
 	closeTab(id) {
@@ -1595,8 +1658,13 @@ let layer = {
 
 		// 清除页面
 		if(file_info.vs_model) {
-			// file_info.vs_model.setValue('')
 			file_info.vs_model._commandManager.clear();// 清除撤销记录
+			if(file_info.is_need_save){ 
+				file_info.vs_model.setValue(file_info.data)// 撤销到修改前
+			}
+			if(file_info.can_remove_model){
+				file_info.vs_model.dispose();
+			}
 		}
 		delete this.edit_list[id];
 		tabBg.parentNode.removeChild(tabBg);
@@ -1748,6 +1816,7 @@ let layer = {
 				const info = await this.getFileUrlInfoByUuid(uuid);
 				let file_info = await this.openFile(info, isShow);
 				if (file_info) {
+					file_info._is_lock = file_info.is_lock;
 					file_info.is_lock = true
 					ld_list.push(file_info);
 				}
@@ -1756,7 +1825,8 @@ let layer = {
 
 			for (let i = 0; i < ld_list.length; i++) 
 			{
-				const uuid = ld_list[i].is_lock = false;
+				ld_list[i].is_lock = ld_list[i]._is_lock;
+				delete ld_list[i]._is_lock;
 			}
 			
 			// 打开备忘录
@@ -1944,11 +2014,16 @@ let layer = {
 	},
 	
 	close(){
+	},
+
+	// 面板准备关闭的时候会触发的函数，return false 的话，会终止关闭面板
+	beforeClose(){
 		layer.onDestroy();
 	},
 
 	// 页面关闭
 	onDestroy() {
+		if(this.edit_list == null) return;
 		if (this.schFunc) this.schFunc();
 
 		this._is_destroy = true
@@ -1985,9 +2060,9 @@ let layer = {
 			this.closeTab(id);
 		});
 		
-		for (let i = 0; i < this.vs_model_list ? this.vs_model_list.length : 0; i++) {
-			const model = this.vs_model_list[i];
-			model.dispose();
+		for (const key in this.monaco.editor.getModels()) {
+			const model = this.monaco.editor.getModels[key];
+			if(model) model.dispose();
 		}
 
 
@@ -2215,5 +2290,17 @@ let layer = {
 };
 
 layer.initExtend();
-layer.methods = layer.messages;
-module.exports = layer;
+exports.ready = layer.ready;
+exports.beforeClose = layer.beforeClose;
+exports.close = layer.close;
+exports.methods = layer.messages;
+exports.template = layer.template;
+exports.style = layer.style;
+exports.$ = layer.$;
+// 监听面板事件
+exports.linsteners = {
+    // 面板显示的时候触发的钩子
+    show() {},
+    // 面板隐藏的时候触发的钩子
+    hide() {},
+};
