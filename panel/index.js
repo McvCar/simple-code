@@ -190,7 +190,6 @@ let layer = {
 			}
 			monaco.languages.typescript.typescriptDefaults.setCompilerOptions(monaco.languages.typescript.typescriptDefaults._compilerOptions);
 			monaco.editor.setTheme("vs-dark")
-			window._test = this;
 			setTimeout(()=>
 			{
 				monaco.editor.setModelLanguage(this.vs_editor.getModel(), "typescript"); // 预热 typescript模块
@@ -323,7 +322,7 @@ let layer = {
 
 		// 读取ace配置
 		this.cfg = localStorage.getItem("simple-code-config");
-		this.cfg = this.cfg ? JSON.parse(this.cfg) : {fontSize: 10,enabledVim:0}; //ace配置
+		this.cfg = this.cfg ? JSON.parse(this.cfg) : {fontSize: 10,enabledVim:0,fixedWidthGutter:1}; //ace配置
 		this.cfg.mode = null;
 		this.custom_cfg = this.cfg.custom_cfg || {};//自定义配置
 		this.custom_cfg.file_cfg_list = this.custom_cfg.file_cfg_list || {}
@@ -898,7 +897,6 @@ let layer = {
 			let fsPath = is_url_type ? Editor.remote.assetdb.urlToFspath(file_path) : file_path;
 			if (isReadText && !fe.isFileExit(fsPath)) return;
 			let js_text = isReadText ? fs.readFileSync(fsPath).toString() : "";
-			let file_name = file_path.substr(file_path.lastIndexOf('/') + 1).replace(/ /g,''); // 防止包含空格的路径
 			let str_uri   = this.fsPathToModelUrl(fsPath)
 
 			// 生成vs model缓存
@@ -1528,7 +1526,7 @@ let layer = {
 		}
 
 		let text = fs.readFileSync(fs_path).toString();
-		return { data: text, uuid: uuid, path: url, name: name, file_type: file_type };
+		return { data: text, uuid: uuid, path: url, name: name, file_type: file_type ,fs_path:fs_path};
 	},
 
 	getFileUrlInfoByFsPath(fs_path) 
@@ -1543,7 +1541,7 @@ let layer = {
 		}
 
 		let text = fs.readFileSync(fs_path).toString();
-		return { data: text, uuid: uuid, path: url, name: name, file_type: file_type };
+		return { data: text, uuid: uuid, path: url, name: name, file_type: file_type ,fs_path:fs_path};
 	},
 
 	// 打开外部文件
@@ -2011,6 +2009,7 @@ let layer = {
 
 	// 页面关闭
 	onDestroy() {
+		if(this.edit_list == null) return;
 		if (this.schFunc) this.schFunc();
 
 		// 保存编辑信息
