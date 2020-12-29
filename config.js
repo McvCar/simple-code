@@ -786,4 +786,70 @@ module.exports = {
     //     useDefineForClassFields?: boolean;
     //     [option: string]: CompilerOptionsValue | undefined;
   },
+
+
+  optionGroups : {
+      Main: {
+          "语言": {
+              path: "mode",
+              type: "select",
+              items: [{caption: 'js', value: 'js'}]
+          },
+          "主题": {
+              path: "theme",
+              type: "select",
+              items: [{caption: 'vs', value: 'vs'},{caption: 'vs-dark', value: 'vs-dark'},{caption: 'hc-black', value: 'hc-black'}]
+          },
+          "快捷键习惯": {
+              type: "buttonBar",
+              path: "keyboardHandler",
+              defaultValue: "VSCode",
+              items: [
+                  { caption : "VSCode", value : "ace/keyboard/vscode" }
+              ]
+          },
+          "新建文件格式": {
+              type: "buttonBar",
+              path: "newFileType",
+              items: [
+                  { caption : "js文件", value : "js" },
+                  { caption : "ts文件", value : "ts" },
+                  { caption : "coffe文件", value : "coffee" },
+                  { caption : "lua文件", value : "lua" }
+              ]
+          },
+          "字体大小": {
+              path: "fontSize",
+              type: "number",
+              defaultValue: 10,
+              defaults: [
+                  {caption: "6px", value: 8},
+                  {caption: "10px", value: 10},
+                  {caption: "12px", value: 12},
+                  {caption: "16px", value: 16},
+                  {caption: "18px", value: 18}
+              ]
+          },
+          "显示代码预览": {
+              path: "fixedWidthGutter"
+          },
+          "vim编辑模式": {
+              path: "useTextareaForIME"
+          },
+      },
+      More: {
+          "自动窗口最低 高度占比%(0为禁用)": {
+              path: "autoLayout",
+              type: "number",
+              defaultValue: 10,
+              defaults: [
+                  {caption: "80%", value: 80},
+                  {caption: "60%", value: 60},
+                  {caption: "40%", value: 40},
+                  {caption: "20%", value: 20},
+                  {caption: "10%", value: 10}
+              ]
+          },
+      },
+  },
 }

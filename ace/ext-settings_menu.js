@@ -1,6 +1,7 @@
 define("ace/ext/menu_tools/overlay_page",["ace_require","exports","module","ace/lib/dom"], function(ace_require, exports, module) {
 'use strict';
 var dom = ace_require("../../lib/dom");
+var simple_config = Editor.require("packages://simple-code/config.js");
 var cssText = "#ace_settingsmenu, #kbshortcutmenu {\
 background-color: #F7F7F7;\
 color: black;\
@@ -443,199 +444,202 @@ var modes = modelist.modes.map(function(x){
 });
 
 
-var optionGroups = {
-    Main: {
-        "语言": {
-            path: "mode",
-            type: "select",
-            items: modes
-        },
-        "主题": {
-            path: "theme",
-            type: "select",
-            items: themes
-        },
-        "快捷键习惯": {
-            type: "buttonBar",
-            path: "keyboardHandler",
-            items: [
-                // { caption : "Ace", value : null },
-                // { caption : "Vim", value : "ace/keyboard/vim" },
-                // { caption : "Emacs", value : "ace/keyboard/emacs" },
-                // { caption : "Sublime", value : "ace/keyboard/sublime" },
-                { caption : "VSCode", value : "ace/keyboard/vscode" }
-            ]
-        },
-        "新建文件格式": {
-            type: "buttonBar",
-            path: "newFileType",
-            items: [
-                { caption : "js文件", value : "js" },
-                { caption : "ts文件", value : "ts" },
-                { caption : "coffe文件", value : "coffee" },
-                { caption : "lua文件", value : "lua" }
-            ]
-        },
-        "字体大小": {
-            path: "fontSize",
-            type: "number",
-            defaultValue: 12,
-            defaults: [
-                {caption: "6px", value: 8},
-                {caption: "10px", value: 10},
-                {caption: "12px", value: 12},
-                {caption: "16px", value: 16},
-                {caption: "18px", value: 18}
-            ]
-        },
-        // "换行显示": {
-        //     type: "buttonBar",
-        //     path: "wrap",
-        //     items: [
-        //        { caption : "Off",  value : "off" },
-        //        { caption : "View", value : "free" },
-        //        { caption : "margin", value : "printMargin" },
-        //        { caption : "40",   value : "40" }
-        //     ]
-        // }
-    //     "光标样式": {
-    //         path: "cursorStyle",
-    //         items: [
-    //            { caption : "Ace",    value : "ace" },
-    //            { caption : "Slim",   value : "slim" },
-    //            { caption : "Smooth", value : "smooth" },
-    //            { caption : "Smooth And Slim", value : "smooth slim" },
-    //            { caption : "Wide",   value : "wide" }
-    //         ]
-    //     },
-    //     "折叠模式": {
-    //         path: "foldStyle",
-    //         items: [
-    //             { caption : "Manual", value : "manual" },
-    //             { caption : "Mark begin", value : "markbegin" },
-    //             { caption : "Mark begin and end", value : "markbeginend" }
-    //         ]
-    //     },
-    //     "tab缩进": [{
-    //         path: "useSoftTabs"
-    //     }, {
-    //         ariaLabel: "Tab Size",
-    //         path: "tabSize",
-    //         type: "number",
-    //         values: [2, 3, 4, 8, 16]
-    //     }],
-    //     "页面滚动范围": {
-    //         type: "buttonBar",
-    //         path: "scrollPastEnd",
-    //         items: [
-    //            { caption : "None",  value : 0 },
-    //            { caption : "Half",   value : 0.5 },
-    //            { caption : "Full",   value : 1 }
-    //         ]
-    //     }
-    },
-    More: {
-        "显示代码预览": {
-            path: "fixedWidthGutter"
-        },
-        "vim编辑模式": {
-            path: "useTextareaForIME"
-        },
-    },
-    //     "空格tab缩进": {
-    //         path: "navigateWithinSoftTabs"
-    //     },
-    //     "括号包选中的内容": {
-    //         path: "wrapBehavioursEnabled"
-    //     },
-    //     "自动缩进": {
-    //         path: "enableAutoIndent"
-    //     },
-    //     "全行选择": {
-    //         type: "checkbox",
-    //         values: "text|line",
-    //         path: "selectionStyle"
-    //     },
-    //     // "Highlight Active Line": {
-    //     //     path: "highlightActiveLine"
-    //     // },
-    //     "显示行虚线": {
-    //         path: "showInvisibles"
-    //     },
-    //     "显示列虚线": {
-    //         path: "displayIndentGuides"
-    //     },
-    //     // "Persistent HScrollbar": {
-    //     //     path: "hScrollBarAlwaysVisible"
-    //     // },
-    //     // "Persistent VScrollbar": {
-    //     //     path: "vScrollBarAlwaysVisible"
-    //     // },
-    //     "滚动动作": {
-    //         path: "animatedScroll"
-    //     },
-    //     // "显示行数": {
-    //     //     path: "showGutter"
-    //     // },
-    //     // "Show Line Numbers": {
-    //     //     path: "showLineNumbers"
-    //     // },
-    //     "相对性行数": {
-    //         path: "relativeLineNumbers"
-    //     },
-    //     "行数固定宽": {
-    //         path: "fixedWidthGutter"
-    //     },
-    //     // "显示打印边距": [{
-    //     //     path: "showPrintMargin"
-    //     // }, {
-    //     //     ariaLabel: "Print Margin",
-    //     //     type: "number",
-    //     //     path: "printMarginColumn"
-    //     // }],
-    //     "Indented Soft Wrap": {
-    //         path: "indentedSoftWrap"
-    //     },
-    //     "突出显示所选单词": {
-    //         path: "highlightSelectedWord"
-    //     },
-    //     "淡入淡出折叠小部件": {
-    //         path: "fadeFoldWidgets"
-    //     },
-    //     "使用文本区域输入法": {
-    //         path: "useTextareaForIME"
-    //     },
-    //     "合并撤消操作": {
-    //         path: "mergeUndoDeltas",
-    //         items: [
-    //            { caption : "Always",  value : "always" },
-    //            { caption : "Never",   value : "false" },
-    //            { caption : "Timed",   value : "true" }
-    //         ]
-    //     },
-    //     "弹性止动块": {
-    //         path: "useElasticTabstops"
-    //     },
-    //     "增量搜索": {
-    //         path: "useIncrementalSearch"
-    //     },
-    //     "不可编辑": {
-    //         defaultValue: 0,
-    //         path: "readOnly"
-    //     },
-    //     "无选择时复制整行": {
-    //         defaultValue: 1,
-    //         path: "copyWithEmptySelection"
-    //     },
-    //     "使用代码提示": {
-    //         defaultValue: 1,
-    //         path: "enableLiveAutocompletion"
-    //     },
-    //     "Enable Behaviours": {
-    //         path: "behavioursEnabled"
-        // },
-    // }
-};
+var simple_config = Editor.require('packages://simple-code/config.js');
+var optionGroups = simple_config.optionGroups;
+// var optionGroups = {
+//     Main: {
+//         "语言": {
+//             path: "mode",
+//             type: "select",
+//             items: modes
+//         },
+//         "主题": {
+//             path: "theme",
+//             type: "select",
+//             items: themes
+//         },
+//         "快捷键习惯": {
+//             type: "buttonBar",
+//             path: "keyboardHandler",
+//             defaultValue: "VSCode",
+//             items: [
+//                 // { caption : "Ace", value : null },
+//                 // { caption : "Vim", value : "ace/keyboard/vim" },
+//                 // { caption : "Emacs", value : "ace/keyboard/emacs" },
+//                 // { caption : "Sublime", value : "ace/keyboard/sublime" },
+//                 { caption : "VSCode", value : "ace/keyboard/vscode" }
+//             ]
+//         },
+//         "新建文件格式": {
+//             type: "buttonBar",
+//             path: "newFileType",
+//             items: [
+//                 { caption : "js文件", value : "js" },
+//                 { caption : "ts文件", value : "ts" },
+//                 { caption : "coffe文件", value : "coffee" },
+//                 { caption : "lua文件", value : "lua" }
+//             ]
+//         },
+//         "字体大小": {
+//             path: "fontSize",
+//             type: "number",
+//             defaultValue: 12,
+//             defaults: [
+//                 {caption: "6px", value: 8},
+//                 {caption: "10px", value: 10},
+//                 {caption: "12px", value: 12},
+//                 {caption: "16px", value: 16},
+//                 {caption: "18px", value: 18}
+//             ]
+//         },
+//         // "换行显示": {
+//         //     type: "buttonBar",
+//         //     path: "wrap",
+//         //     items: [
+//         //        { caption : "Off",  value : "off" },
+//         //        { caption : "View", value : "free" },
+//         //        { caption : "margin", value : "printMargin" },
+//         //        { caption : "40",   value : "40" }
+//         //     ]
+//         // }
+//     //     "光标样式": {
+//     //         path: "cursorStyle",
+//     //         items: [
+//     //            { caption : "Ace",    value : "ace" },
+//     //            { caption : "Slim",   value : "slim" },
+//     //            { caption : "Smooth", value : "smooth" },
+//     //            { caption : "Smooth And Slim", value : "smooth slim" },
+//     //            { caption : "Wide",   value : "wide" }
+//     //         ]
+//     //     },
+//     //     "折叠模式": {
+//     //         path: "foldStyle",
+//     //         items: [
+//     //             { caption : "Manual", value : "manual" },
+//     //             { caption : "Mark begin", value : "markbegin" },
+//     //             { caption : "Mark begin and end", value : "markbeginend" }
+//     //         ]
+//     //     },
+//     //     "tab缩进": [{
+//     //         path: "useSoftTabs"
+//     //     }, {
+//     //         ariaLabel: "Tab Size",
+//     //         path: "tabSize",
+//     //         type: "number",
+//     //         values: [2, 3, 4, 8, 16]
+//     //     }],
+//     //     "页面滚动范围": {
+//     //         type: "buttonBar",
+//     //         path: "scrollPastEnd",
+//     //         items: [
+//     //            { caption : "None",  value : 0 },
+//     //            { caption : "Half",   value : 0.5 },
+//     //            { caption : "Full",   value : 1 }
+//     //         ]
+//     //     }
+//     },
+//     More: {
+//         "显示代码预览": {
+//             path: "fixedWidthGutter"
+//         },
+//         "vim编辑模式": {
+//             path: "useTextareaForIME"
+//         },
+//     },
+//     //     "空格tab缩进": {
+//     //         path: "navigateWithinSoftTabs"
+//     //     },
+//     //     "括号包选中的内容": {
+//     //         path: "wrapBehavioursEnabled"
+//     //     },
+//     //     "自动缩进": {
+//     //         path: "enableAutoIndent"
+//     //     },
+//     //     "全行选择": {
+//     //         type: "checkbox",
+//     //         values: "text|line",
+//     //         path: "selectionStyle"
+//     //     },
+//     //     // "Highlight Active Line": {
+//     //     //     path: "highlightActiveLine"
+//     //     // },
+//     //     "显示行虚线": {
+//     //         path: "showInvisibles"
+//     //     },
+//     //     "显示列虚线": {
+//     //         path: "displayIndentGuides"
+//     //     },
+//     //     // "Persistent HScrollbar": {
+//     //     //     path: "hScrollBarAlwaysVisible"
+//     //     // },
+//     //     // "Persistent VScrollbar": {
+//     //     //     path: "vScrollBarAlwaysVisible"
+//     //     // },
+//     //     "滚动动作": {
+//     //         path: "animatedScroll"
+//     //     },
+//     //     // "显示行数": {
+//     //     //     path: "showGutter"
+//     //     // },
+//     //     // "Show Line Numbers": {
+//     //     //     path: "showLineNumbers"
+//     //     // },
+//     //     "相对性行数": {
+//     //         path: "relativeLineNumbers"
+//     //     },
+//     //     "行数固定宽": {
+//     //         path: "fixedWidthGutter"
+//     //     },
+//     //     // "显示打印边距": [{
+//     //     //     path: "showPrintMargin"
+//     //     // }, {
+//     //     //     ariaLabel: "Print Margin",
+//     //     //     type: "number",
+//     //     //     path: "printMarginColumn"
+//     //     // }],
+//     //     "Indented Soft Wrap": {
+//     //         path: "indentedSoftWrap"
+//     //     },
+//     //     "突出显示所选单词": {
+//     //         path: "highlightSelectedWord"
+//     //     },
+//     //     "淡入淡出折叠小部件": {
+//     //         path: "fadeFoldWidgets"
+//     //     },
+//     //     "使用文本区域输入法": {
+//     //         path: "useTextareaForIME"
+//     //     },
+//     //     "合并撤消操作": {
+//     //         path: "mergeUndoDeltas",
+//     //         items: [
+//     //            { caption : "Always",  value : "always" },
+//     //            { caption : "Never",   value : "false" },
+//     //            { caption : "Timed",   value : "true" }
+//     //         ]
+//     //     },
+//     //     "弹性止动块": {
+//     //         path: "useElasticTabstops"
+//     //     },
+//     //     "增量搜索": {
+//     //         path: "useIncrementalSearch"
+//     //     },
+//     //     "不可编辑": {
+//     //         defaultValue: 0,
+//     //         path: "readOnly"
+//     //     },
+//     //     "无选择时复制整行": {
+//     //         defaultValue: 1,
+//     //         path: "copyWithEmptySelection"
+//     //     },
+//     //     "使用代码提示": {
+//     //         defaultValue: 1,
+//     //         path: "enableLiveAutocompletion"
+//     //     },
+//     //     "Enable Behaviours": {
+//     //         path: "behavioursEnabled"
+//         // },
+//     // }
+// };
 
 
 var OptionPanel = function(editor,cfg) {
@@ -723,7 +727,7 @@ var OptionPanel = function(editor,cfg) {
                 }, item.desc || item.caption || item.name];
             })];
         } else if (option.type == "number") {
-            control = ["input", {type: "number", value: value || option.defaultValue, style:"width:3em", oninput: function() {
+            control = ["input", {type: "number", value: value == null ? option.defaultValue : value, style:"width:3em", oninput: function() {
                 self.setOption(option, parseInt(this.value));
             }}];
             if (option.ariaLabel) {
@@ -772,8 +776,8 @@ var OptionPanel = function(editor,cfg) {
     };
     
     this.renderOption = function(key, option) {
-        if (option.path && !option.onchange && !this.editor.$options[option.path])
-            return;
+        // if (option.path && !option.onchange && !this.editor.$options[option.path])
+        //     return;
         var path = Array.isArray(option) ? option[0].path : option.path;
         this.options[path] = option;
         var safeKey = "-" + path;

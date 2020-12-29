@@ -48,7 +48,7 @@ let layer = {
 		}
 
 		#gotoFileBtn{height: 15px;}
-		#saveBtn {height: 15px;}
+		#settingBtn {height: 15px;}
 		#resetBtn {height: 15px;}
 		#editorA {width: 0%;height: 0%;}
 		#editorB {width: 100%;height: 97%;overflow:hidden;}
@@ -110,7 +110,7 @@ let layer = {
 						<ui-checkbox id="lockChk">锁定编辑</ui-checkbox>
 						<ui-checkbox id="cmdMode">命令模式</ui-checkbox>
 						<ui-button id="gotoFileBtn" class="blue">定位</ui-button>
-						<ui-button id="saveBtn" class="green">保存</ui-button>
+						<ui-button id="settingBtn" class="green">设置</ui-button>
 						<ui-button id="resetBtn" class="red">重置</ui-button>
 					</div>
 				</div>
@@ -122,7 +122,7 @@ let layer = {
 		lockChk: '#lockChk',
 		layoutTab: '#layoutTab',
 		cmdMode: '#cmdMode',
-		saveBtn: '#saveBtn',
+		settingBtn: '#settingBtn',
 		resetBtn: '#resetBtn',
 		gotoFileBtn: '#gotoFileBtn',
 		editorA: '#editorA',
@@ -213,8 +213,7 @@ let layer = {
 
 	// 启动事件
 	ready() {
-		// 读取配置文件
-		this.$title0.hidden = true;
+		this.initStart()
 		this.initAce();
 		this.initVsCode(() => {
 			this.initData();
@@ -223,8 +222,18 @@ let layer = {
 			this.initCustomCompleter();
 			this.runExtendFunc("onLoad", this);
 			this.initSceneData();
+			this.setAutoLayout(Editor.Panel.getFocusedPanel() == this);
 			window._panel = this;
 		});
+	},
+
+	initStart(){
+		// 读取配置文件
+		this.$title0.hidden 	= true;
+		// 读取自动布局信息
+		this.parent_dom 		= this; //Editor.Panel.find('simple-code');
+		this.layout_dom_flex 	= this.getLayoutDomFlex()
+		this.self_flex_per 		= this.getSelfFlexPercent();
 	},
 
 	// 设置vs选项
@@ -284,7 +293,18 @@ let layer = {
 		window.vim_mode = Editor.monaco.vim_mode = this.vim_mode = vim_mode;
 	},
 
-
+	loadDefineMeunCfg(cfg){
+		for (const key in config.optionGroups) {
+			const groups = config.optionGroups[key];
+			for (const k in groups) {
+				const option = groups[k];
+				if(cfg[option.path] == null && option.defaultValue != null){
+					cfg[option.path] = option.defaultValue; // 补充缺失的配置，升级版本导致的
+				}
+			}
+		}
+		return cfg;
+	},
 
 	// 加载数据
 	initData() {
@@ -322,11 +342,13 @@ let layer = {
 
 		// 读取ace配置
 		this.cfg = localStorage.getItem("simple-code-config");
-		this.cfg = this.cfg ? JSON.parse(this.cfg) : {fontSize: 10,enabledVim:0,fixedWidthGutter:1}; //ace配置
+		this.cfg = this.cfg ? JSON.parse(this.cfg) : {}; //ace配置
+		this.loadDefineMeunCfg(this.cfg)
 		this.cfg.mode = null;
 		this.custom_cfg = this.cfg.custom_cfg || {};//自定义配置
 		this.custom_cfg.file_cfg_list = this.custom_cfg.file_cfg_list || {}
 		this.file_cfg = this.custom_cfg.file_cfg_list[md5(prsPath)] = this.custom_cfg.file_cfg_list[md5(prsPath)] || { 'db://xx': { scroll_top: 0, is_show: 0 } };
+		this.self_flex_per = this.cfg.self_flex_per || this.self_flex_per;
 
 		localStorage.setItem("newFileType", this.cfg.newFileType || "js");
 		// 搜索历史
@@ -412,9 +434,6 @@ let layer = {
 				}
 			}
 			(document.getElementById("tools") || this).transformTool = "move";
-
-
-
 			// 关闭cocosCreator 默认的tab键盘事件,不然会冲突
 			require(Editor.appPath + "/editor-framework/lib/renderer/ui/utils/focus-mgr.js").disabled = true;
 		});
@@ -433,10 +452,19 @@ let layer = {
 			// 	this.refresh_file_list = [];
 			// }
 		});
+		
+		this.addEventListener('focus',(e)=>{
+			this.setAutoLayout(true)
+		},true);
+
+		this.addEventListener('blur',(e)=>{
+			this.setAutoLayout(false || Editor.Panel.getFocusedPanel() == this)
+		},true);
 
 		// 保存
-		this.$saveBtn.addEventListener('confirm', () => {
-			if (this.file_info) this.saveFile(true);
+		this.$settingBtn.addEventListener('confirm', () => {
+			// if (this.file_info) this.saveFile(true);
+			this.openMenu()
 		});
 
 		// 重置
@@ -483,6 +511,10 @@ let layer = {
 			this.setVsOption({ [e.name]: e.value })
 			if (e.name == "newFileType") {
 				localStorage.setItem("newFileType", e.value || "js");
+			}
+			else if (e.name == "autoLayout") {
+				this.setAutoLayout(true);
+				this.setAutoLayout(false);
 			}
 		});
 
@@ -556,21 +588,129 @@ let layer = {
 		// 关闭页面提示
 		let _this = this
 		window.addEventListener("beforeunload", function (e) {
-			if(this._is_destroy) return;
-			this._is_destroy = true
 			_this.onDestroy(e);
 		}, false);
 
 		// 检测窗口改变大小调整
 		this.schFunc = this.setTimeoutToJS(() => {
-			if (this.$editorB.scrollWidth != this.old_width || this.$editorB.scrollHeight != this.old_height) {
-				this.old_width = this.$editorB.scrollWidth;
-				this.old_height = this.$editorB.scrollHeight;
-				this.vs_editor.layout();
+			if(this.parentElement == null)
+			{
+				_this.onDestroy();
+				return;
+			}else if (this.is_init_finish && this.upLayout()){
+				let rate = this.getSelfFlexPercent();
+				if(Math.abs(rate*100-this.cfg.autoLayout) > 3){
+					this.self_flex_per = rate;
+				}
 			}
+			this.setAutoLayout(Editor.Panel.getFocusedPanel() == this)
 		}, 1);
+	},
+
+	setAutoLayout(is_focused)
+	{
+		this.getLayoutDomFlex();
+		let now_flex = this.layout_dom_flex && this.layout_dom_flex.style.flex;
+		if(!this.cfg.autoLayout || now_flex == null || (this.old_focused_state != null && this.old_focused_state == is_focused)){
+			return;
+		}
+		this.old_focused_state = is_focused;
+
+		// 焦点改变时修改布局
+		let my_per = is_focused ? this.self_flex_per : this.cfg.autoLayout*0.01;
+		let max_per = 1
+		let sub_per = max_per-my_per;
+		let ohter_height = 0
+		let flexs = this.getFlexs();
+		
+		for (const i in flexs) {
+			const flexInfo = flexs[i];
+			if(flexInfo.dom != this.layout_dom_flex){
+				ohter_height += Number(flexInfo.flex[0])
+			}
+				
+		}
+
+		for (const i in flexs) {
+			const flexInfo = flexs[i];
+			if(flexInfo.dom != this.layout_dom_flex)
+			{
+				let per = Number(flexInfo.flex[0])/ohter_height;//占用空间百分比
+				let oth_per = per*sub_per;
+				flexInfo.dom.style.flex = oth_per+' '+ oth_per+' '+' 0px'
+			}else{
+				flexInfo.dom.style.flex = my_per+' '+ my_per+' '+' 0px'
+			}
+		}
+		this.upLayout();
+		// 场景刷新下，有时会出黑边
+		let scene = Editor.Panel.find('scene')
+		if(scene && scene._onPanelResize) scene._onPanelResize()
+	},
+
+	// 其它窗口总高度
+	getFlexs()
+	{
+		let list = {}
+		for (let i = 0; i < this.layout_dom_flex.parentElement.children.length; i++) {
+			let dom = this.layout_dom_flex.parentElement.children[i];
+			if(dom.style.flex){
+				list[i] = {flex:dom.style.flex.split(' '),dom};
+			}
+		}
+		return list;
+	},
+
+	// 本窗口当前占用空间百分比
+	getSelfFlexPercent()
+	{
+		this.getLayoutDomFlex();
+		let flexs = this.getFlexs();
+		let max_height = 0
+		let self_flex 
+
+		for (const i in flexs) {
+			const flexInfo = flexs[i];
+			max_height += Number(flexInfo.flex[0])
+			if(flexInfo.dom == this.layout_dom_flex){
+				self_flex = flexInfo.flex;
+			}
+		}
+		if(self_flex){
+			return self_flex[0]/max_height;
+		}
+		return 0
+	},
+
+	getLayoutDomFlex(){
+		if(this.parent_dom && this.parent_dom.parentElement)
+		{
+			this.layout_dom_flex = this.parent_dom.parentElement;
+			let isHorizontal = true;
+			for (let i = 0; i < this.layout_dom_flex.parentElement.children.length; i++) {
+				const dom = this.layout_dom_flex.parentElement.children[i];
+				if(dom.scrollHeight != this.layout_dom_flex.scrollHeight){
+					isHorizontal = false;
+				}
+			}
+			// 这里水平布局了两排以上
+			if(isHorizontal){
+				this.layout_dom_flex = this.layout_dom_flex.parentElement || this.layout_dom_flex; //再找一层
+			}
+		}else{
+			this.layout_dom_flex = undefined;
+		}
+		return this.layout_dom_flex;
+	},
 
 
+	upLayout(){
+		if (this.old_width == null || Math.abs(this.$box.scrollWidth - this.old_width) >3 || this.old_height == null || Math.abs(this.$box.scrollHeight - this.old_height) >3) {
+			this.old_width = this.$box.scrollWidth;
+			this.old_height = this.$box.scrollHeight;
+			this.vs_editor.layout();
+			return true;
+		}
 	},
 
 
@@ -2021,10 +2161,16 @@ let layer = {
 		this.editor.showSettingsMenu(this.cfg);
 	},
 
+	// onclose(){
+	// 	this.onDestroy()
+	// },
+
 	// 页面关闭
 	onDestroy() {
-		if(this.edit_list == null) return;
+		if(this._is_destroy || this.edit_list == null) return;
+		this._is_destroy = true;
 		if (this.schFunc) this.schFunc();
+		this.setAutoLayout(false);
 
 		// 保存编辑信息
 		let temp_path_map = {}
@@ -2068,6 +2214,7 @@ let layer = {
 		// this.cfg = this.editor.getOptions();
 		this.cfg.custom_cfg = this.custom_cfg;
 		this.cfg.fontSize = this.vs_editor.getRawOptions().fontSize;
+		this.cfg.self_flex_per = this.self_flex_per;
 		delete this.cfg.language;
 		localStorage.setItem("simple-code-config", JSON.stringify(this.cfg));
 		localStorage.setItem("simple-code-search_history", JSON.stringify(this.search_history));
@@ -2289,7 +2436,9 @@ let layer = {
 		// vs功能:焦点
 		'vs-editor-focus'(event,url) 
 		{
-			this.vs_editor.focus();
+			if(Editor.Panel.getFocusedPanel() == this){
+				this.vs_editor.focus();
+			}
 		},
 		
 		// vs功能: 
