@@ -1104,6 +1104,18 @@ let layer = {
 		return str_uri;
 	},
 	
+	
+	fsPathToUrl(fsPath){
+		let ind = fsPath.indexOf(prsPath+ path.sep + "assets");
+		let str_uri;
+		if(ind != -1){
+			ind = prsPath.length;
+			let _path = fsPath.substr(ind+1);
+			str_uri   = 'db://' + (Editor.isWin32 ? _path.replace(/ /g,'').replace(/\\/g,'/') : _path );
+		}
+		return str_uri;
+	},
+	
 	setTheme(name) {
 		let filePath = Editor.url("packages://simple-code/monaco-editor/custom_thems/") + name + ".json"
 		if (fe.isFileExit(filePath)) {
@@ -1916,7 +1928,7 @@ let layer = {
 	{
 		// 刷新编辑信息
 		let urlI = this.getUriInfo(v.url)
-		let id = this.getTabIdByPath(thsi.fspathToUuid(v.url));
+		let id = this.getTabIdByPath(thsi.fsPathToUrl(v.srcPath));
 		// 正在编辑的tab
 		if (id != null)
 		{
