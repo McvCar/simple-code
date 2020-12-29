@@ -925,6 +925,18 @@ let layer = {
 		// }
 		return str_uri;
 	},
+
+	
+	fsPathToUrl(fsPath){
+		let ind = fsPath.indexOf(prsPath+ path.sep + "assets");
+		let str_uri;
+		if(ind != -1){
+			ind = prsPath.length;
+			let _path = fsPath.substr(ind+1);
+			str_uri   = 'db://' + (Editor.isWin32 ? _path.replace(/ /g,'').replace(/\\/g,'/') : _path );
+		}
+		return str_uri;
+	},
 	
 	setTheme(name) {
 		let filePath = Editor.url("packages://simple-code/monaco-editor/custom_thems/") + name + ".json"
@@ -1738,7 +1750,7 @@ let layer = {
 	{
 		// 刷新编辑信息
 		let urlI = this.getUriInfo(v.url)
-		let old_url = this.fsPathToModelUrl(v.srcPath);
+		let old_url = this.fsPathToUrl(v.srcPath);
 		let id = this.getTabIdByPath(old_url);
 		// 正在编辑的tab
 		if (id != null)
@@ -1846,6 +1858,8 @@ let layer = {
 				isLoadModel()
 			}else{
 				this.code_file_rename_buf.is_use = 0;
+				// 重新生成vs_model
+				this.onMoveFile(assets_info);
 				this.upCodeFileRename(); // 继续读取下个文件
 			}
 		});
@@ -2128,7 +2142,10 @@ let layer = {
 		'asset-db:asset-changed'(event, info) {
 			if(!this.is_init_finish) return;
 
-			this.checkAllCurrFileChange();
+			if(!this.code_file_rename_buf.is_use){
+				this.checkAllCurrFileChange();
+			}
+
 			let url = Editor.remote.assetdb.uuidToUrl(info.uuid);
 			let edit_id = this.getTabIdByPath(url);
 			if(edit_id == null || !this.edit_list[edit_id] || !this.edit_list[edit_id].is_need_save)
@@ -2177,7 +2194,7 @@ let layer = {
 
 				// 刷新编辑信息
 				let old_url = this.fsPathToModelUrl(v.path);
-				let id = this.getTabIdByPath(old_url);
+				let id = this.getTabIdByPath(this.fsPathToUrl(v.path));
 				// 正在编辑的tab
 				if(id != null)
 				{
