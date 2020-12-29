@@ -512,15 +512,17 @@ let layer = {
 		
 		this.addEventListener('focus',(e)=>{
 			this.setAutoLayout(true)
-		},true);
+		},false);
 
 		this.addEventListener('blur',(e)=>{
-			let panel = Editor.Panel.getFocusedPanel()
-			let is_need_close = this.isSameGroupPanel(panel);
-			if(is_need_close){
-				this.setAutoLayout(panel == this)
-			}
-		},true);
+			setTimeout(()=>{
+				let panel = Editor.Panel.getFocusedPanel()
+				let is_need_close = this.isSameGroupPanel(panel);
+				if(is_need_close){
+					this.setAutoLayout(panel == this)
+				}
+			},10)
+		},false);
 
 		// 保存
 		this.$settingBtn.addEventListener('confirm', () => {
@@ -1274,7 +1276,7 @@ let layer = {
 	},
 
 	setTabBarPos(str){
-		this.$box.style.flexDirection = str ? 'column-reverse' : 'column';
+		this.$box.style.flexDirection = str ? 'column' : 'column-reverse';
 	},
 	
 	// 锁定编辑
