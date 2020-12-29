@@ -1452,7 +1452,7 @@ let layer = {
 		Editor.assetdb.saveExists(url, text, (err, meta)=> {
 			if (err) {
 				fs.writeFileSync(Editor.remote.assetdb.urlToFspath(url), text); //外部文件
-				Editor.error("保存代码出错:", err);
+				Editor.error("保存代码出错:", err,meta);
 			}else{
 				// 刚刚保存了，creator还没刷新
 				this.is_save_wait_up = 1;
@@ -1928,7 +1928,7 @@ let layer = {
 	{
 		// 刷新编辑信息
 		let urlI = this.getUriInfo(v.url)
-		let id = this.getTabIdByPath(thsi.fsPathToUrl(v.srcPath));
+		let id = this.getTabIdByPath(this.fsPathToUrl(v.srcPath));
 		// 正在编辑的tab
 		if (id != null)
 		{
@@ -2055,7 +2055,7 @@ let layer = {
 			new_text_map[url] = vs_model.getValue();
 			vs_model.setValue(old_text);
 			has_hint = 1
-			hint_text+=url+"\n";
+			hint_text+=vs_model.dbUrl+"\n";
 		}
 
 		this.setWaitIconHide(true);
@@ -2063,21 +2063,21 @@ let layer = {
 			if(has_hint)
 			{
 				let is_apply = confirm(hint_text);
-				for (const url in this.code_file_rename_buf.rename_files_map) {
-					let old_text = this.code_file_rename_buf.rename_files_map[url]; // 
-					// let new_url = this.code_file_rename_buf.rename_path_map[url]; // 移动后的路径
+				for (const model_url in this.code_file_rename_buf.rename_files_map) {
+					let old_text = this.code_file_rename_buf.rename_files_map[model_url]; // 
+					// let new_url = this.code_file_rename_buf.rename_path_map[model_url]; // 移动后的路径
 					
-					let vs_model = this.monaco.editor.getModel(url);
+					let vs_model = this.monaco.editor.getModel(model_url);
 					if(!vs_model){
 						continue;
 					}
 	
 					if(is_apply){
-						vs_model.setValue(new_text_map[url])
-						let id = this.getTabIdByPath(url);
+						vs_model.setValue(new_text_map[model_url])
+						let id = this.getTabIdByModel(vs_model);
 						if(id == null)
 						{
-							this.saveFileByUrl(url,vs_model.getValue()); // 没有打开的文件则自动保存
+							this.saveFileByUrl(vs_model.dbUrl,vs_model.getValue()); // 没有打开的文件则自动保存
 						}else{} // 已经打开的文件等用户手动保存
 					}else{
 						if(old_text){
