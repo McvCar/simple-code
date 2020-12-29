@@ -20,6 +20,7 @@ const CMD_FILE_PATH = prsPath + path.sep + "temp" + path.sep + "commandLine.js";
 const SCORES = { ".fire": 100, ".prefab": 90 };
 // .d.ts 通用代码提示文件引入位置
 const TS_API_LIB_PATHS = [prsPath,Editor.url('packages://simple-code/template/api_doc')];
+const THEME_DIR 	   = Editor.url("packages://simple-code/monaco-editor/custom_thems/")
 
 let _scripts = [];
 let is_hint = false;
@@ -47,14 +48,21 @@ let layer = {
 		100%{-webkit-transform:rotate(360deg);}
 		}
 
-		#gotoFileBtn{height: 15px;}
-		#settingBtn {height: 15px;}
-		#resetBtn {height: 15px;}
+		#gotoFileBtn{height: 15px;width:40;}
+		#settingBtn {height: 15px;width:40;}
+		#resetBtn {height: 15px;width:40;}
 		#editorA {width: 0%;height: 0%;}
-		#editorB {width: 100%;height: 97%;overflow:hidden;}
+		#editorB {overflow:hidden;flex: 1 1 auto;}
 		#title {line-height: 15px;}
 		#layoutTab {}
-		
+
+		#box {
+			display: flex;
+			flex-direction: column-reverse;
+			width: 100%;
+			height: 100%;
+		}
+
 		.openTab {
 			border-style: inset;
 			padding: 0px 1px 0px 1px;
@@ -107,6 +115,7 @@ let layer = {
 	template: `
 			<div id="box">
 				<div id="editorA"></div>
+				<div id="editorB"></div>
 				<div id="layoutTab" class="layout horizontal justified">
 					<div id="tabList" class="layout horizontal">
 						<i class="icon-doc-text"></i> <span></span> <span></span>
@@ -119,20 +128,21 @@ let layer = {
 
 					</div>
 					<div class="layout horizontal">
-						<ui-checkbox id="lockChk">锁定编辑</ui-checkbox>
-						<ui-checkbox id="cmdMode">命令模式</ui-checkbox>
+						<ui-checkbox id="lockChk">锁标签</ui-checkbox>
+						<ui-checkbox id="lockWindowChk">锁窗</ui-checkbox>
+						<ui-checkbox id="cmdMode">调试</ui-checkbox>
 						<ui-button id="gotoFileBtn" class="blue">定位</ui-button>
 						<ui-button id="settingBtn" class="green">设置</ui-button>
 						<ui-button id="resetBtn" class="red">重置</ui-button>
 					</div>
 				</div>
-				<div id="editorB"></div>
 				<div id="overlay" class="overlay"></div>
 			</div>
 	`,
 
 	$: {
 		lockChk: '#lockChk',
+		lockWindowChk: '#lockWindowChk',
 		layoutTab: '#layoutTab',
 		cmdMode: '#cmdMode',
 		settingBtn: '#settingBtn',
@@ -273,6 +283,9 @@ let layer = {
 		}else if(cfg.useTextareaForIME != null){
 			this.destoryVim();
 		}
+		if(cfg.theme != null){
+			this.setTheme(cfg.theme);
+		}
 	},
 
 	destoryVim(){
@@ -373,7 +386,37 @@ let layer = {
 		this.editor.setOptions(this.cfg);
 		this.editor.setOption("showGutter", true);
 		this.setVsOption(this.cfg,true);
+		this.setLockWindow(this.cfg.is_lock_window);
+		this.setTabBarPos(this.cfg.tabBarPos);
+		this.loadThemeList();
+		this.loadLanguageList();
+	},
 
+
+	loadLanguageList()
+	{
+		let list = monaco.languages.getLanguages()
+		for (let i = 0; i < list.length; i++) 
+		{
+			let language = list[i];
+			for (let n = 0; n < language.extensions.length; n++) {
+				const ext = language.extensions[n];
+				this.FILE_OPEN_TYPES[ext.substr(1)] = language.id;
+			}
+			config.optionGroups.Main["语言"].items.push({ caption: language.id, value: language.id });
+		}
+	},
+
+	loadThemeList()
+	{
+		let list = fe.getFileList(THEME_DIR,[])
+		for (let i = 0; i < list.length; i++) 
+		{
+			let file = list[i].replace(/\\/g,'/');
+			let name = this.getUriInfo(file).name;
+			name = name.substr(0,name.lastIndexOf('.'))
+			config.optionGroups.Main["主题"].items.push({ caption: name, value: name });
+		}
 	},
 
 
@@ -472,7 +515,11 @@ let layer = {
 		},true);
 
 		this.addEventListener('blur',(e)=>{
-			this.setAutoLayout(false || Editor.Panel.getFocusedPanel() == this)
+			let panel = Editor.Panel.getFocusedPanel()
+			let is_need_close = this.isSameGroupPanel(panel);
+			if(is_need_close){
+				this.setAutoLayout(panel == this)
+			}
 		},true);
 
 		// 保存
@@ -513,6 +560,11 @@ let layer = {
 			this.setLockEdit(this.$lockChk.checked ? true : false);
 		});
 
+		// 锁定窗口
+		this.$lockWindowChk.addEventListener('change', () => {
+			this.setLockWindow(this.$lockWindowChk.checked ? true : false);
+		});
+		
 		// 命令模式
 		this.$cmdMode.addEventListener('change', () => {
 			this.custom_cfg.is_cmd_mode = this.$cmdMode.checked ? true : false;
@@ -526,9 +578,15 @@ let layer = {
 			if (e.name == "newFileType") {
 				localStorage.setItem("newFileType", e.value || "js");
 			}
-			else if (e.name == "autoLayout") {
+			else if (e.name == "autoLayoutMin") {
 				this.setAutoLayout(true);
 				this.setAutoLayout(false);
+			}else if (e.name == "autoLayoutMax") {
+				this.setAutoLayout(false);
+				this.setAutoLayout(true);
+				
+			}else if(e.name == "tabBarPos"){
+				this.setTabBarPos(e.value);
 			}
 		});
 
@@ -613,26 +671,62 @@ let layer = {
 				return;
 			}else if (this.is_init_finish && this.upLayout()){
 				let rate = this.getSelfFlexPercent();
-				if(Math.abs(rate*100-this.cfg.autoLayout) > 3){
+				if(Math.abs(rate*100-this.cfg.autoLayoutMin) > 3){
 					this.self_flex_per = rate;
 				}
 			}
-			this.setAutoLayout(Editor.Panel.getFocusedPanel() == this)
+
+			let panel = Editor.Panel.getFocusedPanel()
+			let is_self = panel == this;
+			let is_need_close = this.isSameGroupPanel(panel);
+			if(is_self || is_need_close){
+				this.setAutoLayout(is_self)
+			}
 		}, 1);
+	},
+
+	// 是同一组垂直的面板
+	isSameGroupPanel(panel)
+	{
+		if(panel == null) return false;
+
+		let flexs = this.getFlexs();
+		let checkFunc = (dom,prent_panel)=>
+		{
+			if(dom == prent_panel)
+				return true
+			else if(prent_panel.parentElement)
+				return checkFunc(dom,prent_panel.parentElement)
+			else
+				return false;
+		}
+
+		for (const i in flexs) {
+			const flexInfo = flexs[i];
+			if(flexInfo.dom != this.layout_dom_flex){
+				let isHas = checkFunc(flexInfo.dom,panel);
+				if(isHas){
+					return true;
+				}
+			}	
+		}
+		return false;
 	},
 
 	// 设置展开面板或收起来
 	setAutoLayout(is_focused)
 	{
+		if(this.cfg.is_lock_window) 
+			return;
 		this.getLayoutDomFlex();
 		let now_flex = this.layout_dom_flex && this.layout_dom_flex.style.flex;
-		if(!this.cfg.autoLayout || now_flex == null || (this.old_focused_state != null && this.old_focused_state == is_focused)){
+		if(!this.cfg.autoLayoutMin || now_flex == null || (this.old_focused_state != null && this.old_focused_state == is_focused)){
 			return;
 		}
 		this.old_focused_state = is_focused;
 
 		// 焦点改变时修改布局
-		let my_per = is_focused ? this.self_flex_per : this.cfg.autoLayout*0.01;
+		let my_per = is_focused ? (this.cfg.autoLayoutMax ? this.cfg.autoLayoutMax * 0.01 : this.self_flex_per) : this.cfg.autoLayoutMin*0.01; // 调整窗口缩放比例
 		let max_per = 1
 		let sub_per = max_per-my_per;
 		let ohter_height = 0
@@ -643,14 +737,14 @@ let layer = {
 			if(flexInfo.dom != this.layout_dom_flex){
 				ohter_height += Number(flexInfo.flex[0])
 			}
-				
 		}
 
 		for (const i in flexs) 
 		{
 			const flexInfo = flexs[i];
 			if(this.cfg.autoLayoutDt){
-				flexInfo.dom.style['-webkit-transition']='flex '+this.cfg.autoLayoutDt+"s"
+				
+				flexInfo.dom.style['-webkit-transition']='flex '+this.cfg.autoLayoutDt+"s ease "+(this.cfg.autoLayoutDelay || '0')+'s'
 			}
 			if(flexInfo.dom != this.layout_dom_flex)
 			{
@@ -673,13 +767,15 @@ let layer = {
 			this.$overlay.style.display = "none";
 			this.upLayout();
 			// 场景刷新下，有时会出黑边
-			let scene = Editor.Panel.find('scene')
-			if(scene && scene._onPanelResize) scene._onPanelResize()
+			for (let i = 0; i < Editor.Panel.panels.length; i++) {
+				const panel = Editor.Panel.panels[i];
+				if(panel && panel._onPanelResize) panel._onPanelResize()
+			}
 		}
 		
 		if(this.cfg.autoLayoutDt)
 		{
-			this.$overlay.style.display = "inline";
+			this.$overlay.style.display = this.layout_dom_flex.parentElement.children[0] == this.layout_dom_flex ? "" : "inline"; // 自己在最顶层就不必显示蒙版
 			this.layout_dom_flex.addEventListener('transitionend',actEnd,false);
 		}else{
 			actEnd();
@@ -690,10 +786,12 @@ let layer = {
 	getFlexs()
 	{
 		let list = {}
-		for (let i = 0; i < this.layout_dom_flex.parentElement.children.length; i++) {
-			let dom = this.layout_dom_flex.parentElement.children[i];
-			if(dom.style.flex){
-				list[i] = {flex:dom.style.flex.split(' '),dom};
+		if(this.layout_dom_flex && this.layout_dom_flex.parentElement){
+			for (let i = 0; i < this.layout_dom_flex.parentElement.children.length; i++) {
+				let dom = this.layout_dom_flex.parentElement.children[i];
+				if(dom.style.flex){
+					list[i] = {flex:dom.style.flex.split(' '),dom};
+				}
 			}
 		}
 		return list;
@@ -1117,12 +1215,12 @@ let layer = {
 	},
 	
 	setTheme(name) {
-		let filePath = Editor.url("packages://simple-code/monaco-editor/custom_thems/") + name + ".json"
+		let filePath = THEME_DIR + name + ".json"
 		if (fe.isFileExit(filePath)) {
 			let data = fs.readFileSync(filePath).toString();
 			this.monaco.editor.defineTheme(name, JSON.parse(data));
 		}
-		this.monaco.monaco.editor.setTheme(name);
+		this.monaco.editor.setTheme(name);
 	},
 
 
@@ -1175,6 +1273,10 @@ let layer = {
 		return item_cfg;
 	},
 
+	setTabBarPos(str){
+		this.$box.style.flexDirection = str ? 'column-reverse' : 'column';
+	},
+	
 	// 锁定编辑
 	setLockEdit(is_lock,id) 
 	{
@@ -1186,6 +1288,13 @@ let layer = {
 		this.vs_editor.updateOptions({ lineNumbers: info.is_cmd_mode || id != 0 ? "on" : 'off' });
 		this.vs_editor.updateOptions({ lineNumbers: info.is_cmd_mode || id != 0 ? "on" : 'off' });
 		this.upTitle(id);
+	},
+
+	// 锁定窗口
+	setLockWindow(is_lock) 
+	{
+		this.cfg.is_lock_window = is_lock;
+		this.$lockWindowChk.checked = is_lock ? true : false;
 	},
 
 	// 命令模式
