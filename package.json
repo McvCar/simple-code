@@ -1,7 +1,7 @@
 {
 	"name": "simple-code",
 	"scene-script": "panel/scene-info.js",
-	"version": "2.1.5",
+	"version": "2.1.6",
 	"description": "内置代码编辑器",
 	"author": "MCV",
 	"main": "main.js",
@@ -132,7 +132,7 @@
 		"type": "dockable",
 		"title": "代码编辑器",
 		"width": 400,
-		"height": 300
+		"height": 30
 	},
 	"panel.preview": {
 		"main": "panel/preview.js",

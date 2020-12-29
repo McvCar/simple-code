@@ -728,7 +728,7 @@ var OptionPanel = function(editor,cfg) {
             })];
         } else if (option.type == "number") {
             control = ["input", {type: "number", value: value == null ? option.defaultValue : value, style:"width:3em", oninput: function() {
-                self.setOption(option, parseInt(this.value));
+                self.setOption(option, Number(this.value));
             }}];
             if (option.ariaLabel) {
                 control[1]["aria-label"] = option.ariaLabel;

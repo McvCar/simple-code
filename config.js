@@ -843,13 +843,24 @@ module.exports = {
               type: "number",
               defaultValue: 10,
               defaults: [
-                  {caption: "80%", value: 80},
+                  {caption: "禁用", value: 0},
                   {caption: "60%", value: 60},
                   {caption: "40%", value: 40},
                   {caption: "20%", value: 20},
                   {caption: "10%", value: 10}
               ]
           },
+          
+          "自动窗口过渡动作时间%(0为禁用)": {
+            path: "autoLayoutDt",
+            type: "number",
+            defaultValue: 0.1,
+            defaults: [
+                {caption: "禁用", value: 0},
+                {caption: "0.1秒", value: 0.1},
+                {caption: "0.2秒", value: 0.2},
+            ]
+        },
       },
   },
 }

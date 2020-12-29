@@ -9,7 +9,7 @@ Editor.Panel.extend({
 
   // html template for panel
   template: `
-      <iframe id = "games_view" src="http://localhost:7456/" />
+      <iframe id = "games_view" src="" />
   `,
 
   // element and variable binding
@@ -19,7 +19,7 @@ Editor.Panel.extend({
 
   // method executed when template and styles are successfully loaded and initialized
   ready () {
-    setTimeout(()=>this.upPreview(),1000)
+    setTimeout(()=>this.upPreview(),5000)
   },
 
   upPreview(){

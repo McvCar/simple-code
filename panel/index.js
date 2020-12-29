@@ -89,6 +89,19 @@ let layer = {
             overflow:hidden;          /* 内容超出宽度时隐藏超出部分的内容 */
             text-overflow:ellipsis;   /* 当对象内文本溢出时显示省略标记(...) ；需与overflow:hidden;一起使用。*/
 		}
+		.overlay {
+			width: 9999px;
+			height: 9999px;
+			position: absolute;
+			top: 0px;
+			left: 0px;
+			z-index: 10001;
+			display:none;
+			filter:alpha(opacity=10);
+			background-color: #777;
+			opacity: 0.1;
+			-moz-opacity: 0.1;
+		}
 	`,
 
 	template: `
@@ -98,7 +111,6 @@ let layer = {
 					<div id="tabList" class="layout horizontal">
 						<i class="icon-doc-text"></i> <span></span> <span></span>
 						<div id="waitIco" class="turn">=</div>
-
 
 						<div id="title0" class="closeTab">
 							<div class="title"><nobr>无文件<nobr></div>
@@ -115,6 +127,7 @@ let layer = {
 					</div>
 				</div>
 				<div id="editorB"></div>
+				<div id="overlay" class="overlay"></div>
 			</div>
 	`,
 
@@ -131,6 +144,7 @@ let layer = {
 		tabList: '#tabList',
 		box: '#box',
 		waitIco: '#waitIco',
+		overlay: '#overlay',
 	},
 
 	initAce() {
@@ -607,6 +621,7 @@ let layer = {
 		}, 1);
 	},
 
+	// 设置展开面板或收起来
 	setAutoLayout(is_focused)
 	{
 		this.getLayoutDomFlex();
@@ -631,8 +646,12 @@ let layer = {
 				
 		}
 
-		for (const i in flexs) {
+		for (const i in flexs) 
+		{
 			const flexInfo = flexs[i];
+			if(this.cfg.autoLayoutDt){
+				flexInfo.dom.style['-webkit-transition']='flex '+this.cfg.autoLayoutDt+"s"
+			}
 			if(flexInfo.dom != this.layout_dom_flex)
 			{
 				let per = Number(flexInfo.flex[0])/ohter_height;//占用空间百分比
@@ -642,10 +661,29 @@ let layer = {
 				flexInfo.dom.style.flex = my_per+' '+ my_per+' '+' 0px'
 			}
 		}
-		this.upLayout();
-		// 场景刷新下，有时会出黑边
-		let scene = Editor.Panel.find('scene')
-		if(scene && scene._onPanelResize) scene._onPanelResize()
+		
+		let actEnd = ()=>
+		{
+			this.layout_dom_flex.removeEventListener("transitionend", actEnd);
+			for (const i in flexs) 
+			{
+				const flexInfo = flexs[i];
+				flexInfo.dom.style['-webkit-transition']='';//清除过渡动画
+			}
+			this.$overlay.style.display = "none";
+			this.upLayout();
+			// 场景刷新下，有时会出黑边
+			let scene = Editor.Panel.find('scene')
+			if(scene && scene._onPanelResize) scene._onPanelResize()
+		}
+		
+		if(this.cfg.autoLayoutDt)
+		{
+			this.$overlay.style.display = "inline";
+			this.layout_dom_flex.addEventListener('transitionend',actEnd,false);
+		}else{
+			actEnd();
+		}
 	},
 
 	// 其它窗口总高度
@@ -1878,8 +1916,7 @@ let layer = {
 	{
 		// 刷新编辑信息
 		let urlI = this.getUriInfo(v.url)
-		let old_url = this.fsPathToModelUrl(v.srcPath);
-		let id = this.getTabIdByPath(old_url);
+		let id = this.getTabIdByPath(thsi.fspathToUuid(v.url));
 		// 正在编辑的tab
 		if (id != null)
 		{
@@ -1908,7 +1945,7 @@ let layer = {
 			}
 		}else{
 			// 修改缓存
-			let vs_model = this.monaco.editor.getModel(this.monaco.Uri.parse(old_url))
+			let vs_model = this.monaco.editor.getModel(this.monaco.Uri.parse(this.fsPathToModelUrl(v.srcPath)))
 			if(vs_model) {
 				let text = vs_model.getValue();
 				vs_model.dispose()
@@ -1973,7 +2010,7 @@ let layer = {
 				// 检测wr线程读取vs_model完成没有
 				let try_count = 0;
 				let isLoadModel = ()=>{
-					wrObj._getModel(assets_info.url).then((model)=>
+					wrObj._getModel(newUrl).then((model)=>
 					{
 						if(model == null) {
 							isLoadModel(); // 没加载，继续检测
@@ -1986,6 +2023,8 @@ let layer = {
 				isLoadModel()
 			}else{
 				this.code_file_rename_buf.is_use = 0;
+				// 重新生成vs_model
+				this.onMoveFile(assets_info);
 				this.upCodeFileRename(); // 继续读取下个文件
 			}
 		});
@@ -2089,7 +2128,7 @@ let layer = {
 		if(has_set){
 			vs_model.setValue(text);
 			// 保存修改
-			let id = this.getTabIdByPath(url);
+			let id = this.getTabIdByModel(vs_model);
 			if(id != null)
 			{
 				this.onVsDidChangeContent({},vs_model)
@@ -2262,7 +2301,7 @@ let layer = {
 
 		// 选择改变
 		'selection:activated'(event) {
-			if(!this.is_init_finish) return;
+			if(!this.is_init_finish || this.code_file_rename_buf.is_use) return;
 			this.openActiveFile(!this.is_save_wait_up,!this.is_save_wait_up);
 			this.is_save_wait_up = 0;// 阻止保存时tab乱切换
 		},
@@ -2273,7 +2312,7 @@ let layer = {
 
 		// 项目资源文件发生改变
 		'asset-db:asset-changed'(event, info) {
-			if(!this.is_init_finish) return;
+			if(!this.is_init_finish  || this.code_file_rename_buf.is_use) return;
 
 			this.checkAllCurrFileChange();
 			let url = Editor.remote.assetdb.uuidToUrl(info.uuid);
