@@ -127,7 +127,7 @@ let layer = {
 						</div>
 
 					</div>
-					<div class="layout horizontal">
+					<div id="toolsPanel" class="layout horizontal">
 						<ui-checkbox id="lockChk">锁标签</ui-checkbox>
 						<ui-checkbox id="lockWindowChk">锁窗</ui-checkbox>
 						<ui-checkbox id="cmdMode">调试</ui-checkbox>
@@ -155,6 +155,7 @@ let layer = {
 		box: '#box',
 		waitIco: '#waitIco',
 		overlay: '#overlay',
+		toolsPanel: '#toolsPanel',
 	},
 
 	initAce() {
@@ -201,7 +202,7 @@ let layer = {
 		// 创建vs编辑器，api参考 monaco.d.ts文件
 		vsLoader.require(['vs/editor/editor.main'], () => 
 		{
-			this.monaco = Editor.monaco = monaco;
+			this.monaco = Editor.monaco = Editor.monaco || monaco;
 			config.vsEditorConfig.language = 'javascript';  // 预热 javascript模块
 			config.vsEditorConfig.value = ``
 			var editor = monaco.editor.create(this.$editorB,config.vsEditorConfig);
@@ -213,7 +214,7 @@ let layer = {
 				monaco.languages.typescript.typescriptDefaults._compilerOptions[key] = v;
 			}
 			monaco.languages.typescript.typescriptDefaults.setCompilerOptions(monaco.languages.typescript.typescriptDefaults._compilerOptions);
-			monaco.editor.setTheme("vs-dark")
+			monaco.editor.setTheme("vs-dark-ex")
 			setTimeout(()=>
 			{
 				monaco.editor.setModelLanguage(this.vs_editor.getModel(), "typescript"); // 预热 typescript模块
@@ -260,32 +261,42 @@ let layer = {
 		this.self_flex_per 		= this.getSelfFlexPercent();
 	},
 
-	// 设置vs选项
-	setVsOption(cfg,is_init) {
-		const map_key = { mode: "language", theme: "theme", fontSize: "fontSize", fixedWidthGutter: "minimap"}
-		let vs_cfg = {}
-		for (const key in cfg) {
-			let v = cfg[key];
-			vs_cfg[map_key[key]] = v;
+	// 设置选项
+	setOptions(cfg,isInit) 
+	{
+		
+		if(!isInit)
+		{
+			if (cfg.autoLayoutMin != null) {
+				this.setAutoLayout(true);
+				this.setAutoLayout(false);
+			}
+			if (cfg.autoLayoutMax != null) {
+				this.setAutoLayout(false);
+				this.setAutoLayout(true);
+			}
 		}
-		if (vs_cfg["minimap"] != null) {
-			vs_cfg["minimap"] = { enabled: vs_cfg["minimap"] }
-		}
-
-		this.vs_editor.updateOptions(vs_cfg);
-		if (vs_cfg["language"]) {
-			this.monaco.editor.setModelLanguage(this.vs_editor.getModel(), vs_cfg['language']);
-		}
-
+		
 		// vim
-		if(cfg.useTextareaForIME){
-			this.initVimMode();
-		}else if(cfg.useTextareaForIME != null){
-			this.destoryVim();
+		if(cfg.enabledVim != null){
+			cfg.enabledVim ? this.initVimMode() : this.destoryVim();
 		}
 		if(cfg.theme != null){
 			this.setTheme(cfg.theme);
 		}
+		if (cfg.newFileType != null) {
+			localStorage.setItem("newFileType", cfg.newFileType || "ts");
+		}
+		if(cfg.tabBarPos != null){
+			this.setTabBarPos(cfg.tabBarPos);
+		}
+		if(cfg.enabledMinimap != null){
+			cfg.minimap = {enabled :cfg.enabledMinimap}
+		}
+		if (cfg["language"]) {
+			this.monaco.editor.setModelLanguage(this.vs_editor.getModel(), vs_cfg['language']);
+		}
+		this.vs_editor.updateOptions(cfg);
 	},
 
 	destoryVim(){
@@ -320,6 +331,7 @@ let layer = {
 		window.vim_mode = Editor.monaco.vim_mode = this.vim_mode = vim_mode;
 	},
 
+ 	// 补充缺失的配置，升级版本导致的
 	loadDefineMeunCfg(cfg){
 		for (const key in config.optionGroups) {
 			const groups = config.optionGroups[key];
@@ -370,26 +382,22 @@ let layer = {
 		// 读取ace配置
 		this.cfg = localStorage.getItem("simple-code-config");
 		this.cfg = this.cfg ? JSON.parse(this.cfg) : {}; //ace配置
-		this.loadDefineMeunCfg(this.cfg)
-		this.cfg.mode = null;
+		this.cfg.language = null;
 		this.custom_cfg = this.cfg.custom_cfg || {};//自定义配置
 		this.custom_cfg.file_cfg_list = this.custom_cfg.file_cfg_list || {}
 		this.file_cfg = this.custom_cfg.file_cfg_list[md5(prsPath)] = this.custom_cfg.file_cfg_list[md5(prsPath)] || { 'db://xx': { scroll_top: 0, is_show: 0 } };
 		this.self_flex_per = this.cfg.self_flex_per || this.self_flex_per;
 
-		localStorage.setItem("newFileType", this.cfg.newFileType || "js");
 		// 搜索历史
 		this.search_history = localStorage.getItem("simple-code-search_history");
 		this.search_history = this.search_history ? JSON.parse(this.search_history) : []
 
 		this.$cmdMode.checked = this.custom_cfg.is_cmd_mode || false;
-		this.editor.setOptions(this.cfg);
-		this.editor.setOption("showGutter", true);
-		this.setVsOption(this.cfg,true);
-		this.setLockWindow(this.cfg.is_lock_window);
-		this.setTabBarPos(this.cfg.tabBarPos);
+		this.loadDefineMeunCfg(this.cfg)
 		this.loadThemeList();
 		this.loadLanguageList();
+		this.setOptions(this.cfg,true);
+		this.setLockWindow(this.cfg.is_lock_window);
 	},
 
 
@@ -509,10 +517,39 @@ let layer = {
 			// 	this.refresh_file_list = [];
 			// }
 		});
+
+		// 记录光标位置
+		this.vs_editor.onDidChangeCursorPosition((e)=>{
+			if(this.file_info && this.file_info.vs_model){
+				this.file_info.position = e.position;
+			}
+		});
+
+		this.vs_editor.onDidChangeCursorSelection((e)=>{
+			if(this.file_info && this.file_info.vs_model){
+				this.file_info.selection = e.selection;
+			}
+		});
+
+		// 编译开始
+		this.vs_editor.onDidCompositionStart((e)=>{
+			this.setWaitIconHide(false);
+		});
 		
-		this.addEventListener('focus',(e)=>{
-			this.setAutoLayout(true)
-		},false);
+		// 编译完成
+		this.vs_editor.onDidCompositionEnd((e)=>{
+			this.setWaitIconHide(true);
+		});
+
+		
+		
+		let focusPanels = [this.$editorB,this.$tabList];
+		for (let i = 0; i < focusPanels.length; i++) {
+			const dom = focusPanels[i];
+			dom.addEventListener('focus',(e)=>{
+				this.setAutoLayout(true)
+			},true);
+		}
 
 		this.addEventListener('blur',(e)=>{
 			setTimeout(()=>{
@@ -575,21 +612,7 @@ let layer = {
 
 		// 设置面板改变的时候
 		this.editor.on("setOption", (e) => {
-			this.cfg[e.name] = e.value;
-			this.setVsOption({ [e.name]: e.value })
-			if (e.name == "newFileType") {
-				localStorage.setItem("newFileType", e.value || "js");
-			}
-			else if (e.name == "autoLayoutMin") {
-				this.setAutoLayout(true);
-				this.setAutoLayout(false);
-			}else if (e.name == "autoLayoutMax") {
-				this.setAutoLayout(false);
-				this.setAutoLayout(true);
-				
-			}else if(e.name == "tabBarPos"){
-				this.setTabBarPos(e.value);
-			}
+			this.setOptions({ [e.name]: e.value });
 		});
 
 
@@ -614,6 +637,40 @@ let layer = {
 			}
 		},false)
 
+		// 关闭页面提示
+		let _this = this
+		window.addEventListener("beforeunload", function (e) {
+			_this.onDestroy(e);
+		}, false);
+
+		// 检测窗口改变大小调整
+		this.schFunc = this.setTimeoutToJS(() => {
+			// 本窗口已被删除
+			if(this.parentElement == null)
+			{
+				_this.onDestroy();
+				return;
+			}
+			
+			// 正在播放中过渡特效中
+			if(this.layout_dom_flex && this.layout_dom_flex.style['-webkit-transition']){
+				return;
+			}
+			
+			if (this.is_init_finish && this.upLayout()){
+				let rate = this.getSelfFlexPercent();
+				if(Math.abs(rate*100-this.cfg.autoLayoutMin) > 3){
+					this.self_flex_per = rate;
+				}
+			}
+
+			let panel = Editor.Panel.getFocusedPanel() 
+			let is_self = panel == this && !this.comparisonParentDom(this.$toolsPanel,this._focusedElement);
+			let is_need_close = this.isSameGroupPanel(panel);
+			if(is_self || is_need_close){
+				this.setAutoLayout(is_self)
+			}
+		}, 0.5);
 		// 转跳定义
 		// this.monaco.languages.registerDefinitionProvider("javascript", {
 		// 	provideDefinition:  (model, position, token)=> {
@@ -659,32 +716,17 @@ let layer = {
 		// }})
 
 
-		// 关闭页面提示
-		let _this = this
-		window.addEventListener("beforeunload", function (e) {
-			_this.onDestroy(e);
-		}, false);
+	},
 
-		// 检测窗口改变大小调整
-		this.schFunc = this.setTimeoutToJS(() => {
-			if(this.parentElement == null)
-			{
-				_this.onDestroy();
-				return;
-			}else if (this.is_init_finish && this.upLayout()){
-				let rate = this.getSelfFlexPercent();
-				if(Math.abs(rate*100-this.cfg.autoLayoutMin) > 3){
-					this.self_flex_per = rate;
-				}
-			}
+	comparisonParentDom(parentDom,domNode){
+		if (domNode == null) return false;
 
-			let panel = Editor.Panel.getFocusedPanel()
-			let is_self = panel == this;
-			let is_need_close = this.isSameGroupPanel(panel);
-			if(is_self || is_need_close){
-				this.setAutoLayout(is_self)
-			}
-		}, 1);
+		if(parentDom == domNode)
+			return true
+		else if(domNode.parentElement)
+			return this.comparisonParentDom(parentDom,domNode.parentElement)
+		else
+			return false;
 	},
 
 	// 是同一组垂直的面板
@@ -693,20 +735,10 @@ let layer = {
 		if(panel == null) return false;
 
 		let flexs = this.getFlexs();
-		let checkFunc = (dom,prent_panel)=>
-		{
-			if(dom == prent_panel)
-				return true
-			else if(prent_panel.parentElement)
-				return checkFunc(dom,prent_panel.parentElement)
-			else
-				return false;
-		}
-
 		for (const i in flexs) {
 			const flexInfo = flexs[i];
 			if(flexInfo.dom != this.layout_dom_flex){
-				let isHas = checkFunc(flexInfo.dom,panel);
+				let isHas = this.comparisonParentDom(flexInfo.dom,panel);
 				if(isHas){
 					return true;
 				}
@@ -764,7 +796,7 @@ let layer = {
 			for (const i in flexs) 
 			{
 				const flexInfo = flexs[i];
-				flexInfo.dom.style['-webkit-transition']='';//清除过渡动画
+				flexInfo.dom.style['-webkit-transition'] = undefined;//清除过渡动画
 			}
 			this.$overlay.style.display = "none";
 			this.upLayout();
@@ -870,7 +902,7 @@ let layer = {
 					if (cfg.mode == 2 || _this.vs_editor.hasTextFocus() == cfg.mode) {
 						let isHas = true;
 						cfg.keys.forEach((key) => {
-							if (!pressedKeys[key]) {
+							if (!pressedKeys[key] && !pressedKeys["Key"+key.toLocaleUpperCase()]) {
 								isHas = false;
 							}
 						});
@@ -896,13 +928,12 @@ let layer = {
 		document.addEventListener("keydown", function (e) {
 			// console.log("A",e.key,pressedKeys)
 			pressedKeys = {
-				[e.key] : 1,
+				[e.code] : 1,
 				['Alt'] : e.altKey,
 				['Ctrl'] : e.ctrlKey,
 				['Meta'] : e.metaKey,
 				['Shift'] : e.shiftKey,
 			}
-			
 			ret_type = onApplyEvent(e, 'keydown');
 			_this.runExtendFunc("onKeyDown", e);
 			return ret_type;
@@ -912,6 +943,7 @@ let layer = {
 			
 			pressedKeys = {
 				[e.key] : 1,
+				[e.code] : 1,
 				['Alt'] : e.altKey,
 				['Ctrl'] : e.ctrlKey,
 				['Meta'] : e.metaKey,
@@ -927,6 +959,7 @@ let layer = {
 			// pressedKeys = {};
 			pressedKeys = {
 				[e.key] : 1,
+				[e.code] : 1,
 				['Alt'] : e.altKey,
 				['Ctrl'] : e.ctrlKey,
 				['Meta'] : e.metaKey,
@@ -965,15 +998,15 @@ let layer = {
 			return false;
 		}, 1, "keydown");
 
-		// tab 左移 ∆ == j
-		this.addKeybodyEvent([["Meta", "Ctrl", "j"], [Editor.isWin32 ? "Ctrl" : "Meta", "Alt", "ArrowLeft"], ["Alt", "Shift", "Tab"]], (e) => {
+		// tab 左移
+		this.addKeybodyEvent([["Meta", "Alt", "j"], [Editor.isWin32 ? "Ctrl" : "Meta", "Alt", "ArrowLeft"], ["Alt", "Shift", "Tab"]], (e) => {
 			this.tabToLeft(true);
 			e.preventDefault();// 吞噬捕获事件
 			return false;
 		}, 1, "keydown");
 
-		// tab 右移 ¬ == l
-		this.addKeybodyEvent([["Meta", "Ctrl", "l"], [Editor.isWin32 ? "Ctrl" : "Meta", "Alt", "ArrowRight"], ["Alt", "Tab"]], (e) => {
+		// tab 右移
+		this.addKeybodyEvent([["Meta", "Alt", "l"], [Editor.isWin32 ? "Ctrl" : "Meta", "Alt", "ArrowRight"], ["Alt", "Tab"]], (e) => {
 			this.tabToRight(true);
 			e.preventDefault();// 吞噬捕获事件
 			return false;
@@ -1587,6 +1620,12 @@ let layer = {
 		if (info.scroll_top) {
 			this.vs_editor.setScrollTop(info.scroll_top)
 		}
+		if (info.selection) {
+			this.vs_editor.setSelection(info.selection);
+		}else if (info.position) {
+			this.vs_editor.setPosition(info.position);
+		}
+
 		this.monaco.editor.setModelLanguage(this.vs_editor.getModel(), this.FILE_OPEN_TYPES[info.file_type || ""] || "markdown");
 		// this.editor.selection.clearSelection();
 
@@ -1696,6 +1735,8 @@ let layer = {
 		file_info.scroll_top = this.file_cfg[path] && this.file_cfg[path].scroll_top;
 		file_info.id = id;
 		file_info.can_remove_model = 0;
+		file_info.position = undefined;
+		file_info.selection = undefined;
 		if (!file_info.vs_model) 
 		{
 			let vs_model = this.loadVsModel(path, this.getUriInfo(path).extname , uuid != "outside",false);

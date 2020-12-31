@@ -140,8 +140,9 @@ module.exports = {
     quickSuggestions: true,			 // 使字符串有代码提示
     definitionLinkOpensInPeek: false, // ctrl+点击 跳转是否使用小窗口预览
     cursorSurroundingLines: 5,		 // 撤销后自动滚动页面到光标相对5行的位置
-    scrollPredominantAxis: false,
-
+    smoothScrolling:true,
+    formatOnPaste: true,
+    // cursorSmoothCaretAnimation:true,
     /**
 //  * This editor is used inside a diff editor.
 //  */
@@ -791,15 +792,15 @@ module.exports = {
   optionGroups: {
     Main: {
       "语言": {
-        path: "mode",
+        path: "language",
         type: "select",
         items: []
       },
       "主题": {
         path: "theme",
         type: "select",
-        defaultValue: "vs-dark",
-        items: [{ caption: 'vs', value: 'vs' }, { caption: 'vs-dark', value: 'vs-dark' }, { caption: 'hc-black', value: 'hc-black' }]
+        defaultValue: "vs-dark-ex",
+        items: [{ caption: 'vs', value: 'vs' }, { caption: 'vs-dark', value: 'vs-dark' },{ caption: 'vs-dark-ex', value: 'vs-dark-ex' }, { caption: 'hc-black', value: 'hc-black' }]
       },
       "快捷键习惯": {
         type: "buttonBar",
@@ -812,6 +813,7 @@ module.exports = {
       "新建文件格式": {
         type: "buttonBar",
         path: "newFileType",
+        defaultValue: "ts",
         items: [
           { caption: "js文件", value: "js" },
           { caption: "ts文件", value: "ts" },
@@ -831,13 +833,30 @@ module.exports = {
           { caption: "18px", value: 18 }
         ]
       },
+      "vim编辑模式": {
+        path: "enabledVim",
+        defaultValue: false,
+      },
       "显示代码预览": {
-        path: "fixedWidthGutter",
+        path: "enabledMinimap",
         defaultValue: true,
       },
-      "vim编辑模式": {
-        path: "useTextareaForIME",
+      "翻页过渡效果": {
+        path: "smoothScrolling",
+        defaultValue: true,
+      },
+      "光标过渡效果": {
+        path: "cursorSmoothCaretAnimation",
         defaultValue: false,
+      },
+      "粘贴自动格式化": {
+        path: "formatOnPaste",
+        defaultValue: true,
+      },
+      "光标在边缘位置": {
+        path: "scrollPredominantAxis",
+        type: "number",
+        defaultValue: 5,
       },
     },
     More: {
