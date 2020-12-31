@@ -1,7 +1,6 @@
 define("ace/ext/menu_tools/overlay_page",["ace_require","exports","module","ace/lib/dom"], function(ace_require, exports, module) {
 'use strict';
 var dom = ace_require("../../lib/dom");
-var simple_config = Editor.require("packages://simple-code/config.js");
 var cssText = "#ace_settingsmenu, #kbshortcutmenu {\
 background-color: #F7F7F7;\
 color: black;\
@@ -444,6 +443,7 @@ var modes = modelist.modes.map(function(x){
 });
 
 
+var package_config = Editor.require('packages://simple-code/package.json');
 var simple_config = Editor.require('packages://simple-code/config.js');
 var optionGroups = simple_config.optionGroups;
 // var optionGroups = {
@@ -670,7 +670,7 @@ var OptionPanel = function(editor,cfg) {
                     this.renderOptionGroup(optionGroups.More)
                 ]
             ]],
-            ["tr", null, ["td", {colspan: 2}, "version " + config.version]]
+            ["tr", null, ["td", {colspan: 2}, "version " + package_config.version]]
         ], this.container);
     };
     
