@@ -259,6 +259,7 @@ let layer = {
 		this.parent_dom 		= this; //Editor.Panel.find('simple-code');
 		this.layout_dom_flex 	= this.getLayoutDomFlex()
 		this.self_flex_per 		= this.getSelfFlexPercent();
+		this.timer_map 			= {};
 	},
 
 	// 设置选项
@@ -926,9 +927,8 @@ let layer = {
 		}
 
 		document.addEventListener("keydown", function (e) {
-			// console.log("A",e.key,pressedKeys)
 			pressedKeys = {
-				[e.code] : 1,
+				[config.keyMap[e.keyCode] ? config.keyMap[e.keyCode] : e.key] : 1,
 				['Alt'] : e.altKey,
 				['Ctrl'] : e.ctrlKey,
 				['Meta'] : e.metaKey,
@@ -942,8 +942,7 @@ let layer = {
 		document.addEventListener("keypress", function (e) {
 			
 			pressedKeys = {
-				[e.key] : 1,
-				[e.code] : 1,
+				[config.keyMap[e.keyCode] ? config.keyMap[e.keyCode] : e.key] : 1,
 				['Alt'] : e.altKey,
 				['Ctrl'] : e.ctrlKey,
 				['Meta'] : e.metaKey,
@@ -958,8 +957,7 @@ let layer = {
 		document.addEventListener("keyup", function (e) {
 			// pressedKeys = {};
 			pressedKeys = {
-				[e.key] : 1,
-				[e.code] : 1,
+				[config.keyMap[e.keyCode] ? config.keyMap[e.keyCode] : e.key] : 1,
 				['Alt'] : e.altKey,
 				['Ctrl'] : e.ctrlKey,
 				['Meta'] : e.metaKey,
@@ -1600,6 +1598,9 @@ let layer = {
 			}else{
 				// 刚刚保存了，creator还没刷新
 				this.is_save_wait_up = 1;
+				this.setTimeoutById(()=>{
+					this.is_save_wait_up = 0;
+				},3000)
 			}
 		});
 	},
@@ -1617,13 +1618,13 @@ let layer = {
 			this.vs_editor.setValue(text);
 		}
 
-		if (info.scroll_top) {
-			this.vs_editor.setScrollTop(info.scroll_top)
-		}
 		if (info.selection) {
 			this.vs_editor.setSelection(info.selection);
 		}else if (info.position) {
 			this.vs_editor.setPosition(info.position);
+		}
+		if (info.scroll_top != null) {
+			this.vs_editor.setScrollTop(info.scroll_top)
 		}
 
 		this.monaco.editor.setModelLanguage(this.vs_editor.getModel(), this.FILE_OPEN_TYPES[info.file_type || ""] || "markdown");
@@ -1891,6 +1892,15 @@ let layer = {
 		return this.openFile(this.getFileUrlInfoByFsPath(filePath),isShow);
 		// this.setLockEdit(is_lock);
 	},
+
+	// 打开文件到编辑器
+	openFileByUrl(url, isShow) {
+		let uuid = Editor.remote.assetdb.urlToUuid(url);
+		if(uuid){
+			return this.openFile(this.getFileUrlInfoByUuid(uuid),isShow);
+		}
+	},
+
 
 	// 打开文件到编辑器
 	openFile(info, isShow) {
@@ -2304,6 +2314,22 @@ let layer = {
 	},
 
 	// 调用原生JS的定时器
+	setTimeoutById(func,time,id='com') 
+	{
+		// 之前有定时器先停掉
+		if(this.timer_map[id]){
+			this.timer_map[id]()
+		}
+		let headler = setTimeout(()=>{
+			if(this.timer_map[id]) this.timer_map[id]()
+			this.timer_map[id] = undefined;
+			func()
+		}, time);
+		this.timer_map[id] = ()=>clearTimeout(headler);
+		return this.timer_map[id];
+	},
+
+	// 调用原生JS的定时器
 	setTimeoutToJS(func, time = 1, { count = -1, dt = time } = {}) {
 
 		// 执行多少次
@@ -2466,8 +2492,8 @@ let layer = {
 		// 选择改变
 		'selection:activated'(event) {
 			if(!this.is_init_finish || this.code_file_rename_buf.is_use) return;
+			// 阻止保存时tab乱切换
 			this.openActiveFile(!this.is_save_wait_up,!this.is_save_wait_up);
-			this.is_save_wait_up = 0;// 阻止保存时tab乱切换
 		},
 
 		// 项目资源文件uuid发生改变
