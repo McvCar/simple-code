@@ -287,6 +287,18 @@ module.exports = {
 				return false;
 			}
 		},0)
+
+		this.parent.addKeybodyEvent([['q']],(e)=>
+		{
+		    if (!this.inputTypeChk(e))
+		    {
+				Editor.Scene.callSceneScript('simple-code', 'active-curr-node' ,{},function (err, event) {
+					// Editor.log("delect node")
+				});
+				e.preventDefault();// 吞噬捕获事件
+				return false;
+			}
+		},0)
 	},
 
 	// 不是输入状态是时

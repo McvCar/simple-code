@@ -60,8 +60,15 @@ module.exports = {
 			Editor.remote.assetdb.delete(files);
 		},
 
-		'get-active-uuid'(event,args,parent){
-			// Editor.log("scene test")
+		'active-curr-node'(event,args,parent){
+		    let activeInfo  = Editor.Selection.curGlobalActivate() // 检测面板焦点在资源管理器还是层级管理器
+		    if (activeInfo && activeInfo.type == "node")
+		    {
+				let node = cc.engine.getInstanceById(activeInfo.id)
+				if(node){
+					node.active = !node.active;
+				}
+			}
 		}
 	}
 };
