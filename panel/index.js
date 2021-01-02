@@ -54,8 +54,9 @@ let layer = {
 		#editorA {width: 0%;height: 0%;}
 		#editorB {overflow:hidden;flex: 1 1 auto;}
 		#title {line-height: 15px;}
-		#layoutTab {}
-
+		#tabList {overflow: hidden;-webkit-transition:all 0.1s;}
+		#layoutTab {-webkit-transition:all 0.1s;}
+		
 		#box {
 			display: flex;
 			flex-direction: column-reverse;
@@ -72,6 +73,7 @@ let layer = {
 			float:left;
 			display:block;
 			user-select:none;
+			-webkit-transition:all 0.1s;
 		}
 
 		.closeTab {
@@ -80,22 +82,26 @@ let layer = {
 			border-width: .0px 1px .0px 0px;
 			text-align:center ;
 			float:left;
-			display:block;
 			user-select:none;
 			cursor:pointer;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			-webkit-transition:all 0.1s;
 		}
 
 		.closeBtn {
 			color:#FF0000;
 			display:inline;
 			cursor:crosshair;
+			flex: 1;
 		}
-		.title {
+		.tabTitle {
 			display:inline;           
             word-break:keep-all;      /* 不换行 */
             white-space:nowrap;       /* 不换行 */
             overflow:hidden;          /* 内容超出宽度时隐藏超出部分的内容 */
             text-overflow:ellipsis;   /* 当对象内文本溢出时显示省略标记(...) ；需与overflow:hidden;一起使用。*/
+			-webkit-transition:all 0.1s;
 		}
 		.overlay {
 			width: 9999px;
@@ -122,7 +128,7 @@ let layer = {
 						<div id="waitIco" class="turn">=</div>
 
 						<div id="title0" class="closeTab">
-							<div class="title"><nobr>无文件<nobr></div>
+							<div class="tabTitle"><nobr>无文件<nobr></div>
 							<div class="closeBtn"><nobr> x <nobr></div>
 						</div>
 
@@ -278,18 +284,14 @@ let layer = {
 			}
 		}
 		
-		// vim
-		if(cfg.enabledVim != null){
-			cfg.enabledVim ? this.initVimMode() : this.destoryVim();
-		}
-		if(cfg.theme != null){
-			this.setTheme(cfg.theme);
-		}
 		if (cfg.newFileType != null) {
 			localStorage.setItem("newFileType", cfg.newFileType || "ts");
 		}
 		if(cfg.tabBarPos != null){
 			this.setTabBarPos(cfg.tabBarPos);
+		}
+		if(cfg.hideToolsBar != null){
+			this.$toolsPanel.hidden = cfg.hideToolsBar;
 		}
 		if(cfg.enabledMinimap != null){
 			cfg.minimap = {enabled :cfg.enabledMinimap}
@@ -297,6 +299,14 @@ let layer = {
 		if (cfg["language"]) {
 			this.monaco.editor.setModelLanguage(this.vs_editor.getModel(), vs_cfg['language']);
 		}
+		if(cfg.theme != null){
+			this.setTheme(cfg.theme);
+		}
+		// vim
+		if(cfg.enabledVim != null){
+			cfg.enabledVim ? this.initVimMode() : this.destoryVim();
+		}
+		
 		this.vs_editor.updateOptions(cfg);
 	},
 
@@ -797,7 +807,7 @@ let layer = {
 			for (const i in flexs) 
 			{
 				const flexInfo = flexs[i];
-				flexInfo.dom.style['-webkit-transition'] = undefined;//清除过渡动画
+				flexInfo.dom.style['-webkit-transition'] = '';//清除过渡动画
 			}
 			this.$overlay.style.display = "none";
 			this.upLayout();
@@ -1642,7 +1652,7 @@ let layer = {
 
 		let tabBg = this.getTabDiv(id);
 		if (tabBg) {
-			let title = tabBg.getElementsByClassName("title")[0];
+			let title = tabBg.getElementsByClassName("tabTitle")[0];
 			title.textContent = (info.is_need_save ? info.name + "* " : info.name || "无文件");
 			title.setAttribute('style',info.is_lock || id == 0 ? 'font-style:normal;' : 'font-style:italic;');
 		} else {

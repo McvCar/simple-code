@@ -916,6 +916,10 @@ module.exports = {
         ]
       },
 
+      "隐藏工具栏": {
+        path: "hideToolsBar",
+        defaultValue: false,
+      },
     },
   },
 
