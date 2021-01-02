@@ -424,7 +424,7 @@ module.exports = {
 			//monaco.editor.createModel(fileContent, lang, monaco.Uri.file(filePath))
 			this.parent.monaco.editor.getModels().forEach(model => 
 			{
-				let file_name  = model.uri.path.substr(1)
+				let file_name  =  model.uri.path.substr(model.uri.path.lastIndexOf('/'))
 				if(file_name.indexOf('.d.ts') != -1) return;
 
 				for (let match of model.findMatches(searchText)) 
