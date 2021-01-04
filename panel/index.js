@@ -683,22 +683,42 @@ let layer = {
 			}
 		}, 0.5);
 		// 转跳定义
-		// this.monaco.languages.registerDefinitionProvider("javascript", {
-		// 	provideDefinition:  (model, position, token)=> {
-		// 		// 可以使用 ajax 去取数据，然后 return new Promise(function (resolve, reject) { ... })
-		// 		return Promise.resolve([{
-		// 			uri: this.monaco.Uri.parse('file://model/fn.js'),
-		// 			range: { startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 5 },
-		// 			targetSelectionRange: { startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 1 },
-		// 			originSelectionRange: { startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 1 },
-		// 		},{
-		// 			uri: this.monaco.Uri.parse('file://model/eff.js'),
-		// 			range: { startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 5 },
-		// 			targetSelectionRange: { startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 1 },
-		// 			originSelectionRange: { startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 1 },
-		// 		}]);
-		// 	}
-		// })
+		this.monaco.languages.registerDefinitionProvider("javascript", {
+			provideDefinition:  (model, position, token)=> {
+				let wordInfo = model.getWordAtPosition(position);
+				// 可以使用 ajax 去取数据，然后 return new Promise(function (resolve, reject) { ... })
+				var p = new Promise( (resolve, reject )=>{
+					this.jsWr.getFunctionDefinds(wordInfo.word).then((hitnMap)=>
+					{
+						let list = []
+						for (const url in hitnMap) 
+						{
+							const synObjs = hitnMap[url];
+							const modelB  = this.monaco.editor.getModel(this.monaco.Uri.parse(url))
+							let text = modelB && modelB.getValue();
+							if(text)
+							{
+								for (let i = 0; i < synObjs.length; i++) 
+								{
+									const synObj = synObjs[i];
+									if(synObj.spans && synObj.spans[0])
+									{
+										let range = this.convertPosition(text,synObj.spans[0].start)
+										list.push({
+											uri: this.monaco.Uri.parse(url),
+											range: range,
+										})
+									}
+								}
+							}
+						}
+						resolve(list);
+					})
+					
+				} )
+				return p;
+			}
+		})
 
 		// 鼠标悬停提示
 		// this.monaco.languages.registerHoverProvider("javascript", {
@@ -727,6 +747,20 @@ let layer = {
 		// }})
 
 
+	},
+
+	convertPosition(text,start){
+		let LineNumber = 1
+		let lastLine = 0
+		for (let i = 0; i < start; i++) {
+			const char = text[i];
+			if(char == '\n') {
+				LineNumber ++;
+				lastLine = i;
+			}
+		}
+		let startColumn = start - lastLine;
+		return { startLineNumber: LineNumber, startColumn: startColumn, endLineNumber: LineNumber, endColumn: startColumn }
 	},
 
 	comparisonParentDom(parentDom,domNode){
