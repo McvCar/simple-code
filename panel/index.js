@@ -488,7 +488,13 @@ let layer = {
 				this.setLockEdit(true);
 			}
 		}
+		
 		(document.getElementById("tools") || this).transformTool = "move";//因为键盘事件吞噬不了,需要锁定场景操作为移动模式
+		let model_url = model.uri._formatted;
+		this.setTimeoutById(()=>{
+			this.jsWr.deleteFunctionDefindsBuffer(model_url);
+			this.tsWr.deleteFunctionDefindsBuffer(model_url);
+		},1000,'removeModelBuffer');
 	},
 
 	// 綁定事件
@@ -547,9 +553,10 @@ let layer = {
 			this.setWaitIconHide(false);
 		});
 		
-		// 编译完成
-		this.vs_editor.onDidCompositionEnd((e)=>{
-			this.setWaitIconHide(true);
+		// 删除代码文件 view缓存model
+		this.monaco.editor.onWillDisposeModel((model)=>{
+			this.jsWr.deleteFunctionDefindsBuffer(model.uri._formatted);
+			this.tsWr.deleteFunctionDefindsBuffer(model.uri._formatted);
 		});
 
 		
@@ -682,12 +689,19 @@ let layer = {
 				this.setAutoLayout(is_self)
 			}
 		}, 0.5);
+
 		// 转跳定义
 		this.monaco.languages.registerDefinitionProvider("javascript", {
-			provideDefinition:  (model, position, token)=> {
+			provideDefinition:  (model, position, token)=> 
+			{
 				let wordInfo = model.getWordAtPosition(position);
+				if(wordInfo) Editor.Scene.callSceneScript('simple-code', 'hint-node', wordInfo.word);
 				// 可以使用 ajax 去取数据，然后 return new Promise(function (resolve, reject) { ... })
-				var p = new Promise( (resolve, reject )=>{
+				var p = new Promise( (resolve, reject )=>
+				{
+					if(!wordInfo){
+						return resolve([]);
+					}
 					this.jsWr.getFunctionDefinds(wordInfo.word).then((hitnMap)=>
 					{
 						let list = []
@@ -698,11 +712,13 @@ let layer = {
 							let text = modelB && modelB.getValue();
 							if(text)
 							{
+								let re_syns = {}
 								for (let i = 0; i < synObjs.length; i++) 
 								{
 									const synObj = synObjs[i];
-									if(synObj.spans && synObj.spans[0])
+									if(synObj.spans && synObj.spans[0] && re_syns[synObj.spans[0].start] == null)
 									{
+										re_syns[synObj.spans[0].start] = 1;
 										let range = this.convertPosition(text,synObj.spans[0].start)
 										list.push({
 											uri: this.monaco.Uri.parse(url),
@@ -721,14 +737,35 @@ let layer = {
 		})
 
 		// 鼠标悬停提示
-		// this.monaco.languages.registerHoverProvider("javascript", {
-		// 	provideHover:  (model, position, token)=> {
-		// 		return Promise.resolve([{
-		// 			contents: [{ isTrusted: true, value: 'hello world' }],
-		// 			range: { startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 1 }
-		// 		}]);
-		// 	}
-		// })
+		this.monaco.languages.registerHoverProvider("javascript", {
+			provideHover:  (model, position, token)=> {
+				let wordInfo = model.getWordAtPosition(position);
+				
+				var p = new Promise( (resolve, reject )=>{
+					if(wordInfo){
+						this.jsWr.getFunctionDefindHover(wordInfo.word).then((text)=>
+						{
+							text = text || '';
+							let toInd = text.indexOf('\n');
+							if(toInd != -1){
+								text = text.substr(0,toInd);
+							}
+							resolve({
+								contents: [{ 
+									isTrusted: false,
+									supportThemeIcons:true,
+									value: text,
+								}],
+								// range: { startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 1 }
+							});
+						})
+					}else{
+						resolve({});
+					}
+				} )
+				return p;
+			}
+		})
 
 		// 跳转到实现
 		// this.monaco.languages.registerImplementationProvider("javascript",{provideImplementation: function (model,position, token) {
@@ -2710,7 +2747,12 @@ let layer = {
 			let url_info ;
 			let vs_model = this.monaco.editor.getModel(info.uri._formatted);
 			if(vs_model == null){
-				return Editor.warn('vs_model == null');
+				if(info.uri.scheme == 'http' || info.uri.scheme == 'https'){
+					exec(Editor.isWin32 ? "cmd /c start "+info.uri._formatted : "open "+info.uri._formatted); 
+				}else{
+					Editor.warn('vs_model == null');
+				}
+				return 
 			}
 			
 			for (let i = 0; i < this.file_list_buffer.length; i++) 

@@ -277,6 +277,18 @@ var eventFuncs =
 		})
 	},
 
+	'hint-node'(event,name){
+		var canvas      = cc.director.getScene();
+		if (canvas) {
+			this.getNodeChildren(canvas,(node)=>{
+				if (node.name == name){
+					Editor.Selection.select('node', [node.uuid]);
+					return node;
+				}
+			})
+		}
+	},
+	
 	'select-node'(event,args)
 	{
 		let is_file_self = false;
