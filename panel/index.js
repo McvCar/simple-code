@@ -695,7 +695,14 @@ let layer = {
 			provideDefinition:  (model, position, token)=> 
 			{
 				let wordInfo = model.getWordAtPosition(position);
-				if(wordInfo) Editor.Scene.callSceneScript('simple-code', 'hint-node', wordInfo.word);
+				if(wordInfo)
+				{
+					this.is_not_select_active = 1;
+					this.setTimeoutById(()=>{
+						this.is_not_select_active = 0;
+					},1000,'defindToNode')
+					Editor.Scene.callSceneScript('simple-code', 'hint-node', wordInfo.word);
+				}
 				// 可以使用 ajax 去取数据，然后 return new Promise(function (resolve, reject) { ... })
 				var p = new Promise( (resolve, reject )=>
 				{
@@ -743,7 +750,7 @@ let layer = {
 				
 				var p = new Promise( (resolve, reject )=>{
 					if(wordInfo){
-						this.jsWr.getFunctionDefindHover(wordInfo.word).then((text)=>
+						this.jsWr.getFunctionDefindHover(wordInfo.word,model.uri._formatted).then((text)=>
 						{
 							text = text || '';
 							let toInd = text.indexOf('\n');
@@ -2572,7 +2579,7 @@ let layer = {
 
 		// 选择改变
 		'selection:activated'(event) {
-			if(!this.is_init_finish || this.code_file_rename_buf.is_use) return;
+			if(!this.is_init_finish || this.code_file_rename_buf.is_use || this.is_not_select_active) return;
 			// 阻止保存时tab乱切换
 			this.openActiveFile(!this.is_save_wait_up,!this.is_save_wait_up);
 		},
@@ -2583,7 +2590,7 @@ let layer = {
 
 		// 项目资源文件发生改变
 		'asset-db:asset-changed'(event, info) {
-			if(!this.is_init_finish  || this.code_file_rename_buf.is_use) return;
+			if(!this.is_init_finish  || this.code_file_rename_buf.is_use || this.is_not_select_active) return;
 
 			this.checkAllCurrFileChange();
 			let url = Editor.remote.assetdb.uuidToUrl(info.uuid);
