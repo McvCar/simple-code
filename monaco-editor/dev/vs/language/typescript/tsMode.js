@@ -1026,6 +1026,8 @@ define('vs/language/typescript/languageFeatures',["require", "exports", "./lib/l
                             if (!items || model.isDisposed()) {
                                 return [2 /*return*/];
                             }
+                            
+                            let re_syns = {}
                             convert = function (bucket, item, containerLabel) {
                                 var result = {
                                     name: item.text,
@@ -1042,7 +1044,11 @@ define('vs/language/typescript/languageFeatures',["require", "exports", "./lib/l
                                         convert(bucket, child, result.name);
                                     }
                                 }
-                                bucket.push(result);
+                                // 修复符号提示列表有重复内容bug
+                                if(re_syns[item.spans[0] && item.spans[0].start] == null){
+                                    bucket.push(result);
+                                }
+                                re_syns[item.spans[0] && item.spans[0].start] = 1
                             };
                             result = [];
                             items.forEach(function (item) { return convert(result, item); });
