@@ -140,7 +140,7 @@ module.exports = {
     quickSuggestions: true,			 // 使字符串有代码提示
     definitionLinkOpensInPeek: false, // ctrl+点击 跳转是否使用小窗口预览
     cursorSurroundingLines: 5,		 // 撤销后自动滚动页面到光标相对5行的位置
-    smoothScrolling:true,
+    smoothScrolling: true,
     formatOnPaste: true,
     // cursorSmoothCaretAnimation:true,
     /**
@@ -791,17 +791,53 @@ module.exports = {
 
   optionGroups: {
     Main: {
+      "主题": {
+        path: "theme",
+        type: "select",
+        defaultValue: "vs-dark-ex",
+        items: [{ caption: 'vs', value: 'vs' }, { caption: 'vs-dark', value: 'vs-dark' }, { caption: 'vs-dark-ex', value: 'vs-dark-ex' }, { caption: 'hc-black', value: 'hc-black' }]
+      },
       "语言": {
         path: "language",
         type: "select",
         items: []
       },
-      "主题": {
-        path: "theme",
+      "字体": {
+        path: "fontFamily",
         type: "select",
-        defaultValue: "vs-dark-ex",
-        items: [{ caption: 'vs', value: 'vs' }, { caption: 'vs-dark', value: 'vs-dark' },{ caption: 'vs-dark-ex', value: 'vs-dark-ex' }, { caption: 'hc-black', value: 'hc-black' }]
+        defaultValue: "",
+        items: [{ caption: '默认', value: '' }]
       },
+      "字体大小": {
+        path: "fontSize",
+        type: "number",
+        defaultValue: 11,
+        defaults: [
+          { caption: "6px", value: 8 },
+          { caption: "10px", value: 10 },
+          { caption: "12px", value: 12 },
+          { caption: "16px", value: 16 },
+          { caption: "18px", value: 18 }
+        ],
+      },
+      "字体粗细": {
+        path: "fontWeight",
+        type: "select",
+        defaultValue: "normal",
+        items: [
+          { caption: "默认", value: "normal" },
+          { caption: "1号", value: "100" },
+          { caption: "2号", value: "200" },
+          { caption: "3号", value: "300" },
+          { caption: "4号", value: "400" },
+          { caption: "5号", value: "500" },
+          { caption: "6号", value: "600" },
+          { caption: "7号", value: "700" },
+          { caption: "8号", value: "800" },
+          { caption: "9号", value: "900" },
+        ]
+      },
+
       "快捷键习惯": {
         type: "buttonBar",
         path: "keyboardHandler",
@@ -819,18 +855,6 @@ module.exports = {
           { caption: "ts文件", value: "ts" },
           { caption: "coffe文件", value: "coffee" },
           { caption: "lua文件", value: "lua" }
-        ]
-      },
-      "字体大小": {
-        path: "fontSize",
-        type: "number",
-        defaultValue: 10,
-        defaults: [
-          { caption: "6px", value: 8 },
-          { caption: "10px", value: 10 },
-          { caption: "12px", value: 12 },
-          { caption: "16px", value: 16 },
-          { caption: "18px", value: 18 }
         ]
       },
       "vim编辑模式": {
@@ -906,7 +930,7 @@ module.exports = {
         ]
       },
 
-      "任务栏位置":{
+      "任务栏位置": {
         type: "buttonBar",
         path: "tabBarPos",
         defaultValue: "",
@@ -923,8 +947,8 @@ module.exports = {
     },
   },
 
-  keyMap : {
+  keyMap: {
     "48": '0', "49": '1', "50": '2', "51": '3', "52": '4', "53": '5', "54": '6', "55": '7', "56": '8', "57": '9', "65": 'a', "66": 'b', "67": 'c', "68": 'd', "69": 'e', "70": 'f', "71": 'g', "72": 'h', "73": 'i', "74": 'j', "75": 'k', "76": 'l', "77": 'm', "78": 'n', "79": 'o', "80": 'p', "81": 'q', "82": 'r', "83": 's', "84": 't', "85": 'u', "86": 'v', "87": 'w', "88": 'x', "89": 'y', "90": 'z',
   },
-  
+
 }

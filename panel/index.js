@@ -407,10 +407,29 @@ let layer = {
 		this.loadDefineMeunCfg(this.cfg)
 		this.loadThemeList();
 		this.loadLanguageList();
+		this.loadSysFonts()
 		this.setOptions(this.cfg,true);
 		this.setLockWindow(this.cfg.is_lock_window);
 	},
 
+	// 读取系统字体列表
+	loadSysFonts()
+	{
+		
+		let fontList = Editor.require('packages://simple-code/tools/node-font-list-master/index.js');
+		fontList.getFonts()
+		.then(fonts => {
+			for (let i = 0; i < fonts.length; i++) 
+			{
+				let fontName = fonts[i];
+				config.optionGroups.Main["字体"].items.push({ caption: fontName, value: fontName });
+			}
+			console.log(fonts)
+		})
+		.catch(err => {
+			// console.log(err)
+		})
+	},
 
 	loadLanguageList()
 	{
