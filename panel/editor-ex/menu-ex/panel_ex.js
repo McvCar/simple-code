@@ -7,7 +7,6 @@ const path 			= require('path');
 const fs 			= require('fs');
 const md5			= require('md5');
 const fe 			= Editor.require('packages://simple-code/tools/FileTools.js');
-const AssetCleaner 	= Editor.require('packages://simple-code/panel/editor-ex/asset-clean/AssetCleanerForCocosCreator/AssetCleaner');
 const prsPath 		= Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
 
 let is_lock			= false;

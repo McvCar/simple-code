@@ -91,6 +91,10 @@ module.exports =
 
   // register your ipc messages here
   messages: { 
+	'loadWidgetToCode'(){
+
+		Editor.Ipc.sendToPanel('simple-code', 'loadWidgetToCode');
+	},
 	'open' () {
 	  // open entry panel registered in package.json
 	  Editor.Panel.open('simple-code');

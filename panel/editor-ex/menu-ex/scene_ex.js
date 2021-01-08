@@ -10,6 +10,8 @@ const fe 	= Editor.require('packages://simple-code/tools/FileTools.js');
 
 
 module.exports = {
+	
+	
 	/*************  事件 *************/  
 	messages: 
 	{

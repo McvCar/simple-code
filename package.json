@@ -6,6 +6,10 @@
 	"author": "MCV",
 	"main": "main.js",
 	"main-menu": {
+		"i18n:代码编辑器/打开test": {
+			"message": "simple-code:loadWidgetToCode",
+			"accelerator": "f5"
+		},
 		"i18n:代码编辑器/打开": {
 			"message": "simple-code:open",
 			"accelerator": "CmdOrCtrl+alt+f12"
@@ -28,7 +32,7 @@
 		},
 		"i18n:代码编辑器/搜索/全局文件搜索": {
 			"message": "simple-code:open-global-search",
-			"accelerator": "CmdOrCtrl+shift+F" 
+			"accelerator": "CmdOrCtrl+shift+F"
 		},
 		"i18n:代码编辑器/搜索/在资源管理器高亮未使用的资源": {
 			"message": "simple-code:cleanFile",
