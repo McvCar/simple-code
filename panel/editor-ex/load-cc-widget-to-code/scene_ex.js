@@ -112,7 +112,7 @@ module.exports = {
 				// 检测该node是否绑定了该脚本
 				let compNames = []
 				node._components.forEach((code_comp, i) => {
-					if (code_comp.__classname__ && code_comp.__scriptUuid == null) {
+					if (code_comp.__classname__ ) {
 						compNames.push(code_comp.__classname__)
 					}
 				});
