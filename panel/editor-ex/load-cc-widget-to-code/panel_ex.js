@@ -1,6 +1,6 @@
 /* 
 面板扩展
-功能: 绑定快捷键事件
+功能: 绑定组件到代码
 */
 'use strict';
 const path 			= require('path');
@@ -10,6 +10,7 @@ const fe 			= Editor.require('packages://simple-code/tools/FileTools.js');
 const prsPath 		= Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
 
 let is_lock			= false;
+let ASSETS_TYPE_MAP = {'sprite-atlas':"cc.SpriteAtlas",'sprite-frame':"cc.SpriteFrame",'texture':"cc.SpriteFrame",'prefab':"cc.Prefab"};
 
 module.exports = {
 
@@ -19,16 +20,46 @@ module.exports = {
 		this.parent = parent;
 	},
 
+	// 加载资源到代码
+	loadAssetsToCode(insertUuids,symbolName)
+	{
+		//1.读取选中的资源
+		//2.解析资源类型 == cc.SpriteFrame ? || xxxx
+		//3.接下来流程和加载组件一样
+		if(insertUuids == null || insertUuids.length == 0){
+			return
+		}
+		
+		Editor.assetdb.queryInfoByUuid(insertUuids[0],(_,fileInfo)=>{
+			if(fileInfo==null){
+				return
+			}
+			let widgetType = ASSETS_TYPE_MAP[fileInfo.type];
+			if(widgetType==null){
+				Editor.info('不支持插入的资源类型:',fileInfo.type)
+				return;
+			}
+			if(symbolName == null){
+				let file_ 	  = this.parent.getUriInfo(fileInfo.url);
+				symbolName = file_.name
+				if(file_.extname != ''){
+					symbolName = symbolName.substr(0,symbolName.lastIndexOf('.'));
+				}
+			}
+			this.loadWidgetToCode(widgetType,symbolName,insertUuids,true);
+		});
+	},
+
 	// 加载组件到代码
-	loadWidgetToCode(widgetType,symbolName){
+	loadWidgetToCode(widgetType,symbolName,insertUuids,isAssets=false){
 		if(this.parent.file_info == null || this.parent.code_file_rename_buf.is_use){
 			return;
 		}
 
 		let file_uuid = this.parent.file_info.uuid;
 
-		//1.获得当前打开的脚本是否该场景内节点绑定
-		//2.获得与当前脚本绑定的Node
+		//1.获得当前打开的脚本是否该场景内节点绑定的
+		//2.获得与当前脚本绑定的Nodes
 		//3.往脚本添加组件类型字段
 		//4.往脚本的类型字段写入当前选中的组件或资源
 		this.getCurrEditorFileBindNodes((bindInfos)=>
@@ -37,16 +68,18 @@ module.exports = {
 				console.log("没有绑定文件")
 				return;
 			}
-			let curSlsInfo = Editor.Selection.curGlobalActivate()
-			let isArray = curSlsInfo && curSlsInfo.type ? Editor.Selection.curSelection(curSlsInfo.type).length>1 : false;
+			if(this.parent.file_info.uuid != file_uuid) {
+				return;
+			}
+			let isArray = Editor.Selection.curSelection(isAssets ? 'asset':'node').length>1 ;
 
-			this.insertTextToFile(file_uuid,widgetType,symbolName,isArray);
-			this.insertWidgetInfo(bindInfos,widgetType,symbolName,isArray);
+			this.insertTextToFile(widgetType,symbolName,isArray);
+			this.insertWidgetInfo(bindInfos,widgetType,symbolName,isArray,insertUuids,isAssets);
 		});
 	},
 
-	insertWidgetInfo(bindInfos,widgetType,symbolName,isArray){
-		let args = {bindInfos,widgetType,symbolName,isArray}
+	insertWidgetInfo(bindInfos,widgetType,symbolName,isArray,insertUuids,isAssets){
+		let args = {bindInfos,widgetType,symbolName,isArray,insertUuids,isAssets}
 		Editor.Scene.callSceneScript('simple-code', 'insertWidgetInfo',args, (err, isEnd) => { 
 			console.log('生成完成.',isEnd)
 		});
@@ -65,13 +98,10 @@ module.exports = {
 	},
 	
 	//3.往脚本添加组件类型字段
-	insertTextToFile(uuid,widgetType,symbolName,isArray){
+	insertTextToFile(widgetType,symbolName,isArray){
 		// 1.获得脚本变量插入text位置
 		// 2.获得插入组件文本内容
 		// 3.向脚本指定位置插入获刚得到的文本,并保存文件
-		if(this.parent.file_info.uuid != uuid) {
-			return;
-		}
 		
 		let file_url  = this.parent.file_info.path;
 		let vs_model  = this.parent.file_info.vs_model;
@@ -124,10 +154,67 @@ module.exports = {
 
 
 	messages:{
+		'insertWidgetByName'(e,args){
+			Editor.log(args)
+			if(args.paths[0] == '快速生成拖拽组件'){
+				let nodes = Editor.Selection.curSelection('node');
+				let uuid = nodes && nodes[0];
+				Editor.Scene.callSceneScript('simple-code', 'getNodeName',uuid, (err, name) => 
+				{ 
+					if(name) this.loadWidgetToCode(args.label,name);
+				})
+			}else{
+				this.loadWidgetToCode(args.label,testWidget);
+			}
+		},
 
+		'insertAssets'(e,args){
+			let list = Editor.Selection.curSelection('asset');
+			this.loadAssetsToCode(list,'testWidget');
+		},
+
+		'quickInsertAssets'(e,args){
+			let list = Editor.Selection.curSelection('asset');
+			this.loadAssetsToCode(list);
+		},
+		
 		'loadWidgetToCode'()
 		{
-			this.loadWidgetToCode('cc.Node','testWidget')
+			// this.loadWidgetToCode('cc.Node','testWidget')
+			this.loadAssetsToCode(Editor.Selection.curSelection('asset'),'testWidget')
+		},
+
+		 
+		'selection:activated'(){
+			let nodes = Editor.Selection.curSelection('node');
+			let uuid = nodes && nodes[0];
+			Editor.Scene.callSceneScript('simple-code', 'getNodeCompNames',uuid, (err, compNames) => 
+			{ 
+				let submenu = [{ label: 'cc.Node', enabled: true, cmd:'insertWidgetByName'},];
+
+				for (let i = 0; i < compNames.length; i++) 
+				{
+					const name = compNames[i];
+					let item = { label: name, enabled: true, cmd: "insertWidgetByName"};
+					submenu.push(item);
+				}
+
+				let menuCfg = {
+					layerMenu : [
+						{ type: 'separator' },
+						{ label : "快速生成拖拽组件", enabled:true, submenu:submenu, },
+						{ label : "生成拖拽组件", enabled:true, submenu:submenu, },
+					],
+					assetMenu : [
+						{ type: 'separator' },
+						{ label : "快速生成拖拽资源", enabled:true, cmd: "quickInsertAssets"},
+						{ label : "生成拖拽资源", enabled:true, cmd: "insertAssets"},
+					],
+				}
+
+				Editor.Ipc.sendToMain('simple-code:setMenuConfig',{id:"cc-widget-to-code",menuCfg:menuCfg})
+			});
+			
 		},
 	},
 	

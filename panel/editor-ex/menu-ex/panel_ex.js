@@ -17,51 +17,6 @@ module.exports = {
 	onLoad(parent){
 		// index.js 对象
 		this.parent = parent; 
-
-        // hook 菜单
-        if (!Editor.remote.Menu["__hooked__"]) {
-            Editor.remote.Menu["__hooked__"] = true;
-            // const func = Editor.Ipc.sendToPanel;
-            // Editor.Ipc.sendToPanel = (n, r, ...i) => { Editor.log(n, r, ...i); return func(n, r, ...i) };
-            Editor.remote.Menu = this.hookMenu(Editor.remote.Menu, this.hookMenuFunc.bind(this));
-        }
-	},
-
-	hookMenu(orginMenu, hookFunc) {
-		const menu = function () {
-			hookFunc(...arguments);
-			return new orginMenu(...arguments);
-		};
-		let menuProps = Object.getOwnPropertyNames(orginMenu);
-		for (let prop of menuProps) {
-			const object = Object.getOwnPropertyDescriptor(orginMenu, prop);
-			if (object.writable) {
-				menu[prop] = orginMenu[prop];
-			}
-		}
-		menu.prototype = orginMenu.prototype;
-		return menu;
-	},
-
-    hookMenuFunc(template) {
-        const firstMenu = template[0];
-        const subMenu = firstMenu.submenu;
-        if (subMenu && firstMenu.label === filterData[0] && subMenu[0].label === filterData[1]) {
-            const parentId = subMenu[0].params[2];
-            const injectMenu = {
-                label: Editor.remote.T("game-helper.createcomp"),
-                submenu: [],
-            };
-            this.localPrefabCfgs.forEach((o) => {
-                injectMenu.submenu.push({
-                    label: o.name,
-                    click: () => {
-                        this.createCompNode(o.uuid, o.name, parentId);
-                    },
-                });
-            });
-            subMenu.splice(1, 0, injectMenu);
-        }
 	},
 	
 	// 面板销毁

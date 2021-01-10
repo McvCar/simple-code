@@ -28,7 +28,7 @@ let layer = {
 	// 下拉框 过滤文件类型 
 	SEARCH_BOX_IGNORE: {},//{".png":1,".jpg":1}
 	// 忽略文件
-	IGNORE_FILE: ["png", "jpg", "zip", "labelatlas", "ttf", "mp3", "mp4", "wav", "ogg", "rar", 'fire', 'prefab'],
+	IGNORE_FILE: ["png", "jpg", "zip", "labelatlas", "ttf", "mp3", "mp4", "wav", "ogg", "rar", 'fire', 'prefab', 'plist'],
 	// 打开文件格式对应的类型
 	FILE_OPEN_TYPES: { md: "markdown", js: "javascript", ts: "typescript", effect: "yaml", coffee: "coffeescript", lua: "lua", sql: "mysql", php: "php", xml: "xml", html: "html", css: "css", json: "json", manifest: "json", plist: "xml", gitignore: "gitignore", glsl: "glsl",text:"markdown",txt:"markdown",c:"c",cpp:"cpp",h:"cpp" },
 
@@ -2657,9 +2657,9 @@ let layer = {
 				}
 
 				let is_remove = false
-
+				
 				// 刷新编辑信息
-				let old_url = this.fsPathToModelUrl(v.path);
+				let old_url = this.fsPathToUrl(v.path);
 				let id = this.getTabIdByPath(old_url);
 				// 正在编辑的tab
 				if(id != null)
@@ -2692,7 +2692,7 @@ let layer = {
 					}
 				}else{
 					// 清缓存
-					let vs_model = this.monaco.editor.getModel(this.monaco.Uri.parse(old_url))
+					let vs_model = this.monaco.editor.getModel(this.monaco.Uri.parse(this.fsPathToModelUrl(v.path)))
 					if(vs_model) vs_model.dispose()
 				}
 

@@ -1,6 +1,6 @@
 /* 
 *主线程扩展
-*绑定快捷键事件
+*creator菜单事件
 */
 
 'use strict';
@@ -8,6 +8,7 @@ var path 	= require('path');
 var fs 		= require('fs');
 var md5     = require('md5');
 
+const MENU_PANEL_TYPE = {"创建节点":"layerMenu","Create":"layerMenu","新建":"assetMenu","New":"assetMenu"};
 
 module.exports = {
 
@@ -16,6 +17,7 @@ module.exports = {
 	{
 		// 主线程对象: main.js
 		this.parent = parent; 
+		this.menuCfgs = {}
 		// hook 菜单
         if (!Editor.Menu["__hooked__"]) {
             Editor.Menu["__hooked__"] = true;
@@ -39,10 +41,48 @@ module.exports = {
 		return menu;
 	},
 
-    hookMenuFunc(template) {
+	applyItem(item,parnetPaths,args){
+		if(item.submenu)
+		{
+			for (let n = 0; n < item.submenu.length; n++) 
+			{
+				let sub_item = item.submenu[n];
+				let paths = JSON.parse( JSON.stringify(parnetPaths) )
+				paths.push(sub_item.label)
+				this.applyItem(sub_item,paths)
+			}
+		}else {
+			if(item.message == null){
+				let paths = JSON.parse( JSON.stringify(parnetPaths) )
+				let toArgs = item.params || {label:item.label,paths,args:args||{}}
+				item.click = ()=>{
+					Editor.Ipc.sendToPanel('simple-code', item.cmd,toArgs);
+				};
+			}else{
+				let paths = JSON.parse( JSON.stringify(parnetPaths) )
+				item.params = item.params || {label:item.label,paths,args:args||{}}
+			}
+		}
+	},
+
+	hookMenuFunc(template) 
+	{
         const firstMenu = template[0];
-		Editor.log(template);
-		Editor.log(firstMenu.params);
+		let menuType = MENU_PANEL_TYPE[firstMenu.label];
+		for (const id in this.menuCfgs) 
+		{
+			let menuCfg = this.menuCfgs[id];
+			let list = menuCfg[menuType];
+			if(!list) continue;
+			for (let i = 0; i < list.length; i++) 
+			{
+				const item = list[i];
+				if(item.type != 'separator'){
+					this.applyItem(item,[item.label],firstMenu.params);
+				}
+				template.push(item);
+			}
+		}
         // const subMenu = firstMenu.submenu;
         // if (subMenu && firstMenu.label === filterData[0] && subMenu[0].label === filterData[1]) {
             // const parentId = subMenu[0].params[2];
@@ -77,6 +117,8 @@ module.exports = {
 
 	messages:
 	{
-
+		'setMenuConfig'(e,args){
+			this.menuCfgs[args.id] = args.menuCfg;
+		},
 	}
 };
