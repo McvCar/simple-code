@@ -10,8 +10,8 @@ const fe 			= Editor.require('packages://simple-code/tools/FileTools.js');
 const prsPath 		= Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
 
 let is_lock			= false;
-let ASSETS_TYPE_MAP = {'sprite-atlas':"cc.SpriteAtlas",'sprite-frame':"cc.SpriteFrame",'texture':"cc.SpriteFrame",'prefab':"cc.Prefab"};
-
+let ASSETS_TYPE_MAP = {'sprite-atlas':"cc.SpriteAtlas",'sprite-frame':"cc.SpriteFrame",'texture':"cc.SpriteFrame",'prefab':"cc.Prefab",'audio-clip':'cc.AudioClip','raw-asset':'cc.RawAsset'};
+let IS_URL_TYPE 	= ['cc.AudioClip','cc.RawAsset']
 module.exports = {
 
 	// 面板初始化
@@ -109,24 +109,22 @@ module.exports = {
 		let file_ 	  = this.parent.getUriInfo(file_url);
 		let isTs  	  = file_.extname != '.js';
 		let start_pos 
-		if(isTs){
 
-		}else{
-			let findObj = text.match(/properties[	 ]{0,5}:[	 ]{0,5}[\n]{0,5}[	 ]{0,15}{[	 ]{0,5}/);
-			if(findObj)
+		let reg = isTs ? /class [a-zA-Z_$][\w$]* extends.*[\n]{0,5}[ ]{0,15}[	]{0,5}{/ : /properties[	 ]{0,5}:[	 ]{0,5}[\n]{0,5}[	 ]{0,15}{[	 ]{0,5}/
+		let findObj = text.match(reg);
+		if(findObj)
+		{
+			start_pos = findObj.index + findObj[0].length;
+			if(start_pos)
 			{
-				start_pos = findObj.index + findObj[0].length;
+				let insertText = this.getInsertText(widgetType,symbolName,isArray,isTs);
+				text = text.substr(0,start_pos)+insertText+text.substr(start_pos)
+				vs_model.pushStackElement();
+				vs_model.setValue(text);
+				this.parent.saveFile();
 			}
 		}
 
-		if(start_pos)
-		{
-			let insertText = this.getInsertText(widgetType,symbolName,isArray,isTs);
-			text = text.substr(0,start_pos)+insertText+text.substr(start_pos)
-			vs_model.pushStackElement();
-			vs_model.setValue(text);
-			this.parent.saveFile();
-		}
 	},
 
 	// 获得插入的代码文字
@@ -135,42 +133,78 @@ module.exports = {
 		if(isTs){
 			if(isArray){
 				text = 
-				`\n@property([${widgetType}])`+'\n'+
-				`${symbolName}:${widgetType} [] = [];`
+				`\n\n	@property([${widgetType}])`+'\n'+
+				`	${symbolName}:${widgetType} [] = [];`
 			}else{
 				text = 
-				`\n@property(${widgetType})`+'\n'+
-				`${symbolName}:${widgetType};`
+				`\n\n	@property(${widgetType})`+'\n'+
+				`	${symbolName}:${widgetType} = null;`
 			}
 		}else{
+			let key = IS_URL_TYPE.indexOf(widgetType) == -1 ? 'type: ' : "url: " 
 			text = 
-			'\n'+symbolName+':{\n'+
-				'default: '+(isArray? "[]":"null")+',\n'+
-				'type: '+widgetType+',\n'+
-			'},\n';
+			'\n		'+symbolName+':{\n'+
+			'			default: '+(isArray? "[]":"null")+',\n'+
+			'			'+key+widgetType+',\n'+
+			'		},';
 		}
 		return text;
 	},
 
+	loadSymbolName(callback,defineName='',result=[])
+	{
+		// 打开场景转跳
+		let ps = {value:'请输入变量名字',meta:'',score:0};
+		result.push(ps)
+		// 下拉框选中后操作事件
+		let onSearchAccept = (data,cmdLine)=>
+		{
+			let name = cmdLine.getValue();
+			if(ps.value != data.item.value){
+				name = data.item.value
+			}
+			if(name && name != ps.value){
+				callback(name);
+			}
+		}
+		// 修改搜索框时，通过该函数读取显示的实时显示下拉列表内容, cmdLine为输入文本框对象
+		let onCompletionsFunc = (cmdLine)=>{
+			return result;
+		}
+		
+		this.parent.openSearchBox(defineName,[],(data,cmdLine)=>onSearchAccept(data,cmdLine),(cmdLine)=>onCompletionsFunc(cmdLine))
+		this.parent.setMiniSearchBoxToTouchPos();
+	},
+
 
 	messages:{
-		'insertWidgetByName'(e,args){
+		'insertWidgetByName'(e,args)
+		{
 			Editor.log(args)
-			if(args.paths[0] == '快速生成拖拽组件'){
-				let nodes = Editor.Selection.curSelection('node');
-				let uuid = nodes && nodes[0];
-				Editor.Scene.callSceneScript('simple-code', 'getNodeName',uuid, (err, name) => 
-				{ 
+			let nodes = Editor.Selection.curSelection('node');
+			let uuid = nodes && nodes[0];
+
+			Editor.Scene.callSceneScript('simple-code', 'getNodeName',uuid, (err, name) => 
+			{ 
+				if(args.paths[0] == '快速生成拖拽组件')
+				{
 					if(name) this.loadWidgetToCode(args.label,name);
-				})
-			}else{
-				this.loadWidgetToCode(args.label,testWidget);
-			}
+				}else{
+					this.loadSymbolName((name)=>
+					{
+						this.loadWidgetToCode(args.label,name);
+					},name || '')
+				}
+			})
 		},
 
 		'insertAssets'(e,args){
-			let list = Editor.Selection.curSelection('asset');
-			this.loadAssetsToCode(list,'testWidget');
+
+			this.loadSymbolName((name)=>
+			{
+				let list = Editor.Selection.curSelection('asset');
+				this.loadAssetsToCode(list,name);
+			})
 		},
 
 		'quickInsertAssets'(e,args){

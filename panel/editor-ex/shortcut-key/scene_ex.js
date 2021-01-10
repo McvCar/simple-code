@@ -61,12 +61,17 @@ module.exports = {
 		},
 
 		'active-curr-node'(event,args,parent){
-		    let activeInfo  = Editor.Selection.curGlobalActivate() // 检测面板焦点在资源管理器还是层级管理器
-		    if (activeInfo && activeInfo.type == "node")
+			let nodes = Editor.Selection.curSelection('node');
+		    if (nodes && nodes.length != 0)
 		    {
-				let node = cc.engine.getInstanceById(activeInfo.id)
-				if(node){
-					node.active = !node.active;
+				let active = cc.engine.getInstanceById(nodes[0]).active;
+				for (let i = 0; i < nodes.length; i++) 
+				{
+					const id = nodes[i];
+					let node = cc.engine.getInstanceById(id)
+					if(node){
+						node.active = !active;
+					}
 				}
 			}
 		}

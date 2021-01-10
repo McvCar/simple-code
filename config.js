@@ -809,8 +809,8 @@ module.exports = {
       "字体": {
         path: "fontFamily",
         type: "select",
-        defaultValue: "",
-        items: [{ caption: '默认', value: '' }]
+        defaultValue: undefined,
+        items: [{ caption: '默认', value: undefined }]
       },
       "字体大小": {
         path: "fontSize",

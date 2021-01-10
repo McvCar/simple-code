@@ -2342,6 +2342,8 @@ function prompt(editor, message, options, callback) {
     var el = dom.buildDom(["div", {class: "ace_prompt_container" + (options.hasDescription ? " input-box-with-description" : "")}]);
     var overlay = overlayPage(editor, el, done);
     el.appendChild(cmdLine.container);
+    cmdLine.container.id = 'mini_prompt_input';
+    el.id = 'mini_prompt_box';
 
     if (editor) {
         editor.cmdLine = cmdLine;
@@ -2377,6 +2379,7 @@ function prompt(editor, message, options, callback) {
             }
         });
         el.appendChild(popup.container);
+        popup.container.id = 'mini_prompt_popup'
         updateCompletions();
     }
 

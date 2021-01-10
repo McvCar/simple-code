@@ -358,6 +358,8 @@ let layer = {
 
 	// 加载数据
 	initData() {
+		this.mouse_pos;
+		this.mouse_event_closeFunc;
 		this.is_init_finish = false;
 		// tab页面id
 		this.edit_id = 0;
@@ -663,6 +665,16 @@ let layer = {
 				e.stopPropagation();
 			// }
 		},false)
+		
+		
+		let mousemove = (e)=>{
+			this.mouse_pos = {y:e.clientY,x:e.clientX}
+		}
+		document.addEventListener('mousemove',mousemove,true)
+		this.mouse_event_closeFunc = ()=>{
+			document.removeEventListener('mousemove',mousemove,true)
+		}
+
 		// 读取拖入的文件
 		this.$editorB.addEventListener('drop',(e)=>{
 			var fileObj = e.dataTransfer.files[0];
@@ -1459,6 +1471,31 @@ let layer = {
 			})
 			this.key_cfg.push({ keys, callback, mode: isOnEditorRun, touch_type: touchType });
 		})
+	},
+
+	setMiniSearchBoxToTouchPos(width)
+	{
+		this.setMiniSearchBox(this.mouse_pos,width)
+	},
+
+	setMiniSearchBox(pos,width=150)
+	{
+		if(pos == null) return;
+		let box = document.getElementById('mini_prompt_box');
+		let input = document.getElementById('mini_prompt_input');
+		let popup = document.getElementById('mini_prompt_popup');
+		
+		if(!box || !input || !popup)
+		{
+			return;
+		}
+
+		let max_x = window.screen.availWidth - width;
+		let x = pos.x>max_x ? max_x : pos.x
+
+		box.style.margin = `${pos.y}px auto auto ${x}px`
+		box.style['max-width'] = width+'px'
+		popup.style['max-width'] = width+'px'
 	},
 	/* 
 		打开下拉框, 例子: this.openSearchBox("",fileList,(data)=>{console.log(data.item)});
@@ -2492,6 +2529,7 @@ let layer = {
 		if(this._is_destroy || this.edit_list == null) return;
 		this._is_destroy = true;
 		if (this.schFunc) this.schFunc();
+		if(this.mouse_event_closeFunc) this.mouse_event_closeFunc()
 		this.setAutoLayout(false);
 
 		// 保存编辑信息
