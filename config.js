@@ -3,13 +3,9 @@ module.exports = {
   
   // 快捷键配置
   "main-menu": {
-    "i18n:代码编辑器/打开test": {
-      "message": "simple-code:loadWidgetToCode",
-      "accelerator": "f5"
-    },
     "i18n:代码编辑器/打开": {
       "message": "simple-code:open",
-      "accelerator": "CmdOrCtrl+alt+f12"
+      "accelerator": "F1"
     },
     "i18n:代码编辑器/预览": {
       "message": "simple-code:openPreview",

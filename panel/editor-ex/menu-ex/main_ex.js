@@ -72,6 +72,7 @@ module.exports = {
 		for (const id in this.menuCfgs) 
 		{
 			let menuCfg = this.menuCfgs[id];
+			if(!menuCfg) continue;
 			let list = menuCfg[menuType];
 			if(!list) continue;
 			for (let i = 0; i < list.length; i++) 
@@ -83,29 +84,7 @@ module.exports = {
 				template.push(item);
 			}
 		}
-        // const subMenu = firstMenu.submenu;
-        // if (subMenu && firstMenu.label === filterData[0] && subMenu[0].label === filterData[1]) {
-            // const parentId = subMenu[0].params[2];
-            // const injectMenu = {
-            //     label: Editor.T("game-helper.createcomp"),
-            //     submenu: [{
-            //         label: "test",
-            //         click: () => {
-			// 			Editor.log('test to:',parentId);
-            //         },
-            //     }],
-            // };
-            template.push({
-				label: "test",
-				// enabled: true,
-				message: 'custom-cmd',
-				panel: 'simple-code',
-				params:firstMenu.params,
-				// click: () => {
-				// 	Editor.log('test to:',parentId);
-				// },
-			});
-        // }
+        
 	},
 	
 	// 窗口销毁
@@ -119,6 +98,9 @@ module.exports = {
 	{
 		'setMenuConfig'(e,args){
 			this.menuCfgs[args.id] = args.menuCfg;
+		},
+		'cleanMenuConfigAll'(){
+			this.menuCfgs = {};
 		},
 	}
 };

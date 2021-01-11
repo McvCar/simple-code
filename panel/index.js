@@ -1490,8 +1490,8 @@ let layer = {
 			return;
 		}
 
-		let max_x = window.screen.availWidth - width;
-		let x = pos.x>max_x ? max_x : pos.x
+		let max_x = document.body.clientWidth - width-100;
+		let x = pos.x>max_x ? max_x : pos.x - width*0.5;
 
 		box.style.margin = `${pos.y}px auto auto ${x}px`
 		box.style['max-width'] = width+'px'

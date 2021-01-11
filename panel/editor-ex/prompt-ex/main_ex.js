@@ -29,11 +29,6 @@ module.exports = {
 	messages:
 	{
 		
-		'rename'(){
-			Editor.Panel.open('simple-code');
-			Editor.Ipc.sendToPanel('simple-code', 'rename');
-		},
-		
 		'addNodeComp'(){
 			Editor.Panel.open('simple-code');
 			Editor.Ipc.sendToPanel('simple-code', 'addNodeComp');

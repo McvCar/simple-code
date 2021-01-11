@@ -174,69 +174,6 @@ module.exports = {
 		this.parent.openSearchBox("",[],onAccept,onCompletionsFunc)
 	},
 
-	// 显示重命名框, list = [{value,meta,score,args}]
-	showRenameBox(type,list){
-		if(list.length == 0) return;
-
-		// 重命名规则函数
-		let changeListName = (name)=>{
-			let head_ind = name.lastIndexOf("$[")
-			let last_ind = head_ind >-1 ? name.lastIndexOf("]") : -1
-			last_ind = last_ind>head_ind ? last_ind : -1
-			let start_num = Number( name.substr(head_ind+2,last_ind-head_ind-2 ))
-
-			for (let i = 0; i < list.length ; i++) {
-				let ind = (start_num+i)
-				if (last_ind == -1){
-					list[i].value = name // 重命名
-				}else{
-					list[i].value = name.substr(0,head_ind) + String(ind) + name.substr(last_ind+1) // 重命名
-				}
-			}
-		}
-
-		// 修改搜索框时，通过该函数读取显示的实时显示下拉列表内容, cmdLine为输入文本框对象
-		let onCompletionsFunc = (cmdLine)=>{
-			let name = cmdLine.getValue();
-			if (name == '') return list;
-
-			changeListName(name);
-			return list;
-		}
-
-		// 选中后处理
-		let onAccept = (data,cmdLine)=>{
-			let name = cmdLine.getValue();
-			changeListName(name);
-
-			if(type == "asset")
-			{
-				// 重命名资源
-				list.forEach((info)=>{
-					let to_path = info.args.dir_path+info.value+info.args.suffix;
-					Editor.remote.assetdb.move(info.args.url,to_path);
-				})
-			}else if(type == "node")
-			{
-				// 重命名节点
-				list.forEach((info)=>{
-					let rename = info.value;
-					Editor.Ipc.sendToPanel('scene', 'scene:set-property',{
-						id: info.args.uuid,
-						path: "name",//要修改的属性
-						type: "String",
-						value: rename,
-						isSubProp: false,
-					});
-				})
-			}
-			
-		}
-
-		// 显示下拉框 
-		this.parent.openSearchBox( list[0].value + "_$[0]" ,list,onAccept,onCompletionsFunc)
-	},
-
 	getFileName(path){
 		let s_i  = path.lastIndexOf("/")+1
 		let e_i  = path.lastIndexOf(".")
@@ -251,50 +188,6 @@ module.exports = {
 
 	},
 
-	// 重命名
-	openRename(){
-
-		let isOpen 		= false
-		let activeInfo  = Editor.Selection.curGlobalActivate() // 检测面板焦点在资源管理器还是层级管理器
-		if (!activeInfo) return;
-
-		let list = []
-		let name = ""
-		if (activeInfo.type == "asset")
-		{
-			// 获得选中的资源
-			let asset_list = Editor.Selection.curSelection("asset");
-			asset_list.forEach((uuid)=>
-			{
-				let info = Editor.remote.assetdb.assetInfoByUuid(uuid);
-				if (!info) return;
-				
-				let file = this.getFileName(info.url);
-				info.suffix = file.suffix;
-				info.name   = file.name
-				info.dir_path   = file.dir_path
-				// 加载资源列表
-				list.push( this.parent.getItem(file.name,info.url,0,info) );
-			})
-			this.showRenameBox(activeInfo.type,list)
-			isOpen = list.length > 0
-		}
-		else if(activeInfo.type == "node")
-		{
-			// 获得选中的节点
-			Editor.Scene.callSceneScript('simple-code', 'get-select-node-info' ,"", (err, args)=>
-			{
-				// 加载节点列表
-				args.forEach((info)=>{
-					list.push( this.parent.getItem(info.name,info.path,0,info) );
-				})
-				this.showRenameBox(activeInfo.type,list)
-			});
-			isOpen = Editor.Selection.curSelection("node").length> 0
-		}
-
-		return isOpen;
-	},
 
 	// 打开组件列表
 	openodeCompList(){
@@ -491,11 +384,6 @@ module.exports = {
 			this.parent.openSearchBox("",list,(data)=>onSearchAccept(data));
 		},
 
-		// 下拉框批量重命名
-		'rename'(event,info)
-		{
-			this.openRename()
-		},
 
 		// 快捷键打开当前选中文件/节点进入编辑
 		'custom-cmd' (event,info) {

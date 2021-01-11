@@ -21,7 +21,7 @@ module.exports = {
 	
 	// 面板销毁
 	onDestroy(){
-
+		Editor.Ipc.sendToMain('simple-code:cleanMenuConfigAll')
 	},
 
 
