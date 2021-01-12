@@ -359,7 +359,8 @@ let layer = {
 	// 加载数据
 	initData() {
 		this.mouse_pos;
-		this.mouse_event_closeFunc;
+		this.mouse_move_event_closeFunc;
+		this.mouse_start_event_closeFunc;
 		this.is_init_finish = false;
 		// tab页面id
 		this.edit_id = 0;
@@ -667,12 +668,29 @@ let layer = {
 		},false)
 		
 		
+		// 记录鼠标位置，用于菜单位置
 		let mousemove = (e)=>{
 			this.mouse_pos = {y:e.clientY,x:e.clientX}
 		}
 		document.addEventListener('mousemove',mousemove,true)
-		this.mouse_event_closeFunc = ()=>{
+		this.mouse_move_event_closeFunc = ()=>{
 			document.removeEventListener('mousemove',mousemove,true)
+		}
+
+		// 用于触发双击事件
+		let mousedown = (e)=>{
+			let now_time =  new Date().getTime();
+			if(this._mousedown_time == null || now_time - this._mousedown_time>300){
+				this._mousedown_time = new Date().getTime()
+			}else{
+				// 双击事件分发
+				let mouse_pos = {y:e.clientY,x:e.clientX}
+				this.onMouseDoubleClick(mouse_pos);
+			}
+		}
+		document.addEventListener('mousedown',mousedown,true)
+		this.mouse_start_event_closeFunc = ()=>{
+			document.removeEventListener('mousedown',mousedown,true)
 		}
 
 		// 读取拖入的文件
@@ -1473,12 +1491,13 @@ let layer = {
 		})
 	},
 
-	setMiniSearchBoxToTouchPos(width)
+	setMiniSearchBoxToTouchPos(width=150,isAutoHeight=0,isTextEditMode=0,isHidePopup=false)
 	{
-		this.setMiniSearchBox(this.mouse_pos,width)
+		this.setMiniSearchBox(this.mouse_pos,width,isAutoHeight,isTextEditMode,isHidePopup)
 	},
 
-	setMiniSearchBox(pos,width=150)
+	// 设置迷你输入框大小
+	setMiniSearchBox(pos,width=150,isAutoHeight=0,isTextEditMode=0,isHidePopup=false)
 	{
 		if(pos == null) return;
 		let box = document.getElementById('mini_prompt_box');
@@ -1493,9 +1512,19 @@ let layer = {
 		let max_x = document.body.clientWidth - width-100;
 		let x = pos.x>max_x ? max_x : pos.x - width*0.5;
 
-		box.style.margin = `${pos.y}px auto auto ${x}px`
+		box.style.margin = `${pos.y-10}px auto auto ${x}px`
 		box.style['max-width'] = width+'px'
 		popup.style['max-width'] = width+'px'
+		if(isHidePopup) popup.style['display'] = 'none';
+		if(isAutoHeight) input.cmdLine.setOption("wrap", "free") // ace 编辑器选项
+		if(isTextEditMode) {
+			input.cmdLine.setOption("wrap", "off") // ace 编辑器选项
+			input.cmdLine.setOption('maxLines',35)
+			input.cmdLine.setHighlightActiveLine(true);
+			input.cmdLine.setShowPrintMargin(false);
+			input.cmdLine.renderer.setShowGutter(true);
+			input.cmdLine.renderer.setHighlightGutterLine(true);
+		}
 	},
 	/* 
 		打开下拉框, 例子: this.openSearchBox("",fileList,(data)=>{console.log(data.item)});
@@ -2229,6 +2258,10 @@ let layer = {
 
 	onCurrSceneChildrenInfo(currSceneChildrenInfo) { },
 
+	onMouseDoubleClick(mousePos){
+		this.runExtendFunc("onMouseDoubleClick",mousePos);
+	},
+
 	// 移动 ts/js代码文件
 	onMoveFile(v)
 	{
@@ -2525,11 +2558,15 @@ let layer = {
 	// },
 
 	// 页面关闭
-	onDestroy() {
+	onDestroy() 
+	{
 		if(this._is_destroy || this.edit_list == null) return;
 		this._is_destroy = true;
+
 		if (this.schFunc) this.schFunc();
-		if(this.mouse_event_closeFunc) this.mouse_event_closeFunc()
+		if(this.mouse_move_event_closeFunc) this.mouse_move_event_closeFunc()
+		if(this.mouse_start_event_closeFunc) this.mouse_start_event_closeFunc()
+		
 		this.setAutoLayout(false);
 
 		// 保存编辑信息

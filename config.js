@@ -83,6 +83,10 @@ module.exports = {
       "message": "",
       "accelerator": ""
     },
+    "i18n:代码编辑器/编辑/双击 Label 编辑文字(F2)": {
+      "message": "",
+      "accelerator": ""
+    },
     "i18n:代码编辑器/编辑/剪切文件 (X)": {
       "message": "simple-code:selectNode",
       "accelerator": ""
