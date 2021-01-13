@@ -2343,6 +2343,7 @@ function prompt(editor, message, options, callback) {
     var overlay = overlayPage(editor, el, done);
     el.appendChild(cmdLine.container);
     cmdLine.container.id = 'mini_prompt_input';
+    cmdLine.container.cmdLine = cmdLine;
     el.id = 'mini_prompt_box';
 
     if (editor) {
