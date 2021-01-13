@@ -18,28 +18,58 @@ module.exports = {
 	},
 
 	// 显示重命名框, list = [{value,meta,score,args}]
-	showRenameBox(type,list){
+	showRenameBox(type,reType,list){
 		if(list.length == 0) return;
+		
+		for (let i = 0; i < list.length ; i++) {
+			list[i]._value = list[i].value;
+		}
 
 		// 重命名规则函数
 		let changeListName = (name)=>{
-			let findObj = name.match(/@([0-9]*)/)
-			let start_num = findObj ? Number( findObj[1] ) : 0;
 
-			for (let i = 0; i < list.length ; i++) {
-				let ind = (start_num+i)
-				if (findObj == null){
-					list[i].value = name // 重命名
-				}else{
-					list[i].value = name.substr(0,findObj.index) + String(ind) + name.substr(findObj.index+findObj[0].length) // 重命名
+			if(reType == 'sort'){
+				let findObj = name.match(/@([0-9]*)/)
+				let start_num = findObj ? Number( findObj[1] ) : 0;
+	
+				for (let i = 0; i < list.length ; i++) {
+					let ind = (start_num+i)
+					if (findObj == null){
+						list[i].value = name // 重命名
+					}else{
+						list[i].value = name.substr(0,findObj.index) + String(ind) + name.substr(findObj.index+findObj[0].length) // 重命名
+					}
+				}
+			}else if(reType == 'prefix'){
+				for (let i = 0; i < list.length ; i++) {
+					list[i].value = name+list[i]._value;
+				}
+			}else if(reType == 'suffix'){
+				for (let i = 0; i < list.length ; i++) {
+					list[i].value = list[i]._value+name;
+				}
+			}else if(reType == 'remove_name'){
+				for (let i = 0; i < list.length ; i++) {
+					try {
+						let findObj = list[i]._value.match(new RegExp(name));
+						if(findObj){
+							list[i].value = list[i]._value.substr(0,findObj.index) + list[i]._value.substr(findObj.index+findObj[0].length);
+						}
+					} catch (error) {
+					}
+				}
+			}else if(reType == 'com'){
+				for (let i = 0; i < list.length ; i++) {
+					list[i].value = name;
 				}
 			}
+			
 		}
 
 		// 修改搜索框时，通过该函数读取显示的实时显示下拉列表内容, cmdLine为输入文本框对象
 		let onCompletionsFunc = (cmdLine)=>{
 			let name = cmdLine.getValue();
-			if (name == '') return list;
+			// if (name == '') return list;
 
 			changeListName(name);
 			return list;
@@ -74,8 +104,15 @@ module.exports = {
 			
 		}
 
+		let texts = {
+			'sort':list[0].value + "@0" ,
+			'prefix': 'type_',
+			'suffix': '_type',
+			'remove_name': '[0-9]*',
+			'com': list[0].value ,
+		}
 		// 显示下拉框 
-		this.parent.openSearchBox( list[0].value + "@0" ,list,onAccept,onCompletionsFunc);
+		this.parent.openSearchBox( texts[reType] || '' ,list,onAccept,onCompletionsFunc);
 		this.parent.setMiniSearchBoxToTouchPos(200)
 	},
 
@@ -94,7 +131,7 @@ module.exports = {
 	},
 
 	// 重命名
-	openRename(type){
+	openRename(type,reType = 'sort'){
 
 		let isOpen 		= false
 		let activeInfo  = Editor.Selection.curGlobalActivate() // 检测面板焦点在资源管理器还是层级管理器
@@ -119,7 +156,7 @@ module.exports = {
 				// 加载资源列表
 				list.push( this.parent.getItem(file.name,file.name,0,info) );
 			})
-			this.showRenameBox(type,list)
+			this.showRenameBox(type,reType,list)
 			isOpen = list.length > 0
 		}
 		else if(type == "node")
@@ -131,7 +168,7 @@ module.exports = {
 				args.forEach((info)=>{
 					list.push( this.parent.getItem(info.name,info.name,0,info) );
 				})
-				this.showRenameBox(type,list)
+				this.showRenameBox(type,reType,list)
 			});
 			isOpen = Editor.Selection.curSelection("node").length> 0
 		}
@@ -143,22 +180,30 @@ module.exports = {
 
 	messages:{
 
-		'applyRenameToNodes'(){
-			this.openRename('node')
+		'applyRename'(e,args){
+			let types = {'重命名':'com','加前缀':'prefix','加后缀':'suffix','数字序列':'sort','正则匹配删除命名':'remove_name',}
+			let type = args.paths[0] == '节点批量重命名' ? 'node' : 'asset'
+			let reType = types[args.paths[1]]
+			this.openRename(type,reType)
 		},
-		'applyRenameToAssets'(){
-			this.openRename('asset')
-		},
+		
 		'selection:activated'(e,type){
 			let asset_list = Editor.Selection.curSelection(type);
 			if(asset_list && asset_list.length >1)
 			{
+				let submenu = [
+					{ label: '重命名', enabled: true, cmd:'applyRename'},
+					{ label: '数字序列', enabled: true, cmd:'applyRename'},
+					{ label: '加前缀', enabled: true, cmd:'applyRename'},
+					{ label: '加后缀', enabled: true, cmd:'applyRename'},
+					{ label: '正则匹配删除命名', enabled: true, cmd:'applyRename'},
+				];
 				let menuCfg = {
 					layerMenu : [
-						{ label : "批量重命名", enabled:true, cmd: "applyRenameToNodes"},
+						{ label : "节点批量重命名", enabled:true, enabled:true, submenu:submenu,},
 					],
 					assetMenu : [
-						{ label : "批量重命名", enabled:true, cmd: "applyRenameToAssets"},
+						{ label : "资源批量重命名", enabled:true, enabled:true, submenu:submenu,},
 					],
 				}
 				Editor.Ipc.sendToMain('simple-code:setMenuConfig',{id:"rename-ex",menuCfg:menuCfg});
