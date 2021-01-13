@@ -254,6 +254,10 @@ module.exports = {
 
 			// 变量 properties 对象位置
 			let findObj = text.match(/properties[	 ]{0,5}:[	 ]{0,5}[\n]{0,5}[	 ]{0,15}{[	 ]{0,5}/)
+			if(!findObj){
+				Editor.info('JS脚本缺少 properties:{}, 对象，无法自动拖拽组件')
+				return;
+			}
 			let start_ind = findObj.index + findObj[0].length;
 
 			let getBracketEndPos = (s_ind) => {

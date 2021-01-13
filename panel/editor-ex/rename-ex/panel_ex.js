@@ -84,7 +84,7 @@ module.exports = {
 			{
 				// 重命名资源
 				list.forEach((info)=>{
-					let to_path = info.args.dir_path+info.args.url+info.args.suffix;
+					let to_path = info.args.dir_path+info.value+info.args.suffix;
 					Editor.remote.assetdb.move(info.args.url,to_path);
 				})
 			}else if(type == "node")
