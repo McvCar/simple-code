@@ -95,11 +95,26 @@ module.exports.overlayPage = function overlayPage(editor, contentElement, callba
         'position: fixed; top:0; bottom:0; left:0; right:0;' +
         'z-index: 9990; ' +
         (editor ? 'background-color: rgba(0, 0, 0, 0.3);' : '');
+
+    let oldPos = {x:0,y:0};
+    let isCanClose = false
+    closer.addEventListener('mousedown', function(e) {
+        oldPos.x = e.clientX
+        oldPos.y = e.clientY
+        isCanClose = true
+    });
+    closer.addEventListener('mousemove', function(e) {
+        isCanClose = Math.abs(oldPos.x - e.clientX) <4 && Math.abs(oldPos.y - e.clientY) <4;
+    });
     closer.addEventListener('click', function(e) {
+        if(!isCanClose){
+            return
+        }
         if (!ignoreFocusOut) {
             close();
         }
     });
+    
     document.addEventListener('keydown', documentEscListener);
 
     contentElement.addEventListener('click', function (e) {

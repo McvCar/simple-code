@@ -2401,7 +2401,9 @@ function prompt(editor, message, options, callback) {
 
     overlay.setIgnoreFocusOut(options.ignoreFocusOut);
 
-    function accept() {
+    function accept(editor) {
+        if(editor.isEditorMode) {editor.insert('\n')}
+        
         var val;
         if (popup && popup.getCursorPosition().row > 0) {
             val = valueFromRecentList();
@@ -2428,8 +2430,8 @@ function prompt(editor, message, options, callback) {
 
     if (popup) {
         Object.assign(keys, {
-            "Up": function(editor) { popup.goTo("up"); valueFromRecentList();},
-            "Down": function(editor) { popup.goTo("down"); valueFromRecentList();},
+            "Up": function(editor) { popup.goTo("up"); valueFromRecentList(); if(editor.isEditorMode) {editor.navigateUp() } },
+            "Down": function(editor) { popup.goTo("down"); valueFromRecentList(); if(editor.isEditorMode) {editor.navigateDown() }},
             "Ctrl-Up|Ctrl-Home": function(editor) { popup.goTo("start"); valueFromRecentList();},
             "Ctrl-Down|Ctrl-End": function(editor) { popup.goTo("end"); valueFromRecentList();},
             "Tab": function(editor) {
@@ -2439,6 +2441,7 @@ function prompt(editor, message, options, callback) {
             "PageDown": function(editor) { popup.gotoPageDown(); valueFromRecentList();}
         });
     }
+
 
     cmdLine.commands.bindKeys(keys);
 

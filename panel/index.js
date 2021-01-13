@@ -1499,7 +1499,6 @@ let layer = {
 	// 设置迷你输入框大小
 	setMiniSearchBox(pos,width=150,isAutoHeight=0,isTextEditMode=0,isHidePopup=false)
 	{
-		if(pos == null) return;
 		let box = document.getElementById('mini_prompt_box');
 		let input = document.getElementById('mini_prompt_input');
 		let popup = document.getElementById('mini_prompt_popup');
@@ -1508,15 +1507,21 @@ let layer = {
 		{
 			return;
 		}
+		
+		if(pos) {
+			let max_x = document.body.clientWidth - width-100;
+			let x = pos.x>max_x ? max_x : pos.x - width*0.5;
+			box.style.margin = `${pos.y-10}px auto auto ${x}px`
+		};
 
-		let max_x = document.body.clientWidth - width-100;
-		let x = pos.x>max_x ? max_x : pos.x - width*0.5;
-
-		box.style.margin = `${pos.y-10}px auto auto ${x}px`
 		box.style['max-width'] = width+'px'
 		popup.style['max-width'] = width+'px'
 		if(isHidePopup) popup.style['display'] = 'none';
-		if(isAutoHeight) input.cmdLine.setOption("wrap", "free") // ace 编辑器选项
+		if(isAutoHeight) {
+			input.cmdLine.setOption("wrap", "free") // ace 编辑器选项
+			input.cmdLine.setOption('maxLines',35)
+			input.cmdLine.isEditorMode = true;
+		}
 		if(isTextEditMode) {
 			input.cmdLine.setOption("wrap", "off") // ace 编辑器选项
 			input.cmdLine.setOption('maxLines',35)
@@ -1524,7 +1529,14 @@ let layer = {
 			input.cmdLine.setShowPrintMargin(false);
 			input.cmdLine.renderer.setShowGutter(true);
 			input.cmdLine.renderer.setHighlightGutterLine(true);
+			// input.cmdLine.setTheme("ace/theme/monokai");
+			input.cmdLine.isEditorMode = true;
+		}else{
+			input.cmdLine.setShowPrintMargin(false);
+			input.cmdLine.renderer.setShowGutter(false);
+			input.cmdLine.renderer.setHighlightGutterLine(false);
 		}
+		input.cmdLine.resize()
 	},
 	/* 
 		打开下拉框, 例子: this.openSearchBox("",fileList,(data)=>{console.log(data.item)});

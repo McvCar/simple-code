@@ -108,7 +108,7 @@ module.exports = {
 			'sort':list[0].value + "@0" ,
 			'prefix': 'type_',
 			'suffix': '_type',
-			'remove_name': '[0-9]*',
+			'remove_name': '[0-9]+',
 			'com': list[0].value ,
 		}
 		// 显示下拉框 

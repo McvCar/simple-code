@@ -53,10 +53,25 @@ module.exports = {
 
 	editString(callback,defineName='',result=[])
 	{
-		// 打开场景转跳
-		// let ps = {value:'请输入编辑内容',meta:'',score:0};
-		// result.unshift(ps)
-		// 下拉框选中后操作事件
+		let reSize = (pos)=>
+		{
+			let line = 0
+			for (let index = 0; index < defineName.length; index++) if(defineName[index] == '\n') line++
+			let width = 100
+			let isAutoHeight = 1;
+			let isEditMode = 0;
+			if(defineName.length >100 || line>4){
+				width = 800
+				isEditMode = 1
+			}else if(defineName.length >20){
+				width = 300
+				isAutoHeight = 1
+			}else if(defineName.length >12){
+				width = 150
+			}
+			this.parent.setMiniSearchBox(pos,width,1,isEditMode,true);
+		} 
+		
 		let onSearchAccept = (data,cmdLine)=>
 		{
 			let name = cmdLine.getValue();
@@ -65,23 +80,13 @@ module.exports = {
 		// 修改搜索框时，通过该函数读取显示的实时显示下拉列表内容, cmdLine为输入文本框对象
 		let onCompletionsFunc = (cmdLine)=>{
 			let name = cmdLine.getValue();
+			defineName = name;
 			callback(name);
+			reSize();
 			return result;
 		}
-		let width = 100
-		let isAutoHeight = 0;
-		let isEditMode = 0;
-		if(defineName.length >100){
-			width = 800
-			isEditMode = 1
-		}else if(defineName.length >50){
-			width = 300
-			isAutoHeight = 1
-		}else if(defineName.length >12){
-			width = 150
-		}
 		this.parent.openSearchBox(defineName,[],(data,cmdLine)=>onSearchAccept(data,cmdLine),(cmdLine)=>onCompletionsFunc(cmdLine))
-		this.parent.setMiniSearchBoxToTouchPos(width,isAutoHeight,isEditMode,true);
+		reSize(this.parent.mouse_pos)
 	},
 
 
