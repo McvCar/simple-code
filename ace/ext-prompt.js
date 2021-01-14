@@ -2402,7 +2402,7 @@ function prompt(editor, message, options, callback) {
     overlay.setIgnoreFocusOut(options.ignoreFocusOut);
 
     function accept(editor) {
-        if(editor.isEditorMode) {editor.insert('\n')}
+        if(editor && editor.isEditorMode) {editor.insert('\n')}
         
         var val;
         if (popup && popup.getCursorPosition().row > 0) {

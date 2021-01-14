@@ -67,6 +67,14 @@ module.exports = {
 
 	hookMenuFunc(template) 
 	{
+		for (let i = 0; i < template.length; i++) {
+			const item = template[i];
+			if(item.label == '点击来为属性赋值'){
+				template.splice(i,1);
+				break
+			}
+		}
+		
         const firstMenu = template[0];
 		let menuType = MENU_PANEL_TYPE[firstMenu.label];
 		for (const id in this.menuCfgs) 
