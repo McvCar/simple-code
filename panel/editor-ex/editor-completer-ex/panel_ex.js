@@ -35,7 +35,7 @@ module.exports = {
 		// this.parent.addCustomCompleter("this.ui.","this.ui.","命令模式下该ui保存场景所有节点")
 		// this.parent.addCustomCompleter("this.node.","this.node.","命令模式下该node保存当前鼠标选择的节点")
 		
-		this.parent.addCustomCompleter("forEach","forEach((value,key)=>{${1: }})","遍历数组",27,true)
+		this.parent.addCustomCompleter("forEach in","forEach((value,key)=>{${1: }})","遍历数组",27,true)
 		this.parent.addCustomCompleter("for","for (let ${1:i} = 0; ${1:i} < ${2:arr}.length; i++) {\n	let ${3:vaule} = ${2:arr}[${1:i}];\n}","for(let i=0; i<array.length;i++)",27,true)
 		this.parent.addCustomCompleter("for loop","for (let ${1:i} = 0; ${1:i} < ${2:arr}.length; i++) {\n	let ${3:vaule} = ${2:arr}[${1:i}];\n}","for(let i=0; i<array.length;i++)",27,true)
 		this.parent.addCustomCompleter("for re loop","for (let ${1:i} = ${2:arr}.length-1; ${1:i} >= 0; i--) {\n	let ${3:vaule} = ${2:arr}[${1:i}];\n}","for(let i=array.length -1; i>=0;i--)",27,true)

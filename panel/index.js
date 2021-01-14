@@ -731,6 +731,7 @@ let layer = {
 				}
 			}
 
+			// 伸缩窗口
 			let panel = Editor.Panel.getFocusedPanel() 
 			let is_self = panel == this && !this.comparisonParentDom(this.$toolsPanel,this._focusedElement);
 			let is_need_close = this.isSameGroupPanel(panel);
@@ -1149,7 +1150,8 @@ let layer = {
 	},
 
 	// 自定义代码輸入提示
-	initCustomCompleter() {
+	initCustomCompleter() 
+	{
 		if (!this.file_list_buffer || this.file_list_buffer.length == 0) {
 			// 可以读取到文件缓存再初始化
 			return this.setTimeoutToJS(() => this.initCustomCompleter(), 1.5, { count: 0 });
@@ -1166,13 +1168,15 @@ let layer = {
 			for (let i = 0; i < _this._comp_cfg.length; i++) {
 				const v = _this._comp_cfg[i];
 				delete v.range;
+				delete v.sortText;
+				delete v.preselect;
 				// 只在字符串中提示文件路径
 				if(!is_has_string && v.kind == _this.monaco.languages.CompletionItemKind.Folder){
 					continue;
 				}
 				suggestions.push(v)
 			}
-			return {suggestions};
+			return {suggestions,incomplete:false};
 		},
 		// 光标选中当前自动补全item时触发动作，一般情况下无需处理
 		// resolveCompletionItem(item, token) {
@@ -1261,6 +1265,7 @@ let layer = {
 					insertText: (value || word),
 					kind: kind != null ? kind : this.monaco.languages.CompletionItemKind.Text,
 					insertTextRules: this.monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+					// preselect:true,
 					detail: meta || ''
 				};
 				this._comp_cfg.push(this._comp_cfg_map[word]);
@@ -2863,7 +2868,7 @@ let layer = {
 				if(info.uri.scheme == 'http' || info.uri.scheme == 'https'){
 					exec(Editor.isWin32 ? "cmd /c start "+info.uri._formatted : "open "+info.uri._formatted); 
 				}else{
-					Editor.warn('vs_model == null');
+					Editor.warn('未找到文件,vs_model == null:',info.uri && info.uri._formatted);
 				}
 				return 
 			}
