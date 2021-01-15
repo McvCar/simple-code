@@ -815,7 +815,7 @@ module.exports = {
       "字体大小": {
         path: "fontSize",
         type: "number",
-        defaultValue: 11,
+        defaultValue: 12,
         defaults: [
           { caption: "6px", value: 8 },
           { caption: "10px", value: 10 },
