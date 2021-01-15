@@ -125,8 +125,6 @@ let layer = {
 				<div id="layoutTab" class="layout horizontal justified">
 					<div id="tabList" class="layout horizontal">
 						<i class="icon-doc-text"></i> <span></span> <span></span>
-						<div id="waitIco" class="turn">=</div>
-
 						<div id="title0" class="closeTab">
 							<div class="tabTitle"><nobr>无文件<nobr></div>
 							<div class="closeBtn"><nobr> x <nobr></div>
@@ -134,6 +132,7 @@ let layer = {
 
 					</div>
 					<div id="toolsPanel" class="layout horizontal">
+						<div id="waitIco" class="turn">=</div>
 						<ui-checkbox id="lockChk">锁标签</ui-checkbox>
 						<ui-checkbox id="lockWindowChk">锁窗</ui-checkbox>
 						<ui-checkbox id="cmdMode">调试</ui-checkbox>
@@ -427,7 +426,6 @@ let layer = {
 				let fontName = fonts[i];
 				config.optionGroups.Main["字体"].items.push({ caption: fontName, value: fontName });
 			}
-			console.log(fonts)
 		})
 		.catch(err => {
 			// console.log(err)
@@ -738,6 +736,7 @@ let layer = {
 			if(is_self || is_need_close){
 				this.setAutoLayout(is_self)
 			}
+			this.isIdleTsWorker()
 		}, 0.5);
 
 		// 转跳定义
@@ -1760,6 +1759,7 @@ let layer = {
 				return;
 			}
 
+			let is_save = true
 			if (file_info.uuid == "outside") {
 				fs.writeFileSync(file_info.path , edit_text); //外部文件
 			} else {
@@ -1768,23 +1768,36 @@ let layer = {
 				// if(this.refresh_file_list.indexOf(file_info.path) == -1){ 
 				// 	this.refresh_file_list.push(file_info.path);
 				// }
-				this.saveFileByUrl(file_info.path,edit_text);
+				is_save = this.saveFileByUrl(file_info.path,edit_text);
 			}
-			this.is_need_refresh = true;
-			file_info.is_need_save = false;
-			file_info.data = edit_text;
-			file_info.new_data = edit_text;
-			this.upTitle(id);
-			if(id != 0) this.setLockEdit(true,id);
+			if(is_save)
+			{
+				this.is_need_refresh = true;
+				file_info.is_need_save = false;
+				file_info.data = edit_text;
+				file_info.new_data = edit_text;
+				this.upTitle(id);
+				if(id != 0) this.setLockEdit(true,id);
+			}
 		}
 	},
 
 	saveFileByUrl(url,text)
 	{
+		
+		if(this.code_file_rename_buf && this.code_file_rename_buf.move_files){
+			for (let i = 0; i < this.code_file_rename_buf.move_files.length; i++) {
+				const assets_info = this.code_file_rename_buf.move_files[i];
+				if(url == this.fsPathToUrl(assets_info.srcPath)){
+					Editor.info("当前脚本文件路径被移动了,处于同步修改import路径状态中..,完成后才能保存。如果不需要该功能请在设置关闭");
+					return false;
+				}
+			}
+		}
 		Editor.assetdb.saveExists(url, text, (err, meta)=> {
 			if (err) {
 				fs.writeFileSync(Editor.remote.assetdb.urlToFspath(url), text); //外部文件
-				Editor.error("保存代码出错:", err,meta);
+				Editor.warn("保存的脚本存在语法错误:",url,err,meta);
 			}else{
 				// 刚刚保存了，creator还没刷新
 				this.is_save_wait_up = 1;
@@ -1793,6 +1806,7 @@ let layer = {
 				},3000)
 			}
 		});
+		return true;
 	},
 
 	// 读取文件到编辑器渲染
@@ -1972,7 +1986,8 @@ let layer = {
 	},
 
 	setWaitIconHide(isHide){
-		this.$waitIco.hidden = isHide;
+		if(this.$waitIco)
+			this.$waitIco.hidden = isHide;
 	},
 
 	// 关闭页面tab
@@ -2256,6 +2271,42 @@ let layer = {
 		}, -1)
 	},
 
+	// 检测js/ts解析器进程是否处于空闲状态
+	isIdleTsWorker(callback,isTs,timeOut=500)
+	{
+		let isTimeOut = false;
+		// 超时检查
+		let timeoutId ; 
+		timeoutId = setTimeout(()=>{
+			isTimeOut = true;
+			if(callback) callback(false); 
+		},timeOut);
+		
+		// 转圈圈动画
+		let timeoutAnimId ; 
+		timeoutAnimId = setTimeout(()=>{
+			timeoutAnimId = null;
+			this.setWaitIconHide(false);
+		},50);
+
+		// 调用进程
+		;(isTs ? this.tsWr : this.jsWr).isIdleTsWorker().then(()=>
+		{
+			// 转圈圈动画
+			this.setWaitIconHide(true);
+			if(timeoutAnimId) clearTimeout(timeoutAnimId);
+			timeoutAnimId = null
+
+			if(isTimeOut || timeoutId==null){
+					return; // 已超时的回调
+			}else{
+				clearTimeout(timeoutId);
+				timeoutId = null
+				if(callback) callback(true);// 准时回调
+			}
+		});
+	},
+	
 	// 编译编辑中的代码
 	upCompCodeFile(){
 		let edits = [{
@@ -2816,9 +2867,22 @@ let layer = {
 				}
 				
 				// 重命名后检测引用路径
-				if(urlI.extname == '.js' || urlI.extname == '.ts'){
-					this.code_file_rename_buf.move_files.push(v);
-					this.upCodeFileRename();
+				if(this.cfg.renameConverImportPath && ( urlI.extname == '.js' || urlI.extname == '.ts'))
+				{
+					this.isIdleTsWorker((isIdle)=>
+					{
+						if(isIdle)
+						{	
+							// 解析器进程处于空闲状态
+							this.code_file_rename_buf.move_files.push(v);
+							this.upCodeFileRename();
+							// console.log("检测·")
+						}else{
+							// 解析器进程非常繁忙,不执行自动修改文件引用路径。一般是项目刚打开的时候
+							this.onMoveFile(v);
+							// console.log("停止检测·")
+						}
+					})
 				}else{
 					// 不需要检测引用路径的文件
 					this.onMoveFile(v);

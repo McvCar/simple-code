@@ -11,27 +11,21 @@ const fe = Editor.require('packages://simple-code/tools/FileTools.js');
 // 资源对象读取方法
 let LoadAssetObj = 
 {
+	load(uuid,callback){
+		if(cc.AssetLibrary && cc.AssetLibrary.loadAsset)
+		{
+			cc.AssetLibrary.loadAsset(uuid,callback);
+		}else{
+			cc.loader.load({ type: 'uuid', uuid: uuid},()=>{}, callback);
+		}
+	},
 
 	// 未知类型
 	'tryLoad'(uuid,callback)
 	{
-		cc.loader.load({ type: 'uuid', uuid: uuid},()=>{}, (err, obj) => {
+		LoadAssetObj.load(uuid,(err, obj) => {
 			callback(obj);
-		});
-	},
-
-	'cc.Prefab'(uuid,callback)
-	{
-		cc.loader.load({ type: 'uuid', uuid: uuid},()=>{}, (err, prefab) => {
-			callback(prefab);
-		});
-	},
-
-	'cc.SpriteAtlas'(uuid,callback)
-	{
-		cc.loader.load({ type: 'uuid', uuid: uuid},()=>{}, (err, spriteAtlas) => {
-			callback(spriteAtlas);
-		});
+		})
 	},
 
 	'cc.SpriteFrame'(uuid,callback)
@@ -41,16 +35,16 @@ let LoadAssetObj =
 		{
 			let spriteFramInfo = meta.__subMetas__[Object.getOwnPropertyNames( meta.__subMetas__)[0]];
 			if(spriteFramInfo.uuid){
-				cc.loader.load({ type: 'uuid', uuid: spriteFramInfo.uuid},()=>{}, (err, sriteFrame) => {
-					callback(sriteFrame);
-				});
+				LoadAssetObj.load(spriteFramInfo.uuid,(err, obj) => {
+					callback(obj);
+				})
 			}else{
 				callback();
 			}
 		}else{
-			cc.loader.load({ type: 'uuid', uuid: uuid},()=>{}, (err, sriteFrame) => {
-			    callback(sriteFrame);
-			});
+			LoadAssetObj.load(uuid,(err, obj) => {
+				callback(obj);
+			})
 		}
 	},
 }
@@ -157,37 +151,43 @@ module.exports = {
 			{
 				//等场景加载完脚本
 				let node = cc.engine.getInstanceById(args.bindInfos[0].node_uuid)
-				if (node && !node._objFlags) {
+				if (node && !node._objFlags) 
+				{
 					let comp = node.getComponent(args.bindInfos[0].comp_name)
-					// *：组件uuid改变了说明场景已经刷新了一遍, comp.uuid != old_comp_uuid 
-					if (comp && comp.uuid != old_comp_uuid) 
-					{
-						// 创建脚本瞬间添加的node组件会丢失,所以需要检测3次组件确定加载了
-						// if (chk_count++ == 3) {
-							stop_func();
+					if(!comp) return;
 
-							getSelectedComps(args,(sls_comps)=>
-							{
-								for (let i = 0; i < args.bindInfos.length; i++) {
-									const info = args.bindInfos[i];
-									let node = cc.engine.getInstanceById(info.node_uuid)
-									if (!node) {
-										continue
-									}
-									let comp = node.getComponent(info.comp_name);
-									if (!comp) {
-										continue;
-									}
-									if (comp.hasOwnProperty(args.symbolName)) {
-										comp[args.symbolName] = args.isArray ? sls_comps : sls_comps[0];
-									}
+					let is_up_scene = comp.uuid != old_comp_uuid;
+					// *：组件uuid改变了说明场景已经刷新了一遍, comp.uuid != old_comp_uuid 
+					// 创建脚本瞬间添加的node组件会丢失,所以需要检测1次组件确定加载了
+					chk_count++;// 兼容2.4与1.9版本
+					if (is_up_scene || chk_count == 1)
+					{
+						if(is_up_scene){
+							stop_func();
+						}
+
+						getSelectedComps(args,(sls_comps)=>
+						{
+							for (let i = 0; i < args.bindInfos.length; i++) {
+								const info = args.bindInfos[i];
+								let node = cc.engine.getInstanceById(info.node_uuid)
+								if (!node) {
+									continue
 								}
-								event.reply(null,true);
-							});
-						// }
+								let comp = node.getComponent(info.comp_name);
+								if (!comp) {
+									chk_count = 0;
+									continue;
+								}
+								if (comp.hasOwnProperty(args.symbolName)) {
+									comp[args.symbolName] = args.isArray ? sls_comps : sls_comps[0];
+								}
+							}
+							event.reply(null,true);
+						});
 					}
 				}
-			}, 0.5, { count: 30 })
+			}, 1, { count: 15 })
 
 
 		},

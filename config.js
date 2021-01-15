@@ -827,7 +827,7 @@ module.exports = {
       "字体粗细": {
         path: "fontWeight",
         type: "select",
-        defaultValue: "normal",
+        defaultValue: "600",
         items: [
           { caption: "默认", value: "normal" },
           { caption: "1号", value: "100" },
@@ -864,6 +864,10 @@ module.exports = {
       "vim编辑模式": {
         path: "enabledVim",
         defaultValue: false,
+      },
+      "重命名同步修改import路径": {
+        path: "renameConverImportPath",
+        defaultValue: true,
       },
       "显示代码预览": {
         path: "enabledMinimap",
@@ -904,7 +908,7 @@ module.exports = {
       "自动窗口最大高度占比%": {
         path: "autoLayoutMax",
         type: "number",
-        defaultValue: 0,
+        defaultValue: 80,
         defaults: [
           { caption: "使用用户调整窗口后的值", value: 0 },
           { caption: "固定80%", value: 80 },
@@ -916,7 +920,7 @@ module.exports = {
       "自动窗口过渡动画时间": {
         path: "autoLayoutDt",
         type: "number",
-        defaultValue: 0.1,
+        defaultValue: 0,
         defaults: [
           { caption: "禁用", value: 0 },
           { caption: "0.1秒", value: 0.1 },
