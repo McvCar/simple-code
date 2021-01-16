@@ -385,12 +385,14 @@ let layer = {
 		// this.refresh_file_list = [];
 		// 编辑代码提示 配置
 		this._comp_cfg_map = {};
-		this._comp_cfg = [{
-			label: "forEach", //显示的名称，‘奖金’
-			insertText: "forEach((v,k)=>{})", //插入的值，‘100’
-			kind: 0, //提示的图标
-			detail: "遍历" //描述，‘我的常量
-		}];
+		this._comp_cfg = [
+		// {
+		// 	label: "forEach", //显示的名称，‘奖金’
+		// 	insertText: "forEach((v,k)=>{})", //插入的值，‘100’
+		// 	kind: 0, //提示的图标
+		// 	detail: "遍历" //描述，‘我的常量
+		// }
+		];
 
 		// 读取ace配置
 		this.cfg = localStorage.getItem("simple-code-config");
@@ -1156,26 +1158,40 @@ let layer = {
 			return this.setTimeoutToJS(() => this.initCustomCompleter(), 1.5, { count: 0 });
 		}
 
-		// 定义的提示功能
-		let _this = this;
+		// 定义的提示功能 getAllSuggests
 		let obj   = 
-		{provideCompletionItems: function (model, position ,context, token) {
-			let suggestions = []
-			let text = model.getLineContent(position.lineNumber);
-			let is_has_string = text.indexOf('"') != -1 || text.indexOf("'") !=-1;
-			
-			for (let i = 0; i < _this._comp_cfg.length; i++) {
-				const v = _this._comp_cfg[i];
-				delete v.range;
-				delete v.sortText;
-				delete v.preselect;
-				// 只在字符串中提示文件路径
-				if(!is_has_string && v.kind == _this.monaco.languages.CompletionItemKind.Folder){
-					continue;
+		{provideCompletionItems:  (model, position ,context, token)=> {
+			var p = new Promise( (resolve, reject )=>
+			{
+				let suggestions = []
+				let text = model.getLineContent(position.lineNumber);
+				let is_has_string = text.indexOf('"') != -1 || text.indexOf("'") !=-1;
+				
+				for (let i = 0; i < this._comp_cfg.length; i++) {
+					const v = this._comp_cfg[i];
+					// 只在字符串中提示文件路径
+					if(!is_has_string && v.kind == this.monaco.languages.CompletionItemKind.Folder){
+						continue;
+					}
+					suggestions.push(v)
 				}
-				suggestions.push(v)
-			}
-			return {suggestions,incomplete:false};
+				
+				// 全部代码文件的代码提示合集
+				if(this.all_sym_sugges){
+					suggestions.push.apply(suggestions,this.all_sym_sugges)
+				}else{
+					this.upAllSymSuggests();
+				}
+				
+				for (let i = 0; i < suggestions.length; i++) {
+					const v = suggestions[i];
+					delete v.range;
+					delete v.sortText;
+					delete v.preselect;
+				}
+				resolve( {suggestions,incomplete:false});
+			})
+			return p;
 		},
 		// 光标选中当前自动补全item时触发动作，一般情况下无需处理
 		// resolveCompletionItem(item, token) {
@@ -1212,7 +1228,6 @@ let layer = {
 		// 异步读取文件
 		_asynloadModel(0,(file_info)=> {
 			if(file_info) return this.loadCompleterLib(file_info.meta, file_info.extname, true)
-			else _asynloadModel(0,(file_info)=>{if(file_info) return this.loadGlobalFunctionCompleter(file_info.meta, file_info.extname, true)})
 		});
 
 		// 项目根目录的代码提示文件
@@ -1232,10 +1247,20 @@ let layer = {
 					load_file_map[file_name] = 1;
 					this.loadCompleterLib(file_path, extname, false);
 				}
-				
-				
 			}
 		}
+	},
+
+	upAllSymSuggests()
+	{
+		// 防止短时间内大量重复调用
+		this.setTimeoutById(()=>
+		{
+			this.jsWr.getAllSuggests().then((suggeList)=>
+			{
+				this.all_sym_sugges = suggeList;
+			});
+		},50,'upAllSymSuggests')
 	},
 
 	// 添加自定义代码输入提示, 例子: this.addCustomCompleters(["words","cc.Label"])
@@ -1284,23 +1309,13 @@ let layer = {
 			let js_text = fs.readFileSync(fsPath).toString();
 			if (!fe.isFileExit(fsPath)) return;
 
-			if (isTs && !is_url_type) 
+			// js的 d.ts提示文件
+			if (isTs && !is_url_type && js_text) 
 			{
-				// 解析项目生成api提示字符串
-				// if (is_url_type) {
-				// 	js_text = tools.parseJavaScript(js_text, file_name.substr(0, file_name.lastIndexOf('.')));
-				// }
-				if (js_text) {
-					// this.monaco.languages.typescript.javascriptDefaults.addExtraLib(js_text,this.fsPathToModelUrl(fsPath));
-					this.monaco.languages.typescript.javascriptDefaults.addExtraLib(js_text,'lib://model/' + file_name);
-				}
+				this.monaco.languages.typescript.javascriptDefaults.addExtraLib(js_text,'lib://model/' + file_name); 
 			}
 
-			// if (isTs) {
-				this.loadVsModel(file_path,extname,is_url_type);
-			// }else{
-			// 	// this.monaco.languages.typescript.typescriptDefaults.addExtraLib(js_text, 'lib://model/' + file_name);
-			// }
+			this.loadVsModel(file_path,extname,is_url_type);
 			// 插入模块名字提示
 			let word = file_name.substr(0,file_name.lastIndexOf('.'))
 			this.addCustomCompleter(word,word,file_name,this.monaco.languages.CompletionItemKind.Reference);
@@ -1312,7 +1327,7 @@ let layer = {
 		}
 	},
 
-	// 项目函数转为全局提示，用于模糊提示；
+	// 项目函数转为全局提示，用于模糊提示;
 	loadGlobalFunctionCompleter(file_path,extname,is_url_type){
 		let isJs = extname == ".js";
 		let isTs = extname == ".ts";
@@ -1806,6 +1821,11 @@ let layer = {
 				},3000)
 			}
 		});
+
+		// 保存后刷新下
+		if(!this.is_save_wait_up){
+			this.upAllSymSuggests();
+		}
 		return true;
 	},
 
@@ -2762,7 +2782,6 @@ let layer = {
 				// 刷新文件/代码提示,只有未被编辑情况下才刷新
 				let urlI = this.getUriInfo(url)
 				this.loadCompleterLib(url, urlI.extname, true);
-				this.loadGlobalFunctionCompleter(url, urlI.extname, true);
 			}
 			// this.openActiveFile();
 		},
@@ -2779,10 +2798,10 @@ let layer = {
 					let item = this.newFileInfo(urlI.extname, urlI.name, v.url, v.uuid)
 					this.file_list_buffer.push(item)
 					this.loadCompleterLib(item.meta, item.extname, true);
-					this.loadGlobalFunctionCompleter(item.meta, item.extname, true);
 					this.upCompCodeFile();
 				}
 			})
+			this.upAllSymSuggests()
 		},
 
 		// 项目文件被删除
