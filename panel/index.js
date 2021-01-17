@@ -37,8 +37,8 @@ let layer = {
 		fs.readFileSync(Editor.url("packages://simple-code/monaco-editor/dev/vs/editor/editor.main.css"), "utf-8") +
 		`
 
-		.turn{
-			animation:turn 1s linear infinite;      
+		.turnAnim{
+			animation:turn 2s linear infinite;      
 		  }
 		@keyframes turn{
 		0%{-webkit-transform:rotate(0deg);}
@@ -64,6 +64,10 @@ let layer = {
 			height: 100%;
 		}
 
+		#waitIco {
+			width: 15px;
+			height: 15px;
+		}
 		.openTab {
 			border-style: inset;
 			padding: 0px 1px 0px 1px;
@@ -73,6 +77,7 @@ let layer = {
 			float:left;
 			display:block;
 			user-select:none;
+			text-align:center;
 			-webkit-transition:all 0.1s;
 		}
 
@@ -100,7 +105,8 @@ let layer = {
             word-break:keep-all;      /* 不换行 */
             white-space:nowrap;       /* 不换行 */
             overflow:hidden;          /* 内容超出宽度时隐藏超出部分的内容 */
-            text-overflow:ellipsis;   /* 当对象内文本溢出时显示省略标记(...) ；需与overflow:hidden;一起使用。*/
+			text-overflow:ellipsis;   /* 当对象内文本溢出时显示省略标记(...) ；需与overflow:hidden;一起使用。*/
+			text-align:center;
 			-webkit-transition:all 0.1s;
 		}
 		.overlay {
@@ -124,7 +130,7 @@ let layer = {
 				<div id="editorB"></div>
 				<div id="layoutTab" class="layout horizontal justified">
 					<div id="tabList" class="layout horizontal">
-						<i class="icon-doc-text"></i> <span></span> <span></span>
+						<img src=file://${Editor.url("packages://simple-code/panel/images/settingIco.png")} id="waitIco" class="turnAnim"></img> <span></span> <span></span>
 						<div id="title0" class="closeTab">
 							<div class="tabTitle"><nobr>无文件<nobr></div>
 							<div class="closeBtn"><nobr> x <nobr></div>
@@ -132,7 +138,6 @@ let layer = {
 
 					</div>
 					<div id="toolsPanel" class="layout horizontal">
-						<div id="waitIco" class="turn">=</div>
 						<ui-checkbox id="lockChk">锁标签</ui-checkbox>
 						<ui-checkbox id="lockWindowChk">锁窗</ui-checkbox>
 						<ui-checkbox id="cmdMode">调试</ui-checkbox>
@@ -385,12 +390,14 @@ let layer = {
 		// this.refresh_file_list = [];
 		// 编辑代码提示 配置
 		this._comp_cfg_map = {};
-		this._comp_cfg = [{
-			label: "forEach", //显示的名称，‘奖金’
-			insertText: "forEach((v,k)=>{})", //插入的值，‘100’
-			kind: 0, //提示的图标
-			detail: "遍历" //描述，‘我的常量
-		}];
+		this._comp_cfg = [
+		// {
+		// 	label: "forEach", //显示的名称，‘奖金’
+		// 	insertText: "forEach((v,k)=>{})", //插入的值，‘100’
+		// 	kind: 0, //提示的图标
+		// 	detail: "遍历" //描述，‘我的常量
+		// }
+		];
 
 		// 读取ace配置
 		this.cfg = localStorage.getItem("simple-code-config");
@@ -487,7 +494,7 @@ let layer = {
 			this.is_init_finish = true;
 			this.openActiveFile();
 			this.runExtendFunc("initSceneData");
-			this.setWaitIconHide(true);
+			this.setWaitIconActive(false);
 		},2);
 	},
 
@@ -570,7 +577,7 @@ let layer = {
 
 		// 编译开始
 		this.vs_editor.onDidCompositionStart((e)=>{
-			this.setWaitIconHide(false);
+			this.setWaitIconActive(true);
 		});
 		
 		// 删除代码文件 view缓存model
@@ -752,10 +759,11 @@ let layer = {
 					},1000,'defindToNode')
 					Editor.Scene.callSceneScript('simple-code', 'hint-node', wordInfo.word);
 				}
-				// 可以使用 ajax 去取数据，然后 return new Promise(function (resolve, reject) { ... })
+				
+				// 异步等待返回
 				var p = new Promise( (resolve, reject )=>
 				{
-					if(!wordInfo){
+					if(!wordInfo || !this.cfg.enabledGlobalSugges){
 						return resolve([]);
 					}
 					this.jsWr.getFunctionDefinds(wordInfo.word).then((hitnMap)=>
@@ -798,7 +806,7 @@ let layer = {
 				let wordInfo = model.getWordAtPosition(position);
 				
 				var p = new Promise( (resolve, reject )=>{
-					if(wordInfo){
+					if(wordInfo && this.cfg.enabledGlobalSugges){
 						this.jsWr.getFunctionDefindHover(wordInfo.word,model.uri._formatted).then((text)=>
 						{
 							text = text || '';
@@ -1156,26 +1164,57 @@ let layer = {
 			return this.setTimeoutToJS(() => this.initCustomCompleter(), 1.5, { count: 0 });
 		}
 
-		// 定义的提示功能
-		let _this = this;
+		// 定义的提示功能 getAllSuggests
 		let obj   = 
-		{provideCompletionItems: function (model, position ,context, token) {
-			let suggestions = []
-			let text = model.getLineContent(position.lineNumber);
-			let is_has_string = text.indexOf('"') != -1 || text.indexOf("'") !=-1;
-			
-			for (let i = 0; i < _this._comp_cfg.length; i++) {
-				const v = _this._comp_cfg[i];
-				delete v.range;
-				delete v.sortText;
-				delete v.preselect;
-				// 只在字符串中提示文件路径
-				if(!is_has_string && v.kind == _this.monaco.languages.CompletionItemKind.Folder){
-					continue;
+		{provideCompletionItems:  (model, position ,context, token)=> {
+			var p = new Promise( (resolve, reject )=>
+			{
+				let suggestions = []
+				let text = model.getLineContent(position.lineNumber);
+				let is_has_string = text.indexOf('"') != -1 || text.indexOf("'") !=-1;
+				let isJs = 	this.getUriInfo(model.uri.toString()).extname == '.js'
+				for (let i = 0; i < this._comp_cfg.length; i++) {
+					const v = this._comp_cfg[i];
+					// 只在字符串中提示文件路径
+					if(!is_has_string && v.kind == this.monaco.languages.CompletionItemKind.Folder){
+						continue;
+					}
+					suggestions.push(v)
 				}
-				suggestions.push(v)
-			}
-			return {suggestions,incomplete:false};
+				
+				let retSuggesFunc = ()=>
+				{
+					for (let i = 0; i < suggestions.length; i++) {
+						const v = suggestions[i];
+						delete v.range;
+						delete v.sortText;
+						delete v.preselect;
+					}
+					resolve( {suggestions,incomplete:false});
+				}
+
+				// 全部代码文件的代码提示合集
+				if(isJs && this.cfg.enabledGlobalSugges && this.all_sym_sugges && this.all_sym_sugges.length > 0){
+					let offset = model.getOffsetAt(position)
+					this.jsWr.hasCompletionsAtPosition(model.uri.toString(),offset).then((isHasSym)=>{
+						if(isHasSym)
+						{
+							// 存在精准的内置代码提示，不使用模糊代码提示
+							retSuggesFunc();
+						}else{
+							// 使用全文件模糊代码提示
+							suggestions.push.apply(suggestions,this.all_sym_sugges)
+							retSuggesFunc();
+						}
+					})
+				}else{
+					if(isJs) this.upAllSymSuggests();
+					retSuggesFunc();
+				}
+
+				
+			})
+			return p;
 		},
 		// 光标选中当前自动补全item时触发动作，一般情况下无需处理
 		// resolveCompletionItem(item, token) {
@@ -1212,7 +1251,6 @@ let layer = {
 		// 异步读取文件
 		_asynloadModel(0,(file_info)=> {
 			if(file_info) return this.loadCompleterLib(file_info.meta, file_info.extname, true)
-			else _asynloadModel(0,(file_info)=>{if(file_info) return this.loadGlobalFunctionCompleter(file_info.meta, file_info.extname, true)})
 		});
 
 		// 项目根目录的代码提示文件
@@ -1232,10 +1270,23 @@ let layer = {
 					load_file_map[file_name] = 1;
 					this.loadCompleterLib(file_path, extname, false);
 				}
-				
-				
 			}
 		}
+	},
+
+	upAllSymSuggests()
+	{
+		if(!this.cfg.enabledGlobalSugges){
+			return;
+		}
+		// 防止短时间内大量重复调用
+		this.setTimeoutById(()=>
+		{
+			this.jsWr.getAllSuggests().then((suggeList)=>
+			{
+				this.all_sym_sugges = suggeList;
+			});
+		},50,'upAllSymSuggests')
 	},
 
 	// 添加自定义代码输入提示, 例子: this.addCustomCompleters(["words","cc.Label"])
@@ -1284,23 +1335,13 @@ let layer = {
 			let js_text = fs.readFileSync(fsPath).toString();
 			if (!fe.isFileExit(fsPath)) return;
 
-			if (isTs && !is_url_type) 
+			// js的 d.ts提示文件
+			if (isTs && !is_url_type && js_text) 
 			{
-				// 解析项目生成api提示字符串
-				// if (is_url_type) {
-				// 	js_text = tools.parseJavaScript(js_text, file_name.substr(0, file_name.lastIndexOf('.')));
-				// }
-				if (js_text) {
-					// this.monaco.languages.typescript.javascriptDefaults.addExtraLib(js_text,this.fsPathToModelUrl(fsPath));
-					this.monaco.languages.typescript.javascriptDefaults.addExtraLib(js_text,'lib://model/' + file_name);
-				}
+				this.monaco.languages.typescript.javascriptDefaults.addExtraLib(js_text,'lib://model/' + file_name); 
 			}
 
-			// if (isTs) {
-				this.loadVsModel(file_path,extname,is_url_type);
-			// }else{
-			// 	// this.monaco.languages.typescript.typescriptDefaults.addExtraLib(js_text, 'lib://model/' + file_name);
-			// }
+			this.loadVsModel(file_path,extname,is_url_type);
 			// 插入模块名字提示
 			let word = file_name.substr(0,file_name.lastIndexOf('.'))
 			this.addCustomCompleter(word,word,file_name,this.monaco.languages.CompletionItemKind.Reference);
@@ -1312,7 +1353,7 @@ let layer = {
 		}
 	},
 
-	// 项目函数转为全局提示，用于模糊提示；
+	// 项目函数转为全局提示，用于模糊提示;
 	loadGlobalFunctionCompleter(file_path,extname,is_url_type){
 		let isJs = extname == ".js";
 		let isTs = extname == ".ts";
@@ -1806,6 +1847,11 @@ let layer = {
 				},3000)
 			}
 		});
+
+		// 保存后刷新下
+		if(!this.is_save_wait_up){
+			this.upAllSymSuggests();
+		}
 		return true;
 	},
 
@@ -1985,9 +2031,11 @@ let layer = {
 		return tabBg;
 	},
 
-	setWaitIconHide(isHide){
-		if(this.$waitIco)
-			this.$waitIco.hidden = isHide;
+	setWaitIconActive(isActive){
+		if(this.$waitIco){
+			
+			this.$waitIco.className = isActive ? 'turnAnim' : '';
+		}
 	},
 
 	// 关闭页面tab
@@ -2272,11 +2320,13 @@ let layer = {
 	},
 
 	// 检测js/ts解析器进程是否处于空闲状态
-	isIdleTsWorker(callback,isTs,timeOut=500)
+	isIdleTsWorker(callback,timeOut=500)
 	{
+		let isIdleTs = false;
+		let isIdleJs = false;
 		let isTimeOut = false;
-		// 超时检查
 		let timeoutId ; 
+		// 超时检查
 		timeoutId = setTimeout(()=>{
 			isTimeOut = true;
 			if(callback) callback(false); 
@@ -2286,14 +2336,17 @@ let layer = {
 		let timeoutAnimId ; 
 		timeoutAnimId = setTimeout(()=>{
 			timeoutAnimId = null;
-			this.setWaitIconHide(false);
+			this.setWaitIconActive(true);
 		},50);
 
-		// 调用进程
-		;(isTs ? this.tsWr : this.jsWr).isIdleTsWorker().then(()=>
+		let check = ()=>
 		{
+			if(!isIdleTs || !isIdleJs){
+				return; //
+			}
+
 			// 转圈圈动画
-			this.setWaitIconHide(true);
+			this.setWaitIconActive(false);
 			if(timeoutAnimId) clearTimeout(timeoutAnimId);
 			timeoutAnimId = null
 
@@ -2304,6 +2357,17 @@ let layer = {
 				timeoutId = null
 				if(callback) callback(true);// 准时回调
 			}
+		}
+
+		// 调用进程,检测是否空闲
+		this.jsWr.isIdleTsWorker().then(()=>{
+			isIdleTs = true;
+			check()
+		});
+
+		this.jsWr.isIdleTsWorker().then(()=>{
+			isIdleJs = true;
+			check()
 		});
 	},
 	
@@ -2397,7 +2461,7 @@ let layer = {
 		this.code_file_rename_buf.rename_path_map[oldUrl] = newUrl;
 		
 		// 异步等待读取重命名信息
-		this.setWaitIconHide(false);
+		this.setWaitIconActive(true);
 		this.loadCodeFileRenameInfo(oldUrl,newUrl,assets_info.extname,(edit_files,wrObj)=>
 		{
 			if(edit_files.length>0)
@@ -2465,7 +2529,7 @@ let layer = {
 			hint_text+=vs_model.dbUrl+"\n";
 		}
 
-		this.setWaitIconHide(true);
+		this.setWaitIconActive(false);
 		setTimeout(()=>{
 			if(has_hint)
 			{
@@ -2762,7 +2826,6 @@ let layer = {
 				// 刷新文件/代码提示,只有未被编辑情况下才刷新
 				let urlI = this.getUriInfo(url)
 				this.loadCompleterLib(url, urlI.extname, true);
-				this.loadGlobalFunctionCompleter(url, urlI.extname, true);
 			}
 			// this.openActiveFile();
 		},
@@ -2779,10 +2842,10 @@ let layer = {
 					let item = this.newFileInfo(urlI.extname, urlI.name, v.url, v.uuid)
 					this.file_list_buffer.push(item)
 					this.loadCompleterLib(item.meta, item.extname, true);
-					this.loadGlobalFunctionCompleter(item.meta, item.extname, true);
 					this.upCompCodeFile();
 				}
 			})
+			this.upAllSymSuggests()
 		},
 
 		// 项目文件被删除
