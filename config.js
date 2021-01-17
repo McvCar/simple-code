@@ -869,6 +869,10 @@ module.exports = {
         path: "renameConverImportPath",
         defaultValue: true,
       },
+      "JS 高性能函数跳转/提示": {
+        path: "enabledGlobalSugges",
+        defaultValue: true,
+      },
       "显示代码预览": {
         path: "enabledMinimap",
         defaultValue: true,
