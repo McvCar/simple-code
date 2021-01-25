@@ -195,8 +195,8 @@ let layer = {
 
 
 	initVsCode(callback) {
-		// Editor.require('packages://simple-code/tools/promise.prototype.finally').shim();
 		if(Promise.prototype.finally == null){
+			// Editor.require('packages://simple-code/tools/promise.prototype.finally').shim();
 			Promise.prototype.finally = function (callback) {
 				let P = this.constructor;
 				return this.then(
@@ -250,6 +250,7 @@ let layer = {
 	ready() {
 		this.initStart()
 		this.initAce();
+		this.runExtendFunc("ready", this);
 		this.initVsCode(() => {
 			this.initData();
 			this.initBindEvent();
@@ -306,45 +307,12 @@ let layer = {
 		if(cfg.theme != null){
 			this.setTheme(cfg.theme);
 		}
-		// vim
-		if(cfg.enabledVim != null){
-			cfg.enabledVim ? this.initVimMode() : this.destoryVim();
-		}
 		
 		this.vs_editor.updateOptions(cfg);
-	},
-
-	destoryVim(){
-		if(!this.vim_mode) {
-			return
-		}
-		this.vim_mode.dispose();
-		this.vimStatusBar.remove()
 		
-		delete Editor.monaco.vim_mode;
-		delete this.vimStatusBar;
-		delete this.vim_mode;
+		this.runExtendFunc("setOptions", cfg,isInit);
 	},
 
-	// 加载vim
-	initVimMode(){
-		if(this.vim_mode){
-			return;
-		}
-		const VsVim 	= Editor.require('packages://simple-code/monaco-editor/vim/lib/index.js');
-		this.vimStatusBar = document.getElementById('vimStatusBar');
-		if(this.vimStatusBar) this.vimStatusBar.remove()
-
-		this.vimStatusBar = document.createElement('div')
-		this.vimStatusBar.id = 'vimStatusBar'
-		const parent 	= document.getElementsByClassName('group console flex-1  style-scope app-status-bar')[0] || document.getElementsByClassName('content')[0] || this.$box; // 确定插入位置
-		parent != this.$box && parent.children[0] ?  parent.insertBefore(this.vimStatusBar,parent.children[0]) : parent.appendChild(this.vimStatusBar);
-
-
-		const vim_mode = VsVim.initVimMode(this.vs_editor, this.vimStatusBar);
-		this.VsVim   	= VsVim;
-		window.vim_mode = Editor.monaco.vim_mode = this.vim_mode = vim_mode;
-	},
 
  	// 补充缺失的配置，升级版本导致的
 	loadDefineMeunCfg(cfg){
@@ -1167,7 +1135,7 @@ let layer = {
 		// 定义的提示功能 getAllSuggests
 		let obj   = 
 		{provideCompletionItems:  (model, position ,context, token)=> {
-			var p = new Promise( (resolve, reject )=>
+			var p = new Promise( (resolve, reject )=> 
 			{
 				let suggestions = []
 				let text = model.getLineContent(position.lineNumber);
@@ -1195,18 +1163,25 @@ let layer = {
 
 				// 全部代码文件的代码提示合集
 				if(isJs && this.cfg.enabledGlobalSugges && this.all_sym_sugges && this.all_sym_sugges.length > 0){
-					let offset = model.getOffsetAt(position)
-					this.jsWr.hasCompletionsAtPosition(model.uri.toString(),offset).then((isHasSym)=>{
-						if(isHasSym)
-						{
-							// 存在精准的内置代码提示，不使用模糊代码提示
-							retSuggesFunc();
-						}else{
-							// 使用全文件模糊代码提示
-							suggestions.push.apply(suggestions,this.all_sym_sugges)
-							retSuggesFunc();
-						}
-					})
+					let offset = model.getOffsetAt(position);
+
+					if(text.match(/[a-zA-Z_$][\w$]{1,30}/) == null)
+					{
+						// 使用全文件模糊代码提示
+						suggestions.push.apply(suggestions,this.all_sym_sugges)
+						retSuggesFunc();
+					}else{
+						this.jsWr.hasCompletionsAtPosition(model.uri.toString(),offset).then((isHasSym)=>{
+							if(isHasSym)
+							{
+								// 存在精准的内置代码提示，不使用模糊代码提示
+								retSuggesFunc();
+							}else{
+								suggestions.push.apply(suggestions,this.all_sym_sugges)
+								retSuggesFunc();
+							}
+						})
+					}
 				}else{
 					if(isJs) this.upAllSymSuggests();
 					retSuggesFunc();
@@ -2748,7 +2723,6 @@ let layer = {
 		localStorage.setItem("simple-code-config", JSON.stringify(this.cfg));
 		localStorage.setItem("simple-code-search_history", JSON.stringify(this.search_history));
 
-		this.destoryVim();
 		this.runExtendFunc("onDestroy");
 	},
 

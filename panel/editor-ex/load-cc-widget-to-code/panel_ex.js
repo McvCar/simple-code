@@ -89,6 +89,10 @@ module.exports = {
 
 	// 加载组件到代码
 	loadWidgetToCode(widgetType,symbolName,codeInfo,insertUuids=null,isAssets=false){
+		if(symbolName.match(/[a-zA-Z_$][\w$]*/) == null){
+			Editor.info('生成拖拽组件:变量命名不符合规范:',symbolName);
+			return;
+		}
 		if(this.parent.file_info == null || this.parent.file_info.uuid != codeInfo.editInfo.uuid || this.parent.code_file_rename_buf.is_use ){
 			return;
 		}

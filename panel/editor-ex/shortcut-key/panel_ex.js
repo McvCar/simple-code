@@ -56,7 +56,7 @@ module.exports = {
 			pos.lineNumber -=7;
 			if(pos.lineNumber < 0) pos.lineNumber = 0
 			this.parent.vs_editor.setPosition(pos)
-			this.parent.vs_editor.setScrollTop(this.parent.vs_editor.getScrollTop()-100)
+			this.parent.vs_editor.revealPosition(pos)
 			e.preventDefault();// 吞噬捕获事件
 			return false;
 		},1)

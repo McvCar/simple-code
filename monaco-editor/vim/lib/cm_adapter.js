@@ -286,9 +286,10 @@ var CMAdapter =
 /*#__PURE__*/
 function () {
   function CMAdapter(editor) {
-    _classCallCheck(this, CMAdapter);
+    _classCallCheck(this, CMAdapter); // 检测
 
-    _initialiseProps.call(this);
+    // 读取 键盘 、光标、处理事件函数
+    _initialiseProps.call(this); 
 
     this.editor = editor;
     this.state = {};
@@ -299,27 +300,116 @@ function () {
     this.curOp = {};
     this.attached = false;
     this.statusBar = null;
+    this.isValid = true
+    // 光标ID
+    this.cursor_id = 0;
+    // 注册 读取 键盘 、光标、处理事件函数
     this.addLocalListeners();
+    // 创建 vim 专用插入模式文本光标
     this.ctxInsert = this.editor.createContextKey('insertMode', true);
   }
 
   _createClass(CMAdapter, [{
+    // 激活
     key: "attach",
     value: function attach() {
       CMAdapter.keyMap.vim.attach(this);
     }
-  }, {
+  }, 
+  {
+    // 插入模式
+    key: "enterInsertMode",
+    value: function enterInsertMode() {
+      if(this.state.vim && !this.state.vim.insertMode){
+        CMAdapter.keyMap.vim.actions.clearInputState(this);
+        CMAdapter.keyMap.vim.actions.enterInsertMode(this,{insertAt: 'inplace'},this.state.vim);
+      }
+    }
+  }, 
+  {
+    // 进入选中模式
+    key: "enterVisualMode",
+    value: function enterVisualMode() {
+      if(!this.state.vim.visualMode){
+        CMAdapter.keyMap.vim.actions.toggleVisualMode(this,{},this.state.vim);
+      }
+    }
+  }, 
+  {
+    // 退出选中模式 
+    key: "leaveVisualMode",
+    value: function leaveVisualMode(moveHead) {
+      if(this.state.vim.visualMode){
+        CMAdapter.keyMap.vim.actions.clearInputState(this);
+        CMAdapter.keyMap.vim.actions.toggleVisualMode(this,{moveHead},this.state.vim);
+        this.leaveVisualModeAnim()
+      }
+    }
+  }, 
+  {
+    // 进入选中模式,并设置选择范围 updateFakeCursor
+    key: "setVisualSelection",
+    value: function setVisualSelection(range) 
+    {
+      if(this.state.vim.insertMode) CMAdapter.keyMap.vim.actions.exitInsertMode(this)
+      else CMAdapter.keyMap.vim.actions.clearInputState(this);
+
+      this.setSelectionByRange(range);
+      this.enterVisualMode();
+      this.setSelectionByRange(range);
+      
+      // 设置vim对象内置的位置
+      let sel = toCmPos({ lineNumber:range.positionLineNumber, column: range.positionColumn > range.startColumn ? range.positionColumn -1 : range.positionColumn });
+      this.state.vim.sel.head = sel;
+      // if(this.state.vim.sel.head.ch >= this.state.vim.sel.anchor.ch){
+      //   console.log("移动1:",this.state.vim.sel.head,sel)
+      //   this.state.vim.sel.head = sel;
+      // }else{
+      //   console.log("移动2:",this.state.vim.sel.anchor,sel)
+      //   this.state.vim.sel.head = sel;
+      // }
+      CMAdapter.keyMap.vim.actions.updateFakeCursor(this);
+      this.enterVisualModeAnim()
+    }
+  }, 
+  {
+    // 改造多选: 设置光标位置 
+    key: "setSelectionByRange",
+    value: function setSelectionByRange(range) {
+      let rangs = this.editor.getSelections();
+      if(rangs[this.cursor_id]){
+          rangs[this.cursor_id] = range;
+          this.editor.setSelections(rangs);
+          let sel = toCmPos({ lineNumber:range.positionLineNumber, column: range.positionColumn > range.startColumn ? range.positionColumn -1 : range.positionColumn });
+          this.state.vim.sel.head = sel;
+      }
+    }
+  }, 
+  {
+    // 改造多选: 设置光标位置 
+    key: "getSelectionRange",
+    value: function getSelectionRange() {
+      let rangs = this.editor.getSelections();
+      if(rangs[this.cursor_id]){
+          return rangs[this.cursor_id];
+      }
+    }
+  }, 
+  {
     key: "addLocalListeners",
     value: function addLocalListeners() {
-      this.disposables.push(this.editor.onDidChangeCursorPosition(this.handleCursorChange), this.editor.onDidChangeModelContent(this.handleChange), this.editor.onKeyDown(this.handleKeyDown));
+      this.disposables.push(this.editor.onDidChangeCursorPosition(this.handleCursorChange), this.editor.onDidChangeModelContent(this.handleChange), this.editor.onKeyDown(this.handleKeyDown),this.editor.onMouseDown(this.handleMouseDown));
     }
   }, {
+    // 替换模式
     key: "handleReplaceMode",
     value: function handleReplaceMode(key, e) {
       var fromReplace = false;
       var _char = key;
-      var pos = this.editor.getPosition();
-      var range = new _monacoEditor.Range(pos.lineNumber, pos.column, pos.lineNumber, pos.column + 1);
+      // var pos = this.getSelectionRange();
+      var range = this.getSelectionRange() //new _monacoEditor.Range(pos.lineNumber, pos.column, pos.lineNumber, pos.column + 1);
+      range.endColumn ++;
+      
       var forceMoveMarkers = true;
 
       if (key.startsWith('\'')) {
@@ -335,7 +425,8 @@ function () {
 
         fromReplace = true;
         _char = lastItem;
-        range = new _monacoEditor.Range(pos.lineNumber, pos.column, pos.lineNumber, pos.column - 1);
+        // range = new _monacoEditor.Range(pos.lineNumber, pos.column, pos.lineNumber, pos.column - 1);
+        range.endColumn -=2;
       } else {
         return;
       }
@@ -358,7 +449,9 @@ function () {
       }]);
 
       if (fromReplace) {
-        this.editor.setPosition(range.getStartPosition());
+        range.endColumn = range.startColumn;
+        this.setSelectionByRange(range);
+        // this.editor.setPosition(range.getStartPosition());
       }
     }
   }, {
@@ -510,15 +603,16 @@ function () {
     value: function getCursor() {
       var type = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
-      if (!type) {
-        return toCmPos(this.editor.getPosition());
-      }
+      // if (!type) {
+      //   return toCmPos(this.editor.getPosition());
+      // }
 
-      var sel = this.editor.getSelection();
+      var selects = this.editor.getSelections();
+      var sel = selects[this.cursor_id];
       var pos;
 
-      if (sel.isEmpty()) {
-        pos = sel.getPosition();
+      if (sel == null || sel.isEmpty()) {
+        pos = (sel || selects[0]).getPosition();
       } else if (type === 'anchor') {
         pos = this.getAnchorForSelection(sel);
       } else {
@@ -537,7 +631,9 @@ function () {
   }, {
     key: "getSelection",
     value: function getSelection() {
-      return this.editor.getModel().getValueInRange(this.editor.getSelection());
+      var selects = this.editor.getSelections();
+      var sel = selects[this.cursor_id];
+      return this.editor.getModel().getValueInRange(sel || selects[0]);
     }
   }, {
     key: "replaceRange",
@@ -567,14 +663,26 @@ function () {
         pos.ch = ch;
       }
 
-      var monacoPos = this.editor.getModel().validatePosition(toMonacoPos(pos));
-      this.editor.setPosition(toMonacoPos(pos));
+      let toPos = toMonacoPos(pos);
+      var monacoPos = this.editor.getModel().validatePosition(toPos);
+      // this.editor.setPosition(toPos);
       this.editor.revealPosition(monacoPos);
+
+      // 多选改造
+      let rang = _monacoEditor.Selection.fromPositions(toPos,toPos);
+      let rangs = this.editor.getSelections();
+      if(rangs[this.cursor_id]){
+          rangs[this.cursor_id] = rang;
+      }
+      this.editor.setSelections(rangs);
     }
   }, {
     key: "somethingSelected",
     value: function somethingSelected() {
-      return !this.editor.getSelection().isEmpty();
+      
+      // return !this.editor.getSelection();
+      let range = this.getSelectionRange()
+      return range && !range.isEmpty()
     }
   }, {
     key: "operation",
@@ -596,9 +704,9 @@ function () {
       }
 
       return selections.map(function (sel) {
-        var pos = sel.getPosition();
-        var start = sel.getStartPosition();
-        var end = sel.getEndPosition();
+        // var pos = sel.getPosition();
+        // var start = sel.getStartPosition();
+        // var end = sel.getEndPosition();
         return {
           anchor: _this.clipPos(toCmPos(_this.getAnchorForSelection(sel))),
           head: _this.clipPos(toCmPos(_this.getHeadForSelection(sel)))
@@ -644,15 +752,19 @@ function () {
         posToReveal = sel.getStartPosition();
       }
 
-      this.editor.setSelections(sels);
+      let rangs = this.editor.getSelections();
+      if(rangs[this.cursor_id]){
+          rangs[this.cursor_id] = sel;
+      }
+      this.editor.setSelections(rangs);
       this.editor.revealPosition(posToReveal);
     }
   }, {
     key: "setSelection",
     value: function setSelection(frm, to) {
       var range = _monacoEditor.Range.fromPositions(toMonacoPos(frm), toMonacoPos(to));
-
-      this.editor.setSelection(range);
+      this.setSelectionByRange(range);
+      // this.editor.setSelection(range);
     }
   }, {
     key: "getSelections",
@@ -743,11 +855,10 @@ function () {
     value: function dispose() {
       this.dispatch('dispose');
       this.removeOverlay();
-
+      this.isValid = false
       if (CMAdapter.keyMap.vim) {
         CMAdapter.keyMap.vim.detach(this);
       }
-
       this.disposables.forEach(function (d) {
         return d.dispose();
       });
@@ -762,12 +873,16 @@ function () {
     key: "enterVimMode",
     value: function enterVimMode() {
       var toVim = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+      // 关闭插入模式
       this.ctxInsert.set(false);
+      // 配置信息
       var config = this.getConfiguration();
       this.initialCursorWidth = config.viewInfo.cursorWidth || 0;
+      // 光标宽与光标禁止闪烁
       this.editor.updateOptions({
-        cursorWidth: config.fontInfo.typicalFullwidthCharacterWidth,
-        cursorBlinking: 'solid'
+        // cursorWidth: config.fontInfo.typicalFullwidthCharacterWidth,
+        cursorStyle:'block',
+        cursorBlinking: 'phase'
       });
     }
   }, {
@@ -775,11 +890,34 @@ function () {
     value: function leaveVimMode() {
       this.ctxInsert.set(true);
       this.editor.updateOptions({
-        cursorWidth: this.initialCursorWidth || 0,
+        // cursorWidth: this.initialCursorWidth || 0,
+        cursorStyle:'line',
         cursorBlinking: 'blink'
       });
     }
+  },{
+    key: "enterVisualModeAnim",
+    value: function enterVisualModeAnim() {
+      var toVim = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+      // 光标宽与光标禁止闪烁
+      this.editor.updateOptions({
+        // cursorWidth: config.fontInfo.typicalFullwidthCharacterWidth,
+        cursorStyle:'block-outline',
+        cursorBlinking: 'phase'
+      });
+    }
   }, {
+    key: "leaveVisualModeAnim",
+    value: function leaveVisualModeAnim() {
+      this.ctxInsert.set(true);
+      this.editor.updateOptions({
+        // cursorWidth: this.initialCursorWidth || 0,
+        cursorStyle:'block',
+        cursorBlinking: 'phase'
+      });
+    }
+  }, 
+  {
     key: "virtualSelectionMode",
     value: function virtualSelectionMode() {
       return this.inVirtualSelectionMode;
@@ -1068,8 +1206,12 @@ function () {
         return;
       }
 
-      var pos = this.editor.getPosition();
-      this.editor.setPosition(new _monacoEditor.Position(pos.lineNumber, pos.column + units));
+      let range = this.getSelectionRange();
+      range.startColumn += units;
+      range.endColumn += units;
+      this.setSelectionByRange(range);
+      // var pos = this.editor.getPosition();
+      // this.editor.setPosition(new _monacoEditor.Position(pos.lineNumber, pos.column + units));
     }
     /**
      * Uses internal apis which not sure why is internal
@@ -1247,14 +1389,15 @@ CMAdapter.defineExtension = function (name, fn) {
 var _initialiseProps = function _initialiseProps() {
   var _this3 = this;
 
+  // 按键点击事件
   this.handleKeyDown = function (e) {
     // Allow previously registered keydown listeners to handle the event and
     // prevent this extension from also handling it.
-    if (e.browserEvent.defaultPrevented & e.keyCode !== _monacoEditor.KeyCode.Escape) {
-      return;
-    }
+    // if (e.browserEvent.defaultPrevented & e.keyCode !== _monacoEditor.KeyCode.Escape) {
+    //   return;
+    // }
 
-    if (!_this3.attached) {
+    if (!_this3.attached || !_this3.isValid) {
       return;
     }
 
@@ -1272,6 +1415,9 @@ var _initialiseProps = function _initialiseProps() {
       var cmd = CMAdapter.keyMap.vim.call(key, _this3);
 
       if (cmd) {
+        if (!_this3.state.vim.sel) {
+          return;
+        }
         e.preventDefault();
         e.stopPropagation();
 
@@ -1284,12 +1430,25 @@ var _initialiseProps = function _initialiseProps() {
     }
   };
 
+  // 点击其它地方清除vim状态
+  this.handleMouseDown  = function (e) {
+    if(!_this3.state.vim.insertMode && _this3.isValid){ 
+      CMAdapter.keyMap.vim.actions.clearInputState(_this3);
+      _this3.leaveVisualMode(false)
+      // CMAdapter.keyMap.vim.call('Esc', _this3);
+    }
+  };
+
+  // 光标改变事件
   this.handleCursorChange = function (e) {
+    if(!_this3.isValid){
+      return;
+    }
     var position = e.position,
         source = e.source;
     var editor = _this3.editor;
     var selection = editor.getSelection();
-
+    
     if (!_this3.ctxInsert.get() && e.source === 'mouse' && selection.isEmpty()) {
       var maxCol = editor.getModel().getLineMaxColumn(position.lineNumber);
 
@@ -1301,8 +1460,12 @@ var _initialiseProps = function _initialiseProps() {
 
     _this3.dispatch('cursorActivity', _this3, e);
   };
-
+  
+  // 处理
   this.handleChange = function (e) {
+    if(!_this3.isValid){
+      return;
+    }
     var changes = e.changes;
     var change = {
       text: changes.reduce(function (acc, change) {

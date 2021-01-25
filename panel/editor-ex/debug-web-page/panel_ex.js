@@ -21,38 +21,38 @@ module.exports = {
 
 	init(){
 
-		let infoObj = document.getElementsByClassName('label select style-scope app-top-bar')[0];
-		if (infoObj && infoObj.innerText.indexOf(":74") == -1){
-			infoObj = document.getElementsByClassName('info')[0];
-			if (infoObj && infoObj.innerText.indexOf(":74") == -1){
-				return
-			}
-		}
+		// let infoObj = document.getElementsByClassName('label select style-scope app-top-bar')[0];
+		// if (infoObj && infoObj.innerText.indexOf(":74") == -1){
+		// 	infoObj = document.getElementsByClassName('info')[0];
+		// 	if (infoObj && infoObj.innerText.indexOf(":74") == -1){
+		// 		return
+		// 	}
+		// }
 			
-		let prot = 7310;
-		let s_i = infoObj.innerText.indexOf(":74")+3
-		let num = Number( infoObj.innerText.substr(s_i,2) )
-		prot = prot + num
-		const ws = Editor.require('packages://simple-code/tools/nodejs-websocket');//引入websocket
+		// let prot = 7310;
+		// let s_i = infoObj.innerText.indexOf(":74")+3
+		// let num = Number( infoObj.innerText.substr(s_i,2) )
+		// prot = prot + num
+		// const ws = Editor.require('packages://simple-code/tools/nodejs-websocket');//引入websocket
 		 
-		const server = ws.createServer(connection => {
-			// console.log('有一名用户连接进来了...')
-		    connection.on("text", function (str) {
-				console.log('我来接收客户端发过来的消息' + str)
-				connection.sendText(str);//返回给客户端的数据
-				server.connections.forEach(function (conn) {
-					conn.sendText(str)//返回给所有客户端的数据(相当于公告、通知)
-				})
-		    })
-		    //监听关闭
-		    connection.on("close", function (code, reason) {
-		        console.log("Connection closed")
-		    })
-		    //监听异常
-			connection.on("error",() => {
-				console.log('服务异常关闭...')
-			})
-		}).listen(prot)
+		// const server = ws.createServer(connection => {
+		// 	// console.log('有一名用户连接进来了...')
+		//     connection.on("text", function (str) {
+		// 		console.log('我来接收客户端发过来的消息' + str)
+		// 		connection.sendText(str);//返回给客户端的数据
+		// 		server.connections.forEach(function (conn) {
+		// 			conn.sendText(str)//返回给所有客户端的数据(相当于公告、通知)
+		// 		})
+		//     })
+		//     //监听关闭
+		//     connection.on("close", function (code, reason) {
+		//         console.log("Connection closed")
+		//     })
+		//     //监听异常
+		// 	connection.on("error",() => {
+		// 		console.log('服务异常关闭...')
+		// 	})
+		// }).listen(prot)
 	},
 
 	// 面板销毁
