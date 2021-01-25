@@ -15,6 +15,8 @@ module.exports = {
     quickSuggestions:true,			 // 使字符串有代码提示
     definitionLinkOpensInPeek:false, // ctrl+点击 跳转是否使用小窗口预览
     cursorSurroundingLines : 5,		 // 撤销后自动滚动页面到光标相对5行的位置
+    smoothScrolling: true,
+    formatOnPaste: true,
 
         /**
     //  * This editor is used inside a diff editor.

@@ -37,6 +37,7 @@ let Editor2D =
 	url(url_path){
 		let absPath = Editor._getUrlLast(url_path,'packages:');
 		if(absPath){
+			absPath = absPath.replace(/simple-code\//,'');
 			return path.join(baseDir,absPath)
 		}
 
@@ -206,7 +207,7 @@ let Editor2D =
 module.exports.analogApi = ()=>
 {
 	let packageRoot = __dirname.replace(/\\/g,'/')
-	packageRoot = packageRoot.substr(0,packageRoot.lastIndexOf('simple-code/')-1)
+	packageRoot = packageRoot.substr(0,packageRoot.lastIndexOf('/'));
 	baseDir = packageRoot;
 
 	// 插入api
