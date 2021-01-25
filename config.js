@@ -955,6 +955,14 @@ module.exports = {
 				path: "enabledMinimap",
 				defaultValue: true,
 			},
+			"彩虹缩进显示": {
+				path: "enabledRainbow",
+				defaultValue: false,
+			},
+			"括号多重彩色": {
+				path: "enabledBracketColor",
+				defaultValue: false,
+			},
 			"翻页过渡效果": {
 				path: "smoothScrolling",
 				defaultValue: true,

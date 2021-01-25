@@ -1853,6 +1853,8 @@ let layer = {
 		}
 
 		this.monaco.editor.setModelLanguage(this.vs_editor.getModel(), this.FILE_OPEN_TYPES[info.file_type || ""] || "markdown");
+		// 自适应缩进格式
+		if(this.cfg.detectIndentation) this.setOptions({detectIndentation:true});
 		// this.editor.selection.clearSelection();
 
 		this.setLockEdit(is_lock);
