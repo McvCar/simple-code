@@ -782,11 +782,13 @@ let layer = {
 							if(toInd != -1){
 								text = text.substr(0,toInd);
 							}
+
+							let language = model.getLanguageIdentifier().language
 							resolve({
 								contents: [{ 
 									isTrusted: false,
 									supportThemeIcons:true,
-									value: text,
+									value: text == '' ? '' : `\`\`\`${language}\n* ${text}\n\`\`\``,
 								}],
 								// range: { startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 1 }
 							});
@@ -997,6 +999,9 @@ let layer = {
 		}
 	},
 
+	isFocused(){
+		return Editor.Panel.getFocusedPanel() == Editor.Panel.find('simple-code');
+	},
 
 	// 快捷键/修复creator ctrl+x 不能使用问题
 	initKeybodyCut() {
@@ -1084,7 +1089,7 @@ let layer = {
 		document.addEventListener("focus", () => pressedKeys = {});
 		
 		// 阻挡冒泡creator的快捷键
-		this.$box.addEventListener("keydown", function (e) {
+		this.$box.addEventListener("keydown", (e)=> {
 			if (_this.vs_editor.hasTextFocus() && (e.key == "w" || e.key == "e" || e.key == "r" || e.key == "t")) e.preventDefault()
 			// console.log("key_1")
 		}, false);
@@ -1941,15 +1946,7 @@ let layer = {
 	// 设置编辑页面信息
 	newPageInfo(id, uuid, path, name, file_type, data, is_not_draw = false, is_need_save = false, is_lock = false) {
 		let file_info = this.edit_list[id] = this.edit_list[id] || {};
-		// if (file_info && file_info.is_need_save)
-		// {
-		// 	if (id != 0){
-		// 		// Editor.info("当前文件存文件有所改动,请保存或重置后再切换文件");
-		// 		// return; 
-		// 	}else{
-		// 		this.saveFile(false,id);
-		// 	}
-		// }
+		
 		path = path.replace(/\\/g,'/');
 		file_info.uuid = uuid;
 		file_info.path = path;
