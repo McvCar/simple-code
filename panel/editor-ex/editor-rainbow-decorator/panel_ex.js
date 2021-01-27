@@ -40,8 +40,6 @@ module.exports = {
 	ready(parent){
 		// index.js 对象
 		this.parent = parent;
-		this.vim_cursor = []
-		window.vim_cursor = this.vim_cursor
 	},
 
 	// monaco 编辑器初始化

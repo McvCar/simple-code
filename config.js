@@ -148,7 +148,7 @@ module.exports = {
 		smoothScrolling: true,
 		formatOnPaste: true,
 		detectIndentation: true,        // 自动检测缩进格式
-		
+		colorDecorators:true, 			// 代码块 #00000 cc.Color 颜色显示
 		// cursorSmoothCaretAnimation:true,
 		/**
 		//* This editor is used inside a diff editor.
@@ -971,6 +971,10 @@ module.exports = {
 				path: "cursorSmoothCaretAnimation",
 				defaultValue: false,
 			},
+			"Color字段色彩预览": {
+				path: "enabledCCColor",
+				defaultValue: true,
+			},
 		},
 		More: {
 			"自动窗口最小高度占比%": {
@@ -1040,4 +1044,12 @@ module.exports = {
 		"48": '0', "49": '1', "50": '2', "51": '3', "52": '4', "53": '5', "54": '6', "55": '7', "56": '8', "57": '9', "65": 'a', "66": 'b', "67": 'c', "68": 'd', "69": 'e', "70": 'f', "71": 'g', "72": 'h', "73": 'i', "74": 'j', "75": 'k', "76": 'l', "77": 'm', "78": 'n', "79": 'o', "80": 'p', "81": 'q', "82": 'r', "83": 's', "84": 't', "85": 'u', "86": 'v', "87": 'w', "88": 'x', "89": 'y', "90": 'z',
 	},
 
+	getLocalStorage(){
+		if(this.cfg){
+			return this.cfg;
+		}
+		this.cfg = localStorage.getItem("simple-code-config");
+		this.cfg = this.cfg ? JSON.parse(this.cfg) : {}; 
+		return this.cfg;
+	},
 }
