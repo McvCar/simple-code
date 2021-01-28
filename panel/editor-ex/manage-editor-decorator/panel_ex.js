@@ -41,9 +41,9 @@ module.exports = {
 			return;
 		}
 		
-		let dom = this.vs_editor._domElement
+		let dom = this.parent.vs_editor._domElement
 		var style = document.createElement("style");
-		style.innerHTML = output;
+		style.innerHTML = styleText;
 		this.styles[id] = style;
 		dom.appendChild(style);
 	},

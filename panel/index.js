@@ -26,7 +26,6 @@ let layer = {
 		// ace.editorCss +
 		fs.readFileSync(Editor.url("packages://simple-code/monaco-editor/dev/vs/editor/editor.main.css"), "utf-8") +
 		`
-
 		.turnAnim{
 			animation:turn 2s linear infinite;      
 		  }
