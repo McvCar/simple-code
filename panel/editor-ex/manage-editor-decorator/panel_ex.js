@@ -51,23 +51,34 @@ module.exports = {
 	// 添加装饰物位置信息
 	setDecorator(id,decoration)
 	{
-		// 释放之前的装饰对象
 		var model = this.parent.vs_editor.getModel();
 		if(model == null){
 			return	
 		}
 
-        this.old_decoration[id] = model.deltaDecorations(this.old_decoration[id] || [], decoration);
+		// 释放之前的装饰对象
+		if(this.old_decoration[id]){
+			let oldModel = this.old_decoration[id].model
+			if(oldModel && !oldModel._isDisposed){
+				this.old_decoration[id].decoration  = oldModel.deltaDecorations(this.old_decoration[id].decoration, []);
+			}
+		}
+
+        this.old_decoration[id] = {
+			decoration: model.deltaDecorations(this.old_decoration[id] && this.old_decoration[id].decoration || [], decoration),
+			model:model,
+		}
 	},
 
 	// 删除装饰物信息
 	removeDecorator(id){
 		this.setDecoratorStyle(id,'');
 		var model = this.parent.vs_editor.getModel();
-		if(model == null){
+		if(model == null || this.old_decoration[id] == null){
 			return	
 		}
-        this.old_decoration[id] = model.deltaDecorations(this.old_decoration[id] || [], []);
+		model.deltaDecorations(this.old_decoration[id].decoration || [], []);
+		this.old_decoration[id] = null;
 	},
 
 	// 广播通知需要刷新装饰物

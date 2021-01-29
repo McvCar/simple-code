@@ -339,19 +339,23 @@ module.exports = {
 	messages:{
 		'insertWidgetByName'(e,args)
 		{
+			if(this.parent == null) return;
 			this.insertWidgetAction(args.paths[0] == '快速生成拖拽组件',args.label);
 		},
 
 		'insertAssets'(e,args){
+			if(this.parent == null) return;
 
 			this.insertAssets(false)
 		},
 
 		'quickInsertAssets'(e,args){
+			if(this.parent == null) return;
 			this.insertAssets(true)
 		},
 		 
 		'selection:activated'(){
+			if(this.parent == null) return;
 			let nodes = Editor.Selection.curSelection('node');
 			let uuid = nodes && nodes[0];
 			this.getCurrEditorFileBindNodes(this.parent.file_info && this.parent.file_info.uuid, (bindInfos)=>

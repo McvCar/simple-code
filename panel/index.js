@@ -208,6 +208,7 @@ let layer = {
 		this.$title0.hidden 	= true;
 		this.timer_map 			= {};
 		this.cfg 				= config.getLocalStorage();
+		this.pro_cfg 			= config.getProjectLocalStorage()
 	},
 
 	// 设置选项
@@ -927,9 +928,8 @@ let layer = {
 		this.cfg.fontSize = this.vs_editor.getRawOptions().fontSize;
 		this.cfg.self_flex_per = this.self_flex_per;
 		delete this.cfg.language;
-		localStorage.setItem("simple-code-config", JSON.stringify(this.cfg));
+		config.saveStorage();
 		localStorage.setItem("simple-code-search_history", JSON.stringify(this.search_history));
-
 	},
 
 

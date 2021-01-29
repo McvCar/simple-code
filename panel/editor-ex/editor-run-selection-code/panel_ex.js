@@ -26,23 +26,33 @@ module.exports = {
 	},
 
 	// monaco 编辑器初始化
-	onLoad(){
+	onLoad()
+	{
 		// 1.读取选中区域
 		// 2.生成图标
 		// 3.点击图标执行运行选中的代码
+		// this.parent.vs_editor.onDidChangeCursorSelection((e)=>{
+		// 	if(this.sch == null){
+		// 		this.sch = setTimeout(()=>{
+		// 			this.sch =  null
+		// 			let selections = this.parent.vs_editor.getSelections();
+		// 			this.upDecorator(selections);
+		// 		},50);
+		// 	}
+		// });
 
-		this.parent.vs_editor.onDidChangeCursorSelection((e)=>{
-			if(this.sch == null){
-				this.sch = setTimeout(()=>{
-					this.sch =  null
-					let selections = this.parent.vs_editor.getSelections();
-					this.upDecorator(selections);
-				},50);
-			}
+		this.parent.vs_editor.onMouseDown((e)=>{
+			this.is_mouse_down = true;
 		});
 
+		this.parent.vs_editor.onMouseUp((e)=>{
+			setTimeout(()=>{
+				this.is_mouse_down = false;
+				let selections = this.parent.vs_editor.getSelections();
+				this.upDecorator(selections);
+			},50);
+		});
 		this.initWidget();
-		// this.parent.runExtendFunc('setDecoratorStyle',id,style)
 	},
 
 	initWidget()
@@ -65,6 +75,7 @@ module.exports = {
 				if (!this.domNode)
 				{
 					this.domNode = document.createElement('div');
+					this.domNode.title="点击运行选中的代码"
 					var style = document.createElement("style");
 					style.innerHTML = _this.styleText;
 					this.domNode.className = 'editorRunCodeIcon'
@@ -95,17 +106,18 @@ module.exports = {
 			console.log(text);
 			Editor.Scene.callSceneScript('simple-code', 'run-command-code', {type:'cmd',data:text});	
 		},false)
+		this.runWidget.setActive(false);
 		this.parent.vs_editor.addContentWidget(this.runWidget);
 	},
 
 	upDecorator(selections)
 	{
-		if(selections.length == 0 || selections.length > 1 || selections[0].isEmpty()){
+		if(this.is_mouse_down || selections.length == 0 || selections.length > 1 || selections[0].isEmpty()){
 			this.runWidget.setActive(false);
 			return;
 		}
 		let selection = selections[0];
-		let line = Math.min(selection.selectionStartLineNumber,selection.positionLineNumber);
+		let line = Math.min( selection.selectionStartLineNumber,selection.positionLineNumber);
 		line = line == 1 ? line : line -1;
 		let column = this.parent.vs_editor.getModel().getLineLength(line)
 		this.runWidget.setActive(true);

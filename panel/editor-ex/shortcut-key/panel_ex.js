@@ -109,14 +109,14 @@ module.exports = {
 		this.parent.addKeybodyEvent([["F1"]],(e)=>
 		{
 			e.preventDefault();// 吞噬捕获事件
-			this.parent.setLockEdit(!this.parent.custom_cfg.is_lock)
+			this.parent.setLockEdit(!this.parent.cfg.is_lock)
 		},1)
 
 		// 命令行模式切换
 		this.parent.addKeybodyEvent([["F2"]],(e)=>
 		{
 			e.preventDefault();// 吞噬捕获事件
-			this.parent.setCmdMode(!this.parent.custom_cfg.is_cmd_mode)
+			this.parent.setCmdMode(!this.parent.cfg.is_cmd_mode)
 		},1)
 
 		if (!Editor.isWin32){
@@ -170,48 +170,6 @@ module.exports = {
 					return false;
 				}
 			},0)
-		}	
-
-		// 跳到编辑器标签
-		for (let i = 0; i < 10; i++) {
-			// 绑定页面全局快捷键事件,注意: 区分大小写 Ctrl = ctrl
-			this.parent.addKeybodyEvent([[Editor.isWin32 ? "Alt" : "Meta",String(i)]],(e)=>
-			{
-				if(this.parent.file_info == null) return;
-
-				let tab_tag_cfg = this.parent.cfg.tab_tag_cfg = this.parent.cfg.tab_tag_cfg || {};
-				let tab_info 	= tab_tag_cfg[String(i)];
-				if(tab_info){
-					let file_info = this.parent.openOutSideFile(tab_info.fsPath,true)
-					if(file_info){
-						file_info.position = tab_info.position;
-						file_info.selection = tab_info.selection;
-						file_info.scroll_top = tab_info.scroll_top;
-						this.parent.readFile(file_info);
-						e.preventDefault();// 吞噬捕获事件
-						return false;
-					}
-				}
-			},1)
-		}
-
-		// 绑定编辑器标签
-		for (let i = 0; i < 10; i++) {
-			// 绑定页面全局快捷键事件,注意: 区分大小写 Ctrl = ctrl
-			this.parent.addKeybodyEvent([[Editor.isWin32 ? "Ctrl" : "Alt",String(i)]],(e)=>
-			{
-				if(this.parent.file_info == null || this.parent.file_info.vs_model == null) return;
-
-				let tab_tag_cfg = this.parent.cfg.tab_tag_cfg = this.parent.cfg.tab_tag_cfg || {}
-				tab_tag_cfg[String(i)] = {
-					fsPath : this.parent.file_info.vs_model.fsPath, 
-					position:this.parent.file_info.position,
-					selection:this.parent.file_info.selection,
-					scroll_top:this.parent.vs_editor.getScrollTop()
-				}
-				e.preventDefault();// 吞噬捕获事件
-				return false;
-			},1)
 		}	
 
 		this.parent.addKeybodyEvent([["Alt" ,Editor.isWin32 ? '`' : 'Dead' ]],(e)=>

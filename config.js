@@ -149,6 +149,7 @@ module.exports = {
 		formatOnPaste: true,
 		detectIndentation: true,        // 自动检测缩进格式
 		colorDecorators:true, 			// 代码块 #00000 cc.Color 颜色显示
+		// glyphMargin: true,				// 断点显示区域
 		// cursorSmoothCaretAnimation:true,
 		/**
 		//* This editor is used inside a diff editor.
@@ -1051,5 +1052,30 @@ module.exports = {
 		this.cfg = localStorage.getItem("simple-code-config");
 		this.cfg = this.cfg ? JSON.parse(this.cfg) : {}; 
 		return this.cfg;
+	},
+
+	// 项目位置的本地缓存
+	getProjectLocalStorage(){
+		if(this.pro_cfg){
+			return this.pro_cfg;
+		}
+		const fe 	= Editor.require('packages://simple-code/tools/FileTools.js');
+		const path 	= require("path");
+		const prsPath = Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
+
+		const savePath = path.join(prsPath,'local','simple-code-config.json')
+		this.pro_cfg = fe.isFileExit(savePath) ? require(savePath) : {};
+		return this.pro_cfg;
+	},
+	
+	saveStorage(){
+		const fe 	= Editor.require('packages://simple-code/tools/FileTools.js');
+		const path 	= require("path");
+		const fs 	= require("fs");
+		const prsPath = Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
+
+		const savePath = path.join(prsPath,'local','simple-code-config.json')
+		fs.writeFileSync(savePath,JSON.stringify(this.pro_cfg || {}))
+		localStorage.setItem("simple-code-config", JSON.stringify(this.cfg || {}));
 	},
 }

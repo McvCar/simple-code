@@ -197,11 +197,12 @@ let layer =
 		// }
 		];
 
-		// 读取ace配置
+		// 全局配置信息
 		this.cfg = config.getLocalStorage();
+		// 项目配置信息
+		this.pro_cfg = config.getProjectLocalStorage()
 		this.cfg.language = null;
-		this.cfg.file_cfg_list = this.cfg.file_cfg_list || {}
-		this.file_cfg = this.cfg.file_cfg_list[md5(prsPath)] = this.cfg.file_cfg_list[md5(prsPath)] || { 'db://xx': { scroll_top: 0, is_show: 0 } };
+		this.file_cfg = this.pro_cfg.file_cfg = this.pro_cfg.file_cfg || {}
 
 		this.loadDefineMeunCfg(this.cfg)
 		this.loadThemeList();
