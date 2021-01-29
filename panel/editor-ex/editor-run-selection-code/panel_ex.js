@@ -103,8 +103,8 @@ module.exports = {
 			e.preventDefault();
 			e.stopPropagation();
 			let text = this.parent.vs_editor.getModel().getValueInRange(this.parent.vs_editor.getSelection())
-			console.log(text);
-			Editor.Scene.callSceneScript('simple-code', 'run-command-code', {type:'cmd',data:text});	
+			Editor.Scene.callSceneScript('simple-code', 'run-command-code', {type:'cmd',data:text});
+			this.parent.runExtendFunc('onExecCode',text);
 		},false)
 		this.runWidget.setActive(false);
 		this.parent.vs_editor.addContentWidget(this.runWidget);
