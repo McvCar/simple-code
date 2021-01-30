@@ -264,8 +264,7 @@ let layer = {
 		}
 
 		// 搜索历史
-		this.search_history = localStorage.getItem("simple-code-search_history");
-		this.search_history = this.search_history ? JSON.parse(this.search_history) : []
+		this.search_history = this.pro_cfg.search_history  = this.pro_cfg.search_history || [];
 
 		this.setOptions(this.cfg,true);
 		this.setLockWindow(this.cfg.is_lock_window);
@@ -500,7 +499,8 @@ let layer = {
 		
 		// 阻挡冒泡creator的快捷键
 		this.$box.addEventListener("keydown", (e)=> {
-			if (_this.vs_editor.hasTextFocus() && (e.key == "w" || e.key == "e" || e.key == "r" || e.key == "t")) e.preventDefault()
+			let className = e.path[0] && e.path[0].className || ''
+			if (className.indexOf('monaco') != -1 && (e.key == "w" || e.key == "e" || e.key == "r" || e.key == "t")) e.preventDefault()
 		}, false);
 
 		// 关闭页面
@@ -926,10 +926,10 @@ let layer = {
 		//  写入配置
 		// this.cfg = this.editor.getOptions();
 		this.cfg.fontSize = this.vs_editor.getRawOptions().fontSize;
+		this.cfg.search_history = this.search_history;
 		this.cfg.self_flex_per = this.self_flex_per;
 		delete this.cfg.language;
 		config.saveStorage();
-		localStorage.setItem("simple-code-search_history", JSON.stringify(this.search_history));
 	},
 
 
