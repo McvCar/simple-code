@@ -15,8 +15,8 @@ module.exports = {
 	ready(parent){
 		// index.js 对象
 		this.parent = parent;
-		this.cmd_ind = 0
 		this.records = this.parent.pro_cfg.records = this.parent.pro_cfg.records || [];
+		this.cmd_ind = this.records.length;
 	},
 
 	// monaco 编辑器初始化
@@ -46,28 +46,31 @@ module.exports = {
 		shadowRoot.appendChild(sty)
 		shadowRoot.appendChild(this.editorBox)
 		this.loadEditor()
-		eruda._entryBtn.setPos({x:this.parent.$box.offsetWidth-30,y:20})
+		eruda._entryBtn.setPos({x:this.parent.$box.offsetWidth-40,y:25})
 		eruda._entryBtn.on('click', () => this.cmd_editor.layout())
+	},
+	
+	getWindowObj(){
+		if(Editor.monaco.preview && Editor.monaco.preview.contentWindow == null) delete Editor.monaco.preview;
+		return Editor.monaco.preview && Editor.monaco.preview.contentWindow || window;
 	},
 
 	loadEditor()
 	{
 		const vsLoader = Editor.require('packages://simple-code/monaco-editor/dev/vs/loader.js');
-		// vs代码路径
-		vsLoader.require.config({ 'vs/nls': { availableLanguages: { '*': 'zh-cn' } }, paths: { 'vs': Editor.url('packages://simple-code/monaco-editor/dev/vs', 'utf8') } });
 		// 创建vs编辑器，api参考 monaco.d.ts文件
 		vsLoader.require(['vs/editor/editor.main'], () => 
 		{
-			let monaco = Editor.monaco || monaco;
+			let monaco = this.monaco = Editor.monaco || monaco;
 			config.vsEditorConfig.language = 'javascript';  // 预热 javascript模块
 			config.vsEditorConfig.value = ``
 			var editor = monaco.editor.create(this.editorBox,config.vsEditorConfig);
 			window.cmd_editor = this.cmd_editor = editor;
-			editor.updateOptions({minimap:{enabled:false},lineNumbers:'off',renderLineHighlight:false});
+			editor.updateOptions({minimap:{enabled:false}, gotoLocation:{enable:false}, hover:{enable:false} ,lineNumbers:'off',renderLineHighlight:false, links:false, contextmenu:false});
 			monaco.editor.setTheme(this.parent.cfg.theme);
 			editor.onKeyDown(this.handleKeyDown.bind(this));
 			editor.onDidChangeModelContent(this.handleInput.bind(this));
-			
+			// this.editorBox.addEventListener("keydown", (e)=> this.handleKeyDown.bind(this), false);
 			//获得焦点
 			editor.onDidFocusEditorText((e) => {
 				// 关闭cocosCreator 默认的tab键盘事件,不然会冲突
@@ -78,35 +81,117 @@ module.exports = {
 			editor.onDidBlurEditorText((e) => {
 				require(Editor.appPath + "/editor-framework/lib/renderer/ui/utils/focus-mgr.js").disabled = false;
 			});
+			this.initCompletion();
 		});
-		
+	},
 
-		// var editor = ace.edit(this.editorBox);
-		// editor.setOptions({
-		// 	// 默认:false
-		// 	wrap: false, // 换行
-		// 	autoScrollEditorIntoView: false, // 自动滚动编辑器视图
-		// 	enableLiveAutocompletion: true, // 智能补全
-		// 	enableSnippets: true, // 启用代码段
-		// 	enableBasicAutocompletion: false, // 启用基本完成 不推荐使用
-		// });
-		// this.cmd_editor = window.cmd_editor = editor;
+	// 读取环境变量代码提示
+	initCompletion(){
+		let obj   = 
+		{
+			provideCompletionItems:  (model, position ,context, token)=> {
+				if(this.cmd_editor.getModel() != model){
+					return {suggestions:[]}
+				}
 
-		// // 设置主题
-		// editor.setTheme("ace/theme/monokai");
-		// // 设置编辑语言
-		// editor.getSession().setMode("ace/mode/javascript");
-		// // 设置快捷键模式
-		// editor.setHighlightActiveLine(false);
-		// editor.setShowPrintMargin(false);
-		// editor.renderer.setShowGutter(false);
-		// editor.renderer.setHighlightGutterLine(false);
-		// editor.$mouseHandler.$focusTimeout = 0;
-		// editor.$highlightTagPending = true;
-		// editor.renderer.content.style.cursor = "default";
-		// editor.renderer.setStyle("ace_autocomplete");
-		// editor.setOption("displayIndentGuides", false);
-		
+				var p = new Promise( (resolve, reject )=> 
+				{
+					let suggestions = []
+					let text = model.getLineContent(position.lineNumber);
+					let pos  = model.getOffsetAt( this.cmd_editor.getPosition() );
+					let regEx = /[\w$_\.0-9]+\./g;
+					let isLoadObj = false
+					while(true)
+					{
+						let findObj = regEx.exec(text);
+						if(findObj == null) {
+							break;
+						};
+						if( findObj[0].length+findObj.index+1>= pos){
+							isLoadObj = true
+							this.newItem(findObj,suggestions);
+							break;
+						}
+					}
+
+					if(!isLoadObj){
+						// Editor.monaco.preview 为游戏预览窗口的环境
+						this.loadObjectProperty(this.getWindowObj(),suggestions,false);
+					}
+
+					for (let i = 0; i < suggestions.length; i++) {
+						const v = suggestions[i];
+						delete v.range;
+						delete v.sortText;
+						delete v.preselect;
+					}
+					resolve( {suggestions,incomplete:false});
+				});
+			
+				return p;
+			}
+		}
+		// 光标选中当前自动补全item时触发动作，一般情况下无需处理
+		// resolveCompletionItem(item, token) {
+		// 	return null;
+		// }
+		//Register the custom completion function into Monaco Editor    
+		this.monaco.languages.registerCompletionItemProvider('javascript',obj );
+	},
+
+	newItem(findObj,suggestions)
+	{
+		let words = findObj[0].split('.');
+		let obj = this.getWindowObj();
+		for (let i = 0; i < words.length-1; i++) {
+			const word = words[i];
+			try {
+				let value = obj[word];
+				if(value != null){
+					obj = obj[word];
+				}else{
+					obj = null;
+					break;
+				}
+			} catch (error) {
+				console.log(error)
+				break;
+			}
+		}
+
+		if(obj!=null) this.loadObjectProperty(obj,suggestions);
+	},
+
+	loadObjectProperty(obj,suggestions,isLoadmeta=true){
+
+		try {
+			// 取成员
+			let words2 = Object.getOwnPropertyNames(Object.getPrototypeOf(obj))
+			let words = Object.getOwnPropertyNames(obj)
+			words = words.concat(words2);
+
+			for (let i = 0; i < words.length; i++) 
+			{
+				const word = words[i];
+				let meta = '';
+				if(isLoadmeta){
+					try {
+						let v = obj[word];
+						meta = v.toString()
+					} catch (error) {
+						// console.log(error)
+					}
+				}
+				suggestions.push({
+					label: word,
+					insertText: word,
+					kind: this.monaco.languages.CompletionItemKind.Value,
+					detail: meta
+				});
+			}
+		} catch (error) {
+			// console.log(error);
+		}
 	},
 
 	onExecCode(){
@@ -114,47 +199,93 @@ module.exports = {
 		this.cmd_editor.layout()
 	},
 
-	handleInput(e){
-		if(e.changes && e.changes[0] && e.changes[0].text.replace(/[	 ]/g,'') == '\n'){
-			let text = this.cmd_editor.getValue()
-			text = text.substr(0,e.changes[0].rangeOffset)+text.substr(e.changes[0].rangeOffset+e.changes[0].text.length);
-			if(text == '') return;
-			
-			eruda._devTools._tools.console.inputCmd(text)
-			let ind = this.records.indexOf(text);
-			if(ind != -1){
-				this.records.splice(ind,1);
+	execCode(code){
+		// Editor.monaco.preview 为游戏预览窗口的环境
+		if(Editor.monaco.preview && Editor.monaco.preview.contentWindow.eval){
+			console.log(code)
+			let ret = Editor.monaco.preview.contentWindow.eval(code);
+			if(ret != null){
+				console.log(ret);
 			}
-			this.records.push(text);
-			this.cmd_editor.setValue('');
-			this.cmd_ind = this.records.length;
+		}else{
+			eruda._devTools._tools.console.inputCmd(code)
 		}
 	},
 
+	handleInput(e){
+		// if(e.changes && e.changes[0] && e.changes[0].text.replace(/[	 ]/g,'') == '\n'){
+		// 	let text = this.cmd_editor.getValue()
+		// 	text = text.substr(0,e.changes[0].rangeOffset)+text.substr(e.changes[0].rangeOffset+e.changes[0].text.length);
+		// 	if(text == '') return;
+			
+		// 	let ind = this.records.indexOf(text);
+		// 	if(ind != -1){
+		// 		this.records.splice(ind,1);
+		// 	}
+		// 	this.records.push(text);
+		// 	this.cmd_editor.setValue('');
+		// 	this.cmd_ind = this.records.length;
+		// 	try {
+		// 		this.execCode(text);
+		// 	} catch (error) {
+		// 		console.error(error)
+		// 	}
+		// }
+	},
+	
+
 	handleKeyDown(e)
 	{
+		let widget = this.cmd_editor._domElement.getElementsByClassName('suggest-widget')[0];
+		if(widget && widget.style.visibility != 'hidden'){
+			return;
+		}
+		
 		let has_key = false
+		let text = ''
 		if(e.browserEvent.key == 'ArrowUp')
 		{
-			let text = this.records[--this.cmd_ind] || '';
-			if(text){
-				this.cmd_editor.setValue(text);
-			}
-			has_key = true
+			--this.cmd_ind
 			if(this.cmd_ind<0){
 				this.cmd_ind = 0
 			}
+			text = this.records[this.cmd_ind] || '';
+			this.cmd_editor.setValue(text);
+			has_key = true
 		}else if(e.browserEvent.key == 'ArrowDown')
 		{
-			let text = this.records[++this.cmd_ind] || '';
-			if(text){
-				this.cmd_editor.setValue(text);
-			}
+			text = this.records[++this.cmd_ind] || '';
+			this.cmd_editor.setValue(text);
 			has_key = true
 			if(this.cmd_ind>this.records.length){
 				this.cmd_ind = this.records.length
 			}
+		}else if(e.browserEvent.key == 'Enter')
+		{
+			has_key = true
+			let text = this.cmd_editor.getValue()
+			if(text == '') return;
+			this.records.push(text);
+			this.cmd_editor.setValue('');
+			this.cmd_ind = this.records.length;
+			try {
+				this.execCode(text);
+			} catch (error) {
+				console.error(error)
+			}
 		}
+		// console.log(this.cmd_editor.getModel().getPositionAt(text.length-1))
+
+		setTimeout(()=>{
+			let select = this.cmd_editor.getSelection()
+			select.endColumn = select.positionColumn;
+			select.endLineNumber = select.positionLineNumber;
+			select.selectionStartColumn = select.positionColumn;
+			select.selectionStartLineNumber = select.positionLineNumber;
+			select.startColumn = select.startColumn;
+			select.startLineNumber = select.startLineNumber;	
+			this.cmd_editor.setSelection(select);
+		},0)
 
 		if(has_key){
 			e.preventDefault();

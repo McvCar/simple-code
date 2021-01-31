@@ -487,6 +487,9 @@ let layer =
 		// 定义的提示功能 getAllSuggests
 		let obj   = 
 		{provideCompletionItems:  (model, position ,context, token)=> {
+			if(model != this.vs_editor.getModel()){
+				return {suggestions:[]};
+			}
 			var p = new Promise( (resolve, reject )=> 
 			{
 				let suggestions = []
