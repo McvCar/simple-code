@@ -46,6 +46,9 @@ module.exports = {
 		});
 
 		this.parent.vs_editor.onMouseUp((e)=>{
+			if(!this.parent.cfg.enabledDebugBtn){
+				return;
+			}
 			setTimeout(()=>{
 				this.is_mouse_down = false;
 				let selections = this.parent.vs_editor.getSelections();
@@ -132,9 +135,11 @@ module.exports = {
 	// 设置选项
 	setOptions(cfg,isInit) 
 	{
-		// if(cfg.enabledVim != null){
-		// 	cfg.enabledVim ? this.initWidget() : this.destoryWidget();
-		// }
+		if(cfg.enabledDebugBtn != null){
+			if(!cfg.enabledDebugBtn){
+				this.runWidget.setActive(cfg.enabledDebugBtn);
+			}
+		}
 	},
 
 	destoryWidget(){

@@ -19,6 +19,14 @@ module.exports = {
 		this.cmd_ind = this.records.length;
 	},
 
+	// 设置选项
+	setOptions(cfg,isInit) 
+	{
+		if(cfg.enabledConsoleBtn != null && !isInit){
+			eruda._entryBtn._$el[0].style.visibility = cfg.enabledConsoleBtn ? "visible" : 'hidden';
+		}
+	},
+
 	// monaco 编辑器初始化
 	onLoad()
 	{
@@ -47,7 +55,34 @@ module.exports = {
 		shadowRoot.appendChild(this.editorBox)
 		this.loadEditor()
 		eruda._entryBtn.setPos({x:this.parent.$box.offsetWidth-40,y:25})
-		eruda._entryBtn.on('click', () => this.cmd_editor.layout())
+
+
+		eruda._entryBtn.on('click', () => this.cmd_editor.layout());
+		eruda._entryBtn._$el[0].style.visibility = this.parent.cfg.enabledConsoleBtn ? "visible" : 'hidden';
+		eruda._entryBtn._$el[0].title = "控制台快捷键: Ctrl+Shift+Y、Esc"
+
+		// 打开控制台快捷键
+		this.parent.addKeybodyEvent([[Editor.isWin32 ? "Ctrl" : "Meta",'Shift',"y"]],(e)=>
+		{
+			eruda._devTools._isShow ? eruda._devTools.hide() : eruda._devTools.show();
+			if(eruda._devTools._isShow){
+				this.cmd_editor.focus()
+				this.cmd_editor.layout()
+			}
+			e.preventDefault();// 吞噬捕获事件
+			return false;
+		},1);
+
+		this.parent.addKeybodyEvent([["Escape"]],(e)=>
+		{
+			if(!this.parent.cfg.enabledVim){
+				eruda._devTools.show();
+				this.cmd_editor.focus()
+				this.cmd_editor.layout()
+			}
+			e.preventDefault();// 吞噬捕获事件
+			return false;
+		},1);
 	},
 	
 	getWindowObj(){
@@ -66,7 +101,10 @@ module.exports = {
 			config.vsEditorConfig.value = ``
 			var editor = monaco.editor.create(this.editorBox,config.vsEditorConfig);
 			window.cmd_editor = this.cmd_editor = editor;
-			editor.updateOptions({minimap:{enabled:false}, gotoLocation:{enable:false}, hover:{enable:false} ,lineNumbers:'off',renderLineHighlight:false, links:false, contextmenu:false});
+			editor.updateOptions({
+				minimap:{enabled:false}, gotoLocation:{enable:false}, hover:{enable:false} ,lineNumbers:'off',renderLineHighlight:false, links:false, contextmenu:false,
+				suggest:{maxVisibleSuggestions:3}
+			});
 			monaco.editor.setTheme(this.parent.cfg.theme);
 			editor.onKeyDown(this.handleKeyDown.bind(this));
 			editor.onDidChangeModelContent(this.handleInput.bind(this));
@@ -273,6 +311,11 @@ module.exports = {
 			} catch (error) {
 				console.error(error)
 			}
+		}else if(e.browserEvent.key == 'Escape')
+		{
+			has_key = true;
+			eruda._devTools.hide()
+			this.parent.vs_editor.focus()
 		}
 		// console.log(this.cmd_editor.getModel().getPositionAt(text.length-1))
 

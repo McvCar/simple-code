@@ -4,8 +4,19 @@ let esprima = require("./esprima/esprima");
 
 let espJsMap = {CallExpression:'{},',FunctionExpression:'()=>{},',ArrayExpression:'[],',Literal:'"0",',ArrowFunctionExpression:'()=>{}',}
 let patt = new RegExp('([0-9a-zA-Z_]+)[ =]*[ ]*[(].*[)][ \n=>]*{','g'); 
+const inputType = {"text":1,"password":1,"number":1,"date":1,"color":1,"range":1,"month":1,"week":1,"time":1,"email":1,"search":1,"url":1,"textarea":1}
 
 module.exports = {
+
+	// 不是输入状态是时
+	inputTypeChk(e){
+		if (e.path[0] ){
+			let type = e.path[0].type ;
+			if ( inputType[type]){
+				return true
+			}
+		}
+	},
 
 	// 拷贝本对象方法到目标对象
 	// newObj 子类

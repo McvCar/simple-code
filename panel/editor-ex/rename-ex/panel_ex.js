@@ -8,6 +8,7 @@ const md5     	= require('md5');
 const fs 		= require('fs');
 const fe 		= Editor.require('packages://simple-code/tools/FileTools.js');
 const cfg 		= Editor.require('packages://simple-code/config.js');
+const tools  	= Editor.require('packages://simple-code/tools/tools.js');
 
 module.exports = {
 
@@ -15,6 +16,15 @@ module.exports = {
 	onLoad(parent){
 		// index.js 对象
 		this.parent = parent; 
+
+		// 键盘事件：重名
+		this.parent.addKeybodyEvent([["d"]],(e)=>
+		{
+			// 不是输入状态是时
+			if ( !tools.inputTypeChk(e) && this.openRename()){
+				e.preventDefault();// 吞噬捕获事件
+			}
+		},0)
 	},
 
 	// 显示重命名框, list = [{value,meta,score,args}]

@@ -37,7 +37,7 @@ Editor.Panel.extend({
 
     let id 
     id = setInterval(()=>{  
-      if(preview.contentWindow.cc){
+      if(preview.contentWindow && preview.contentWindow.cc){
         clearInterval(id);
 
         let log = preview.contentWindow.console.log

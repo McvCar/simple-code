@@ -10,11 +10,13 @@ const config = Editor.require('packages://simple-code/config.js');
 const path 	= require("fire-path");
 const exec 	= require('child_process').exec;
 const md5 	= require('md5');
+const { isArray } = require('../../monaco-editor/dev/vs/editor/editor.main');
 
 const prsPath = Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
 
 let layer = 
 {
+	SEARCH_SCORES : { ".fire": 100, ".prefab": 90 },
 	// 主题文件位置
 	THEME_DIR 	   : Editor.url("packages://simple-code/monaco-editor/custom_thems/"),
 	// .d.ts 通用代码提示文件引入位置
@@ -34,8 +36,9 @@ let layer =
 	{
 		this.timer_map 			= {};
 		this.file_list_buffer  	= this.file_list_buffer || [];
+
 		this.initVsCode(() => {
-			this.initFileListBuffer(()=>{
+		this.initFileListBuffer(()=>{
 				this.initEditorData();
 				this.initEditorEvent();
 				this.initCustomCompleter();
@@ -104,26 +107,27 @@ let layer =
 		};
 
 		// 重复检测直到资源读取成功
-		let schId = this.setTimeoutToJS(() => this.initFileListBuffer(()=>{
-			if(callback) 
-			{
-				let temp = callback;
-				callback = null;
-				temp();
-			}
-		}), 1.5, { count: 0 });
-
-		Editor.assetdb.deepQuery((err, results) => {
+		// let schId = this.setTimeoutToJS(() => this.initFileListBuffer(()=>{
+		// 	// if(callback) 
+		// 	// {
+		// 	// 	let temp = callback;
+		// 	// 	callback = null;
+		// 	// 	temp();
+		// 	// }
+		// }), 1.5, { count: 0 });
+		Editor.assetdb.queryAssets('db://assets/**/*', '', (err, results)=> {
+			if(this.file_list_buffer && this.file_list_buffer.length >0) return;
 			let fileList = []; // 文件列表
-			for (let i = 0; i < results.length; i++) {
+			for (let i = 0; i < results.length; i++) 
+			{
 				let result = results[i];
-				if (result.extname != "" && this.SEARCH_BOX_IGNORE[result.extname] == null) {
-					let url = Editor.remote.assetdb.uuidToUrl(result.uuid);//Editor.assetdb.uuidToUrl(result.uuid)
-					if (url) {
-						let name = url.substr(url.lastIndexOf('/') + 1);
-						let item_cfg = this.newFileInfo(result.extname, name, url, result.uuid)
-						fileList.push(item_cfg);
-					}
+				let info = this.getUriInfo(result.url);
+				if (info.extname != "" && this.SEARCH_BOX_IGNORE[info.extname] == null) 
+				{
+					let name = info.name;
+					result.extname = info.extname
+					let item_cfg = this.newFileInfo(result.extname, name, result.url, result.uuid,result.destPath)
+					fileList.push(item_cfg);
 				}
 			}
 
@@ -133,12 +137,35 @@ let layer =
 			{
 				let temp = callback;
 				callback = null;
-				schId()
-				schId = null;
+				// schId()
+				// schId = null;
 				temp();
 			}
-		});
+	   });
 	},
+
+	// 排序:设置搜索优先级
+	sortFileBuffer() {
+		let getScore = (extname) => {
+			return this.SEARCH_SCORES[extname] || (this.FILE_OPEN_TYPES[extname] && 80) || (this.SEARCH_BOX_IGNORE[extname] && 1) || 2;
+		}
+		this.file_list_buffer.sort((a, b) => getScore(b.extname) - getScore(a.extname));
+	},
+	
+	newFileInfo(extname, name, url, uuid,fsPath) {
+		let item_cfg = {
+			extname: extname,//格式
+			value: name == "" ? url : name,
+			meta: url,
+			score: 0,//搜索优先级
+			fsPath:fsPath,
+			// matchMask: i,
+			// exactMatch: 0,
+			uuid: uuid,
+		};
+		return item_cfg;
+	},
+
 
 	setTheme(name) {
 		let filePath = this.THEME_DIR + name + ".json"
@@ -185,7 +212,7 @@ let layer =
 			rename_path_map : {},
 		}
 		// 待刷新的文件url
-		// this.refresh_file_list = [];
+		this.refresh_file_list = [];
 		// 编辑代码提示 配置
 		this._comp_cfg_map = {};
 		this._comp_cfg = [
@@ -325,15 +352,6 @@ let layer =
 		this.vs_editor.onDidBlurEditorText((e) => {
 			Editor.Ipc.sendToPanel = this._sendToPanel || Editor.Ipc.sendToPanel;
 			require(Editor.appPath + "/editor-framework/lib/renderer/ui/utils/focus-mgr.js").disabled = false;
-
-			// 用于脱离编辑状态后刷新creator
-			// if(this.refresh_file_list.length){
-			// 	for (let i = 0; i < this.refresh_file_list.length; i++) {
-			// 		let url = this.refresh_file_list[i];
-			// 		Editor.assetdb.refresh(url);// 导入保存的代码状态
-			// 	}
-			// 	this.refresh_file_list = [];
-			// }
 		});
 
 		// 记录光标位置
@@ -555,33 +573,12 @@ let layer =
 		this.monaco.languages.registerCompletionItemProvider('javascript',obj );
 		this.monaco.languages.registerCompletionItemProvider('typescript',obj );
 		this.monaco.languages.registerCompletionItemProvider('plaintext',obj );
-		
-		// 一帧读一个项目代码文件，用于代码提示、函数转跳
-		let _asynloadModel = (i,call) => 
-		{
-			if (!this || !this.file_list_buffer) return;
-			let is_load = false;
-			let load_count = 0;
-			for (; i < this.file_list_buffer.length; i++) 
-			{
-				let file_info = this.file_list_buffer[i];
-				if(file_info.extname == ".js" || file_info.extname == '.ts'){
-					is_load = call(file_info) || is_load;
-					load_count ++ ;
-					if(load_count == 80) break;
-				}else{
-					call(file_info);
-				}
-			}
-			
-			if (is_load) setTimeout(() => _asynloadModel(i + 1,call), 1)
-			else call();
-		}
 
-		// 异步读取文件
-		_asynloadModel(0,(file_info)=> {
-			if(file_info) return this.loadCompleterLib(file_info.meta, file_info.extname, true)
-		});
+		for (let i = 0; i < this.file_list_buffer.length; i++) 
+		{
+			let file_info = this.file_list_buffer[i];
+			this.loadCompleterLib(file_info.meta, file_info.extname, true, false);
+		}
 
 		// 项目根目录的代码提示文件
 		let load_file_map = {}
@@ -598,7 +595,7 @@ let layer =
 				// creator.d.ts 文件
 				if (extname == '.ts' && !load_file_map[file_name]) {
 					load_file_map[file_name] = 1;
-					this.loadCompleterLib(file_path, extname, false);
+					this.loadCompleterLib(file_path, extname, false, true);
 				}
 			}
 		}
@@ -654,29 +651,40 @@ let layer =
 		}
 	},
 
-	// 读取vs默认文件代码提示功能
-	loadCompleterLib(file_path, extname, is_url_type){
+	// 读取vs默认文件代码提示功能,异步读取文件,只在初始化时调用该函数
+	loadCompleterLib(file_path, extname, isUrlType,isCover=true){
 		let isJs = extname == ".js";
 		let isTs = extname == ".ts";
 		let file_name = file_path.substr(file_path.lastIndexOf('/') + 1)
 		if(isJs || isTs)
 		{
-			let fsPath = is_url_type ? Editor.remote.assetdb.urlToFspath(file_path) : file_path;
-			let js_text = fs.readFileSync(fsPath).toString();
+			let fsPath = isUrlType ? Editor.remote.assetdb.urlToFspath(file_path) : file_path;
 			if (!fe.isFileExit(fsPath)) return;
-
-			// js的 d.ts提示文件
-			if (isTs && !is_url_type && js_text) 
-			{
-				this.monaco.languages.typescript.javascriptDefaults.addExtraLib(js_text,'lib://model/' + file_name); 
-			}
-
-			this.loadVsModel(file_path,extname,is_url_type);
 			// 插入模块名字提示
 			let word = file_name.substr(0,file_name.lastIndexOf('.'))
 			this.addCustomCompleter(word,word,file_name,this.monaco.languages.CompletionItemKind.Reference);
+
+			let loadFunc = (err,code)=>
+			{
+				if(err){
+					return Editor.info('读取文件失败:',err);
+				}
+				code = code.toString()
+
+				// js的 d.ts提示文件
+				if (isTs && !isUrlType && code) 
+				{
+					this.monaco.languages.typescript.javascriptDefaults.addExtraLib(code,'lib://model/' + file_name); 
+				}
+				let vs_model = this.loadVsModel(file_path,extname,isUrlType,false);
+				if(isCover || vs_model.getValue() == ''){
+					vs_model.setValue(code)
+				}
+			}
+
+			fs.readFile(fsPath,loadFunc);
 			return true
-		}else if(is_url_type){
+		}else if(isUrlType){
 			// 插入模块文件名提示
 			let word = file_path.substr(12,file_path.lastIndexOf('.')-12)
 			this.addCustomCompleter(word,word,'',this.monaco.languages.CompletionItemKind.Folder);
@@ -684,12 +692,12 @@ let layer =
 	},
 
 	// 项目函数转为全局提示，用于模糊提示;
-	loadGlobalFunctionCompleter(file_path,extname,is_url_type){
+	loadGlobalFunctionCompleter(file_path,extname,isUrlType){
 		let isJs = extname == ".js";
 		let isTs = extname == ".ts";
 		if(isJs || isTs)
 		{
-			let fsPath = is_url_type ? Editor.remote.assetdb.urlToFspath(file_path) : file_path;
+			let fsPath = isUrlType ? Editor.remote.assetdb.urlToFspath(file_path) : file_path;
 			let file_name = file_path.substr(file_path.lastIndexOf('/') + 1)
 			let model = this.monaco.editor.getModel(this.monaco.Uri.parse(this.fsPathToModelUrl(fsPath)));
 			let js_text = ""
@@ -709,13 +717,13 @@ let layer =
 	},
 
 	// *.d.ts文件里读取自定义代码輸入提示，提供精准代码提示;
-	loadVsModel(file_path, extname, is_url_type,isReadText=true) {
+	loadVsModel(file_path, extname, isUrlType,isReadText=true) {
 		let file_type = this.FILE_OPEN_TYPES[extname.substr(1).toLowerCase()];
 		if(file_type)
 		{
 			let isJs = extname == ".js";
 			let isTs = extname == ".ts";
-			let fsPath = is_url_type ? Editor.remote.assetdb.urlToFspath(file_path) : file_path;
+			let fsPath = isUrlType ? Editor.remote.assetdb.urlToFspath(file_path) : file_path;
 			if (isReadText && !fe.isFileExit(fsPath)) return;
 			let js_text = isReadText ? fs.readFileSync(fsPath).toString() : "";
 			let str_uri   = this.fsPathToModelUrl(fsPath)
@@ -726,7 +734,7 @@ let layer =
 				model = this.monaco.editor.createModel('',file_type,this.monaco.Uri.parse(str_uri))
 				model.onDidChangeContent((e) => this.onVsDidChangeContent(e,model));
 				model.fsPath = fsPath;
-				model.dbUrl  = is_url_type ? file_path : undefined;
+				model.dbUrl  = isUrlType ? file_path : undefined;
 			}
 			if(isReadText) model.setValue(js_text);
 			return model
@@ -801,12 +809,15 @@ let layer =
 			if (file_info.uuid == "outside") {
 				fs.writeFileSync(file_info.path , edit_text); //外部文件
 			} else {
-				// fs.writeFileSync(Editor.remote.assetdb.urlToFspath(file_info.path), edit_text);
-				// // 用于脱离编辑状态后刷新creator
-				// if(this.refresh_file_list.indexOf(file_info.path) == -1){ 
-				// 	this.refresh_file_list.push(file_info.path);
-				// }
-				is_save = this.saveFileByUrl(file_info.path,edit_text);
+				if(this.cfg.codeCompileMode == 'save'){
+					is_save = this.saveFileByUrl(file_info.path,edit_text);
+				}else{
+					fs.writeFileSync(Editor.remote.assetdb.urlToFspath(file_info.path), edit_text);
+					// 用于脱离编辑状态后刷新creator
+					if(this.refresh_file_list.indexOf(file_info.path) == -1){ 
+						this.refresh_file_list.push(file_info.path);
+					}
+				}
 			}
 			if(is_save)
 			{
@@ -849,6 +860,30 @@ let layer =
 			this.upAllSymSuggests();
 		}
 		return true;
+	},
+
+	// 刷新保存后未编译的脚本
+	refreshSaveFild(isRefreshApi = false)
+	{
+		// 用于脱离编辑状态后刷新creator
+		if(this.refresh_file_list.length){
+			// Editor.assetdb.refresh(this.refresh_file_list);// 导入保存的代码状态，连续保存会引起报错
+			for (let i = 0; i < this.refresh_file_list.length; i++) 
+			{
+				let url = this.refresh_file_list[i];
+				if(isRefreshApi){
+					Editor.assetdb.refresh(url);// 导入保存的代码状态，连续保存会引起报错
+				}else{
+					let text = fs.readFileSync(Editor.remote.assetdb.urlToFspath(url)).toString();
+					Editor.assetdb.saveExists(url, text, (err, meta)=> {
+						if (err) {
+							Editor.warn("保存的脚本存在语法错误:",url,err,meta);
+						}
+					});
+				}
+			} 
+			this.refresh_file_list = [];
+		}
 	},
 
 	// 读取文件到编辑器渲染

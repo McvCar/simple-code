@@ -16,7 +16,6 @@ const exec 	= require('child_process').exec;
 const md5 	= require('md5');
 
 const prsPath = Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
-const SCORES = { ".fire": 100, ".prefab": 90 };
 
 let _scripts = [];
 let is_hint = false;
@@ -36,7 +35,8 @@ let layer = {
 		75%{-webkit-transform:rotate(270deg);}
 		100%{-webkit-transform:rotate(360deg);}
 		}
-
+		
+		#manualCompile{height: 15px;width:40;}
 		#gotoFileBtn{height: 15px;width:40;}
 		#settingBtn {height: 15px;width:40;}
 		#resetBtn {height: 15px;width:40;}
@@ -130,6 +130,7 @@ let layer = {
 						<ui-checkbox id="lockChk">锁标签</ui-checkbox>
 						<ui-checkbox id="lockWindowChk">锁窗</ui-checkbox>
 						<ui-checkbox id="cmdMode">调试</ui-checkbox>
+						<ui-button id="manualCompile" class="">编译</ui-button>
 						<ui-button id="gotoFileBtn" class="blue">定位</ui-button>
 						<ui-button id="settingBtn" class="green">设置</ui-button>
 						<ui-button id="resetBtn" class="red">重置</ui-button>
@@ -144,6 +145,7 @@ let layer = {
 		lockWindowChk: '#lockWindowChk',
 		layoutTab: '#layoutTab',
 		cmdMode: '#cmdMode',
+		manualCompile: '#manualCompile',
 		settingBtn: '#settingBtn',
 		resetBtn: '#resetBtn',
 		gotoFileBtn: '#gotoFileBtn',
@@ -197,6 +199,7 @@ let layer = {
 			this.upCurrSceneChildrenInfo();
 			this.is_init_finish = true;
 			this.runExtendFunc("onLoad",this);
+			this.setOptions(this.cfg,true);
 			window._panel = this;
 		});
 	},
@@ -227,7 +230,11 @@ let layer = {
 			this.$toolsPanel.hidden = cfg.hideToolsBar;
 		}
 		if(cfg.is_cmd_mode != null || isInit){
-			this.$cmdMode.checked = this.cfg.is_cmd_mode || false;
+			this.$cmdMode.checked = cfg.is_cmd_mode || false;
+		}
+		if(cfg.codeCompileMode != null || isInit){
+			this.$manualCompile.hidden = cfg.codeCompileMode != 'manual';
+			this.$gotoFileBtn.hidden = cfg.codeCompileMode == 'manual';
 		}
 		this.runExtendFunc("setOptions", cfg,isInit);
 	},
@@ -266,7 +273,6 @@ let layer = {
 		// 搜索历史
 		this.search_history = this.pro_cfg.search_history  = this.pro_cfg.search_history || [];
 
-		this.setOptions(this.cfg,true);
 		this.setLockWindow(this.cfg.is_lock_window);
 	},
 
@@ -277,11 +283,26 @@ let layer = {
 	// 綁定事件
 	initBindEvent() {
 
+		// 失去焦点，编译代码
+		this.addEventListener('blur', () => {
+			if(this.cfg.codeCompileMode == 'blur'){
+				this.refreshSaveFild(false)
+			}
+		},false);
+
+		// 手动编译
+		this.$manualCompile.addEventListener('confirm', () => {
+			// if (this.file_info) this.saveFile(true);
+			this.refreshSaveFild(true)
+		},false);
+
 		// 保存
 		this.$settingBtn.addEventListener('confirm', () => {
 			// if (this.file_info) this.saveFile(true);
 			this.openMenu()
-		});
+		},false);
+
+		
 
 		// 重置
 		this.$resetBtn.addEventListener('confirm', () => {
@@ -302,7 +323,7 @@ let layer = {
 				}
 			}
 		});
-
+		
 		// 定位文件
 		this.$gotoFileBtn.addEventListener('confirm', () => {
 			if (this.file_info) {
@@ -380,17 +401,15 @@ let layer = {
 		}
 
 		// 关闭页面提示
-		let _this = this
-		window.addEventListener("beforeunload", function (e) {
-			_this.onDestroy(e);
-		}, false);
+		this.onDestroy = this.onDestroy.bind(this)
+		window.addEventListener("beforeunload", this.onDestroy, false);
 
 		// 检测窗口改变大小调整
 		this.schFunc = this.setTimeoutToJS(() => 
 		{
 			if(this.parentElement == null){
 				// 本窗口已被删除
-				_this.onDestroy();
+				this.onDestroy();
 				return;
 			}
 			let is_up_layout = this.is_init_finish && this.upLayout()
@@ -748,7 +767,7 @@ let layer = {
 					}
 					if (end_pos == 999) start_pos = 999;
 					let head_count = end_pos - start_pos;
-					info.score = (SCORES[info.extname] || 70) + head_count * 10 + (start_pos != 999 ? start_pos * -10 : 0) + parseInt(similar_count / text.length * 30);
+					info.score = (_this.SEARCH_SCORES[info.extname] || 70) + head_count * 10 + (start_pos != 999 ? start_pos * -10 : 0) + parseInt(similar_count / text.length * 30);
 				}
 
 				completions.sort((a, b) => b.score - a.score);
@@ -807,27 +826,6 @@ let layer = {
 		});
 	},
 
-	newFileInfo(extname, name, url, uuid) {
-		let item_cfg = {
-			extname: extname,//格式
-			value: name == "" ? url : name,
-			meta: url,
-			score: 0,//搜索优先级
-			// matchMask: i,
-			// exactMatch: 0,
-			uuid: uuid,
-		};
-		return item_cfg;
-	},
-
-
-	// 排序:设置搜索优先级
-	sortFileBuffer() {
-		let getScore = (extname) => {
-			return SCORES[extname] || (this.FILE_OPEN_TYPES[extname] && 80) || (this.SEARCH_BOX_IGNORE[extname] && 1) || 2;
-		}
-		this.file_list_buffer.sort((a, b) => getScore(b.extname) - getScore(a.extname));
-	},
 
 	setWaitIconActive(isActive){
 		if(this.$waitIco){
@@ -875,10 +873,12 @@ let layer = {
 	// 页面关闭
 	onDestroy() 
 	{
+		document.removeEventListener('beforeunload',this.onDestroy,false);
 		if(this._is_destroy || this.edit_list == null) return;
 		this._is_destroy = true;
 		this._super();
 		this.runExtendFunc("onDestroy");
+		this.refreshSaveFild();
 
 		if (this.schFunc) this.schFunc();
 		if(this.mouse_move_event_closeFunc) this.mouse_move_event_closeFunc()
@@ -986,6 +986,8 @@ let layer = {
 
 			this.checkAllCurrFileChange();
 			let url = Editor.remote.assetdb.uuidToUrl(info.uuid);
+			if(url) return;
+
 			let edit_id = this.getTabIdByPath(url);
 			if(edit_id == null || !this.edit_list[edit_id] || !this.edit_list[edit_id].is_need_save)
 			{
