@@ -574,13 +574,25 @@ let layer =
 		this.monaco.languages.registerCompletionItemProvider('typescript',obj );
 		this.monaco.languages.registerCompletionItemProvider('plaintext',obj );
 
+		// 加载所有脚本文件到缓存
+		let script_num = 0;
+		let read_num = 0;
 		for (let i = 0; i < this.file_list_buffer.length; i++) 
 		{
 			let file_info = this.file_list_buffer[i];
-			this.loadCompleterLib(file_info.meta, file_info.extname, true, false);
+			let isScript = this.loadCompleterLib(file_info.meta, file_info.extname, true, false, true, ()=>{
+				read_num ++;
+				if(read_num == script_num){
+					//所有脚本加载完成,刷新下已显示的代码页面
+					this.upCompCodeFile();
+				}
+			});
+			if(isScript){
+				script_num ++;
+			}
 		}
 
-		// 项目根目录的代码提示文件
+		// 项目根目录的代码提示文件 x.d.ts
 		let load_file_map = {}
 		for (var n = 0; n < this.TS_API_LIB_PATHS.length; n++) 
 		{
@@ -595,7 +607,7 @@ let layer =
 				// creator.d.ts 文件
 				if (extname == '.ts' && !load_file_map[file_name]) {
 					load_file_map[file_name] = 1;
-					this.loadCompleterLib(file_path, extname, false, true);
+					this.loadCompleterLib(file_path, extname, false, false, false);
 				}
 			}
 		}
@@ -652,7 +664,7 @@ let layer =
 	},
 
 	// 读取vs默认文件代码提示功能,异步读取文件,只在初始化时调用该函数
-	loadCompleterLib(file_path, extname, isUrlType,isCover=true){
+	loadCompleterLib(file_path, extname, isUrlType = false, isCover=true, isSasync = true, finishCallback){
 		let isJs = extname == ".js";
 		let isTs = extname == ".ts";
 		let file_name = file_path.substr(file_path.lastIndexOf('/') + 1)
@@ -680,9 +692,16 @@ let layer =
 				if(isCover || vs_model.getValue() == ''){
 					vs_model.setValue(code)
 				}
+				if(finishCallback) {
+					finishCallback(vs_model);
+				}
 			}
-
-			fs.readFile(fsPath,loadFunc);
+			if(isSasync){
+				fs.readFile(fsPath,loadFunc);
+			}else{
+				let code = fs.readFileSync(fsPath);
+				loadFunc(0,code);
+			}
 			return true
 		}else if(isUrlType){
 			// 插入模块文件名提示
@@ -795,7 +814,7 @@ let layer =
 	},
 	
 	// 保存修改
-	saveFile(isMandatorySaving = false, id = -1) {
+	saveFile(isMandatorySaving = false, isMustCompile = false, id = -1) {
 		id = id == -1 ? this.edit_id : id;
 		let file_info = this.edit_list[id];
 		if (file_info && file_info.uuid && (file_info.is_need_save || isMandatorySaving)) {
@@ -809,7 +828,7 @@ let layer =
 			if (file_info.uuid == "outside") {
 				fs.writeFileSync(file_info.path , edit_text); //外部文件
 			} else {
-				if(this.cfg.codeCompileMode == 'save'){
+				if(this.cfg.codeCompileMode == 'save' || isMustCompile){
 					is_save = this.saveFileByUrl(file_info.path,edit_text);
 				}else{
 					fs.writeFileSync(Editor.remote.assetdb.urlToFspath(file_info.path), edit_text);
@@ -1261,7 +1280,7 @@ let layer =
 
 		// 切换模式前先保存备忘录
 		if(this.edit_list[0] && this.edit_list[0].path != filePath) {
-			this.saveFile(false,0); 
+			this.saveFile(false,false,0); 
 		}
 
 		let info = this.getFileUrlInfoByFsPath(filePath)

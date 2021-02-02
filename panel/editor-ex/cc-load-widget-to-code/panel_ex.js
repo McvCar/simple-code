@@ -120,7 +120,7 @@ module.exports = {
 	insertWidgetInfo(bindInfos,widgetType,symbolName,isArray,insertUuids,isAssets){
 		let args = {bindInfos,widgetType,symbolName,isArray,insertUuids,isAssets}
 		Editor.Scene.callSceneScript('simple-code', 'insertWidgetInfo',args, (err, isEnd) => { 
-			console.log('生成完成.',isEnd)
+			// console.log('生成完成.',isEnd)
 		});
 	},
 
@@ -162,7 +162,7 @@ module.exports = {
 			}
 			vs_model.pushStackElement();
 			vs_model.setValue(text);
-			this.parent.saveFile();
+			this.parent.saveFile(true,true);
 		}
 	},
 
