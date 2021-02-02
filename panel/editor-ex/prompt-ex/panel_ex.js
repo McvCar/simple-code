@@ -17,15 +17,6 @@ module.exports = {
 		// index.js 对象
 		this.parent = parent; 
 
-		// 键盘事件：重名
-		this.parent.addKeybodyEvent([["d"]],(e)=>
-		{
-			// 不是输入状态是时
-			if ( !this.inputTypeChk(e) && this.openRename()){
-				e.preventDefault();// 吞噬捕获事件
-			}
-		},0)
-
 		// 键盘事件：添加节点组件
 		this.parent.addKeybodyEvent([["g"]],(e)=>
 		{

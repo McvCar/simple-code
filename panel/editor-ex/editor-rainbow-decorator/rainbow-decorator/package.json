@@ -1,0 +1,62 @@
+{
+  "_from": "rainbow-decorator",
+  "_id": "rainbow-decorator@1.0.6",
+  "_inBundle": false,
+  "_integrity": "sha1-UkLjlWabqN6ZHAGSKaybD4mo+xI=",
+  "_location": "/rainbow-decorator",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "tag",
+    "registry": true,
+    "raw": "rainbow-decorator",
+    "name": "rainbow-decorator",
+    "escapedName": "rainbow-decorator",
+    "rawSpec": "",
+    "saveSpec": null,
+    "fetchSpec": "latest"
+  },
+  "_requiredBy": [
+    "#USER",
+    "/"
+  ],
+  "_resolved": "https://registry.npm.taobao.org/rainbow-decorator/download/rainbow-decorator-1.0.6.tgz",
+  "_shasum": "5242e395669ba8de991c019229ac9b0f89a8fb12",
+  "_spec": "rainbow-decorator",
+  "_where": "/Users/mac/Downloads/vscode-indent-rainbow-master",
+  "author": {
+    "name": "Joshua Bax",
+    "email": "joshua.bax@gmail.com"
+  },
+  "bugs": {
+    "url": "https://gitlab.com/Edrem/rainbow-decorator/issues"
+  },
+  "bundleDependencies": false,
+  "deprecated": false,
+  "description": "Adds rainbow indent decorations to Monaco Editor",
+  "devDependencies": {
+    "monaco-editor": "^0.18.1",
+    "typescript": "^3.7.2"
+  },
+  "files": [
+    "dist"
+  ],
+  "homepage": "https://gitlab.com/Edrem/rainbow-decorator",
+  "keywords": [
+    "monaco",
+    "monaco-editor"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "name": "rainbow-decorator",
+  "peerDependencies": {
+    "monaco-editor": "0.13.x||0.14.x||0.15.x||0.16.x||0.17.x||0.18.x"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://gitlab.com/Edrem/rainbow-decorator.git"
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "version": "1.0.6"
+}

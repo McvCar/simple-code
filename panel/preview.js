@@ -32,6 +32,36 @@ Editor.Panel.extend({
       url = 'http://'+document.getElementById("playButtons").dataHost.previewURL;
     }
     this.$games_view.src = url;
+    window.preview =  this.$games_view;
+
+
+    let id 
+    id = setInterval(()=>{  
+      if(preview.contentWindow && preview.contentWindow.cc){
+        clearInterval(id);
+
+        let log = preview.contentWindow.console.log
+        preview.contentWindow.console.log = (...args)=>{
+          Editor.log(...args);
+        }
+
+        let warn = preview.contentWindow.console.warn
+        preview.contentWindow.console.warn = (...args)=>{
+          Editor.warn(...args);
+        }
+
+        let error = preview.contentWindow.console.error
+        preview.contentWindow.console.error = (...args)=>{
+          Editor.error(...args);
+        }
+        preview.contentWindow.cc.log = preview.contentWindow.console.log
+        preview.contentWindow.cc.warn = preview.contentWindow.console.warn
+        preview.contentWindow.cc.error = preview.contentWindow.console.error
+      }
+    },500);
+    if(Editor.monaco){
+      Editor.monaco.preview = preview;
+    }
   },
 
   // register your ipc messages here

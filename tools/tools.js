@@ -4,10 +4,47 @@ let esprima = require("./esprima/esprima");
 
 let espJsMap = {CallExpression:'{},',FunctionExpression:'()=>{},',ArrayExpression:'[],',Literal:'"0",',ArrowFunctionExpression:'()=>{}',}
 let patt = new RegExp('([0-9a-zA-Z_]+)[ =]*[ ]*[(].*[)][ \n=>]*{','g'); 
+const inputType = {"text":1,"password":1,"number":1,"date":1,"color":1,"range":1,"month":1,"week":1,"time":1,"email":1,"search":1,"url":1,"textarea":1}
 
 module.exports = {
 
-	 copyToClipboard(str){
+	// 不是输入状态是时
+	inputTypeChk(e){
+		if (e.path[0] ){
+			let type = e.path[0].type ;
+			if ( inputType[type]){
+				return true
+			}
+		}
+	},
+
+	// 拷贝本对象方法到目标对象
+	// newObj 子类
+	// baseObj 父类
+	// mergeFuncs = ["init"]; 新旧类的同名函数合并一起
+	extendTo(newObj,baseObj,mergeFuncs = []){
+		if (!baseObj || !newObj) return;
+		
+		for(let k in baseObj){
+			let v = baseObj[k]
+			if (newObj[k] == null){
+				newObj[k] = v
+			}
+			// 函数继承使用 "this._super()" 调用父类
+			else if (typeof v == "function" && typeof newObj[k] == "function" && !newObj[k]._isExend){
+				let newFunc = newObj[k];
+				newObj[k] = function(){
+					this._super = v;
+					let ret = newFunc.apply(this,arguments);// 执行函数并传入传参
+					delete this._super;
+					return ret;
+				};
+				newObj[k]._isExend = true
+			}
+		}
+	},
+
+	copyToClipboard(str){
 		var input = str;
 		const el = document.createElement('textarea');
 		el.value = input;

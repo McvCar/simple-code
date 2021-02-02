@@ -461,7 +461,7 @@ var eventFuncs =
 						let head = t.stack.substr(0,t.stack.indexOf("\n"))
 						let endd = t.stack.substr(t.stack.indexOf(">")+1)
 						endd = endd.substr(0,endd.indexOf(")"))
-						Editor.error("调试命令 ERROR:",head+endd)
+						Editor.info("调试命令 ERROR:",head+endd)
 					}
 				}
 
