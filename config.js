@@ -917,6 +917,16 @@ module.exports = {
 					{ caption: "lua文件", value: "lua" }
 				]
 			},
+			"触发编译方式": {
+				type: "buttonBar",
+				path: "codeCompileMode",
+				defaultValue: "save",
+				items: [
+					{ caption: "保存后", value: "save" },
+					{ caption: "退出编辑后", value: "blur" },
+					{ caption: "手动编译", value: "manual" },
+				]
+			},
 
 			"光标在边缘位置": {
 				path: "scrollPredominantAxis",
@@ -962,7 +972,7 @@ module.exports = {
 			},
 			"括号多重彩色": {
 				path: "enabledBracketColor",
-				defaultValue: false,
+				defaultValue: true,
 			},
 			"翻页过渡效果": {
 				path: "smoothScrolling",
@@ -974,6 +984,14 @@ module.exports = {
 			},
 			"Color字段色彩预览": {
 				path: "enabledCCColor",
+				defaultValue: true,
+			},
+			"显示调试按钮": {
+				path: "enabledDebugBtn",
+				defaultValue: true,
+			},
+			"显示控制台按钮": {
+				path: "enabledConsoleBtn",
 				defaultValue: true,
 			},
 		},
