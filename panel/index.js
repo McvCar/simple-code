@@ -394,6 +394,8 @@ let layer = {
 				let mouse_pos = {y:e.clientY,x:e.clientX}
 				this.onMouseDoubleClick(mouse_pos);
 			}
+			this._isMoveDown = true
+			this.setTimeoutById(()=>this._isMoveDown = false,3000,'mousedow')
 		}
 		document.addEventListener('mousedown',mousedown,true)
 		this.mouse_start_event_closeFunc = ()=>{
@@ -973,7 +975,9 @@ let layer = {
 		'selection:activated'(event) {
 			if(!this.is_init_finish || this.code_file_rename_buf.is_use || this.is_not_select_active) return;
 			// 阻止保存时tab乱切换
-			this.openActiveFile(!this.is_save_wait_up,!this.is_save_wait_up);
+			if(this._isMoveDown){
+				this.openActiveFile(!this.is_save_wait_up,!this.is_save_wait_up);
+			}
 		},
 
 		// 项目资源文件uuid发生改变

@@ -3,6 +3,7 @@ const path 		= require('path');
 const fs 		= require('fs');
 const md5     	= require('md5');
 const fe    	= Editor.require('packages://simple-code/tools/FileTools.js');
+const tools    	= Editor.require('packages://simple-code/tools/tools.js');
 
 // 工作路径
 let prsPath  = Editor.importPath.split('library'+path.sep)[0] ;
@@ -20,7 +21,7 @@ var eventFuncs =
  	// 保存新建脚本路径
  	getNewFileSavePath(node_url,file_type){
  		// 场景文件路径: node_url = db://assets/xxxx/xxxx.xxx
- 		node_url = node_url.substr(0,node_url.lastIndexOf("/")) + '/' +"script_min" + '/'; //保存到预制节点的同级目录
+		 node_url = node_url.substr(0,node_url.lastIndexOf("/")) + '/' +"script_min" + '/'; //保存到预制节点的同级目录
  		return node_url;
  	},
 
