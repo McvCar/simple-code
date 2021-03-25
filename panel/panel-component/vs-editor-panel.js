@@ -465,6 +465,82 @@ let layer =
 			}
 		})
 
+		let getTabNum = (text)=>{
+			let tabNum = 0;
+			if(text[0] == ' '){
+				let findObj = text.match(/[ ]+/);
+				tabNum = Math.round(findObj[0].length / options.tabSize)
+			}else if (text[0] == '	'){
+				let findObj = text.match(/[ ]+/);
+				tabNum = findObj[0].length;
+			}
+			return tabNum;
+		};
+		
+		// 代码格式化
+		// this.monaco.languages.registerDocumentRangeFormattingEditProvider("javascript", {
+		// 	provideDocumentRangeFormattingEdits(model , range , options , token){
+		// 		// let text = model.getValueInRange(range);
+		// 		setTimeout(()=>
+		// 		{
+		// 			// 1.检测存在同级代码块
+		// 			// 2.获得最上级等号位置
+		// 			// 3.上级等号位置比变量长则执行对齐，否则以自身为上级等号
+		// 			// 4.每一行重复以上步骤
+		// 			let getLineInfo = (i)=>
+		// 			{
+		// 				let text = model.getLineContent(i);
+		// 				// 1.检测是否空行
+		// 				if(text.match(/\S/) == null){
+		// 					return {}
+		// 				}
+		// 				// 2.检测当前缩进位置
+		// 				let _tabNum = this.getTabNum(text);
+
+		// 				// 3.检测是否有等号以及位置
+		// 				let findObj = text.match(/([ ]{1,})([:=])/);
+		// 				if(findObj){
+		// 					let info = {
+		// 						tabNum:_tabNum,
+		// 						startPos: findObj.index+1,
+		// 						charPos: findObj.index+findObj[0].length+1
+		// 					}
+
+		// 					return info;
+		// 				}
+		// 				return {tabNum:_tabNum}
+		// 			}
+
+		// 			let up_info = {};
+		// 			for (let i = range.startLineNumber-1; i > Math.max(range.startLineNumber-10,0); i--) {
+		// 				up_info = getLineInfo(i);
+		// 				if(up_info.tabNum != null){
+		// 					// 检测不是否空行
+		// 					break;
+		// 				}
+		// 			}
+
+		// 			for (let i = range.startLineNumber; i <= range.endLineNumber; i++) {
+		// 				let curr_info = getLineInfo(i);
+		// 				if(curr_info.charPos != null)
+		// 				{
+		// 					// 跟上面某行不是同个缩进级别
+		// 					if(curr_info.tabNum != up_info.tabNum || up_info.charPos == null){
+		// 						up_info = curr_info
+		// 						continue;
+		// 					}
+		// 					// 检测等号缩进长度
+		// 				}
+		// 			}
+
+		// 		},50)
+		// 		return [];
+		// 		// return [{
+		// 		// 	text: YourFormatter(model.getValue()) // put formatted text here
+		// 		// 	range: model.getFullModelRange()
+		// 		// }];
+		// 	}
+		// })
 		// 跳转到实现
 		// this.monaco.languages.registerImplementationProvider("javascript",{provideImplementation: function (model,position, token) {
 		// 	return Promise.resolve([{

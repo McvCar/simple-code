@@ -958,7 +958,7 @@ module.exports = {
 				path: "renameConverImportPath",
 				defaultValue: true,
 			},
-			"JS 高性能函数跳转/提示": {
+			"JS高性能函数跳转/提示": {
 				path: "enabledGlobalSugges",
 				defaultValue: true,
 			},
