@@ -950,6 +950,10 @@ module.exports = {
 				path: "formatOnPaste",
 				defaultValue: true,
 			},
+			"保存自动格式化": {
+				path: "formatOnSaveFile",
+				defaultValue: false,
+			},
 			"vim编辑模式": {
 				path: "enabledVim",
 				defaultValue: false,

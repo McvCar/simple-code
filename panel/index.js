@@ -536,8 +536,19 @@ let layer = {
 		// 	return false;
 		// },1,"keydown");
 
-		this.addKeybodyEvent([["Ctrl", "s"], ["Meta", "s"]], (e) => {
-			this.saveFile(true);
+		this.addKeybodyEvent([["Ctrl", "s"], ["Meta", "s"]], (e) => 
+		{
+			// 保存后格式化文档
+			if(this.cfg.formatOnSaveFile){
+				this.vs_editor.trigger('anything','editor.action.formatDocument')
+				setTimeout(()=>{
+					this.saveFile(true);
+				},100)
+			}else{
+				this.saveFile(true);
+			}
+
+			
 			e.preventDefault();// 吞噬捕获事件
 			return false;
 		}, 1, "keydown");
