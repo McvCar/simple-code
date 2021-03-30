@@ -394,8 +394,11 @@ let layer = {
 				let mouse_pos = {y:e.clientY,x:e.clientX}
 				this.onMouseDoubleClick(mouse_pos);
 			}
-			this._isMoveDown = true
-			this.setTimeoutById(()=>this._isMoveDown = false,3000,'mousedow')
+
+			if(!this.isFocused()){
+				this._isMoveDown = true
+				this.setTimeoutById(()=>this._isMoveDown = false,2000,'mousedow')
+			}
 		}
 		document.addEventListener('mousedown',mousedown,true)
 		this.mouse_start_event_closeFunc = ()=>{
