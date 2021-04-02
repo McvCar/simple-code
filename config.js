@@ -954,6 +954,10 @@ module.exports = {
 				path: "formatOnSaveFile",
 				defaultValue: false,
 			},
+			"点击后自动显示代码": {
+				path: "clickToViewCode",
+				defaultValue: true,
+			},
 			"vim编辑模式": {
 				path: "enabledVim",
 				defaultValue: false,

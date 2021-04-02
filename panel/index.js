@@ -990,7 +990,7 @@ let layer = {
 			if(!this.is_init_finish || this.code_file_rename_buf.is_use || this.is_not_select_active) return;
 			// 阻止保存时tab乱切换
 			if(this._isMoveDown){
-				this.openActiveFile(!this.is_save_wait_up,!this.is_save_wait_up);
+				this.openActiveFile(!this.is_save_wait_up && this.cfg.clickToViewCode,!this.is_save_wait_up);
 			}
 		},
 
