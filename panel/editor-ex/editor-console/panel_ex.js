@@ -45,7 +45,7 @@ module.exports = {
 		});
 
 		eruda._devTools._window_height = this.parent.$box.clientHeight
-		let shadowRoot = eruda._devTools._tools.console._$inputBox.createShadowRoot();
+		let shadowRoot = eruda._devTools._tools.console._$inputBox.attachShadow({mode: 'open'});
 		this.editorBox = document.createElement('div');
 		this.editorBox.style['width'] = '100%'
 		this.editorBox.style['height'] = '100%'
