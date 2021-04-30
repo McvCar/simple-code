@@ -1,4 +1,7 @@
 // panel/index.js, this filename needs to match the one registered in package.json
+
+const version 		= Editor.remote.App.version.replace(/[.]/g,'')
+
 Editor.Panel.extend({
   // css style for panel
   style: `
@@ -34,7 +37,10 @@ Editor.Panel.extend({
     this.$games_view.src = url;
     window.preview =  this.$games_view;
 
-
+    if(version>=200 && version<246){
+      return;
+    }
+    
     let id 
     id = setInterval(()=>{  
       if(preview.contentWindow && preview.contentWindow.cc){
