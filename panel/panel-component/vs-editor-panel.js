@@ -1218,7 +1218,7 @@ let layer =
 			tabBg.className = id == tabBg._id ? "openTab" : "closeTab";
 		}
 
-		if (this.edit_list[this.edit_id] && !is_new_page) {
+		if (this.edit_list[this.edit_id]) {
 			// 记录切换页面前编辑的数据
 			this.edit_list[this.edit_id].new_data = this.vs_editor.getValue();
 			this.edit_list[this.edit_id].scroll_top = this.vs_editor.getScrollTop()
