@@ -354,9 +354,6 @@ let layer = {
 
 
 		// 读取拖入的文件
-		this.$editorB.ondragover = function(e){
-			e.preventDefault();
-		}
 		this.$editorB.addEventListener('dragover',(e)=>{
 			// if(e.dataTransfer.files[0]){
 				e.preventDefault();
@@ -374,6 +371,34 @@ let layer = {
 				Editor.log('暂不支持该文本类型');
 			}
 		},false)
+
+		let inspector = document.getElementById('inspector');
+		
+		// 读取拖入的文件
+		inspector.addEventListener('drag',(e)=>{
+			// if(e.dataTransfer.files[0]){
+				e.preventDefault();
+				e.stopPropagation();
+			// }
+		},true)
+		
+		inspector.addEventListener('dragover',(e)=>{
+			// if(e.dataTransfer.files[0]){
+				e.preventDefault();
+				e.stopPropagation();
+			// }
+		},true)
+		
+		// 读取拖入的文件
+		inspector.addEventListener('drop',(e)=>{
+			var fileObj = e.dataTransfer.files[0];
+			if(fileObj && this.openOutSideFile(fileObj.path,true))
+			{
+				e.preventDefault();
+			}else{
+				Editor.log('暂不支持该文本类型');
+			}
+		},true)
 		
 		// 记录鼠标位置，用于菜单位置
 		let mousemove = (e)=>{

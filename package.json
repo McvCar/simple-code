@@ -142,6 +142,7 @@
 		"main": "panel/preview.js",
 		"type": "dockable",
 		"title": "预览器",
+		"webSecurity":false,
 		"width": 400,
 		"height": 300
 	}
