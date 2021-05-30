@@ -21,103 +21,13 @@ let _scripts = [];
 let is_hint = false;
 let layer = {
 	
-	style:
-		// ace.editorCss +
-		fs.readFileSync(Editor.url("packages://simple-code/monaco-editor/dev/vs/editor/editor.main.css"), "utf-8") +
-		`
-		.turnAnim{
-			animation:turn 2s linear infinite;      
-		  }
-		@keyframes turn{
-		0%{-webkit-transform:rotate(0deg);}
-		25%{-webkit-transform:rotate(90deg);}
-		50%{-webkit-transform:rotate(180deg);}
-		75%{-webkit-transform:rotate(270deg);}
-		100%{-webkit-transform:rotate(360deg);}
-		}
-		
-		#manualCompile{height: 15px;width:40;}
-		#gotoFileBtn{height: 15px;width:40;}
-		#settingBtn {height: 15px;width:40;}
-		#resetBtn {height: 15px;width:40;}
-		#editorA {width: 0%;height: 0%;}
-		#editorB {overflow:hidden;flex: 1 1 auto;}
-		#title {line-height: 15px;}
-		#tabList {overflow: hidden;-webkit-transition:all 0.1s;}
-		#layoutTab {-webkit-transition:all 0.1s;}
-		
-		#box {
-			display: flex;
-			flex-direction: column-reverse;
-			width: 100%;
-			height: 100%;
-		}
-
-		#waitIco {
-			width: 15px;
-			height: 15px;
-		}
-		.openTab {
-			border-style: inset;
-			padding: 0px 1px 0px 1px;
-			border-width: 0px 1px 0px 0px;
-			background-color : rgb(212, 212, 212);
-			color:#1e1e1e;
-			float:left;
-			display:block;
-			user-select:none;
-			text-align:center;
-			-webkit-transition:all 0.1s;
-		}
-
-		.closeTab {
-			border-style: outset;
-			padding: 0px 3px 0px 3px;
-			border-width: .0px 1px .0px 0px;
-			text-align:center ;
-			float:left;
-			user-select:none;
-			cursor:pointer;
-			overflow: hidden;
-			text-overflow: ellipsis;
-			-webkit-transition:all 0.1s;
-		}
-
-		.closeBtn {
-			color:#FF0000;
-			display:inline;
-			cursor:crosshair;
-			flex: 1;
-		}
-		.tabTitle {
-			display:inline;           
-            word-break:keep-all;      /* 不换行 */
-            white-space:nowrap;       /* 不换行 */
-            overflow:hidden;          /* 内容超出宽度时隐藏超出部分的内容 */
-			text-overflow:ellipsis;   /* 当对象内文本溢出时显示省略标记(...) ；需与overflow:hidden;一起使用。*/
-			text-align:center;
-			-webkit-transition:all 0.1s;
-		}
-		.overlay {
-			width: 9999px;
-			height: 9999px;
-			position: absolute;
-			top: 0px;
-			left: 0px;
-			z-index: 10001;
-			display:none;
-			filter:alpha(opacity=10);
-			background-color: #777;
-			opacity: 0.1;
-			-moz-opacity: 0.1;
-		}
-	`,
+	style:'',
 
 	template: `
 			<div id="box">
 				<div id="editorA"></div>
 				<div id="editorB"></div>
-				<div id="layoutTab" class="layout horizontal justified">
+				<div id="layoutTab" class="layout horizontal justified titleBarFontSize">
 					<div id="tabList" class="layout horizontal">
 						<img src=file://${Editor.url("packages://simple-code/panel/images/settingIco.png")} id="waitIco" class="turnAnim"></img> <span></span> <span></span>
 						<div id="title0" class="closeTab">
@@ -189,6 +99,7 @@ let layer = {
 	ready() 
 	{
 		this.initStartData()
+		this.initCSS()
 		this.initAce();
 		this.runExtendFunc("ready",this);
 		this.initVsEditor(()=>{
@@ -203,6 +114,20 @@ let layer = {
 			window._panel = this;
 		});
 	},
+	
+	initCSS()
+	{
+		let text = 
+			// ace.editorCss +
+			fs.readFileSync(Editor.url("packages://simple-code/panel/panel-component/index.css"), "utf-8") + '\n'+
+			fs.readFileSync(Editor.url("packages://simple-code/monaco-editor/dev/vs/editor/editor.main.css"), "utf-8");
+			
+
+		var style = document.createElement("style");
+		style.innerHTML = text;
+		this.$box.appendChild(style);
+		this.styleSheet = style.sheet;
+	},
 
 	initStartData(){
 		// 游戏资源路径缓存
@@ -212,6 +137,7 @@ let layer = {
 		this.timer_map 			= {};
 		this.cfg 				= config.getLocalStorage();
 		this.pro_cfg 			= config.getProjectLocalStorage()
+		
 	},
 
 	// 设置选项
@@ -236,7 +162,22 @@ let layer = {
 			this.$manualCompile.hidden = cfg.codeCompileMode != 'manual';
 			this.$gotoFileBtn.hidden = cfg.codeCompileMode == 'manual';
 		}
+		if(cfg.titleBarFontSize != null){
+			this.setCssByName('.titleBarFontSize',`{font-size: ${cfg.titleBarFontSize}px}`)
+		}
 		this.runExtendFunc("setOptions", cfg,isInit);
+	},
+
+	setCssByName(name,infoText){
+		for (let i = 0; i < this.styleSheet.cssRules.length; i++) {
+			const css_rule = this.styleSheet.cssRules[i];
+			if(css_rule.selectorText == name){
+				this.styleSheet.deleteRule(i)
+				this.styleSheet.insertRule(name +' '+ infoText,0)
+				break;
+			}
+			
+		}
 	},
 
  	// 补充缺失的配置，升级版本导致的

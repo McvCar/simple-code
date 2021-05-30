@@ -862,23 +862,35 @@ module.exports = {
 				type: "select",
 				items: []
 			},
-			"字体": {
-				path: "fontFamily",
-				type: "select",
-				defaultValue: undefined,
-				items: [{ caption: '默认', value: undefined }]
+			"标签栏大小": {
+				path: "titleBarFontSize",
+				type: "number",
+				defaultValue: 12,
+				defaults: [
+					{ caption: "8px", value: 8 },
+					{ caption: "10px", value: 10 },
+					{ caption: "12px", value: 12 },
+					{ caption: "14px", value: 14 },
+					{ caption: "16px", value: 16 }
+				],
 			},
 			"字体大小": {
 				path: "fontSize",
 				type: "number",
 				defaultValue: 12,
 				defaults: [
-					{ caption: "6px", value: 8 },
+					{ caption: "8px", value: 8 },
 					{ caption: "10px", value: 10 },
 					{ caption: "12px", value: 12 },
-					{ caption: "16px", value: 16 },
-					{ caption: "18px", value: 18 }
+					{ caption: "14px", value: 14 },
+					{ caption: "16px", value: 16 }
 				],
+			},
+			"字体": {
+				path: "fontFamily",
+				type: "select",
+				defaultValue: undefined,
+				items: [{ caption: '默认', value: undefined }]
 			},
 			"字体粗细": {
 				path: "fontWeight",
