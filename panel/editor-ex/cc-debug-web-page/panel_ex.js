@@ -33,7 +33,7 @@ module.exports = {
 		// let s_i = infoObj.innerText.indexOf(":74")+3
 		// let num = Number( infoObj.innerText.substr(s_i,2) )
 		// prot = prot + num
-		// const ws = Editor.require('packages://simple-code/tools/nodejs-websocket');//引入websocket
+		// const ws = Editor.require('packages://simple-code/node_modules/nodejs-websocket');//引入websocket
 		 
 		// const server = ws.createServer(connection => {
 		// 	// console.log('有一名用户连接进来了...')

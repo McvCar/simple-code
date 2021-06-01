@@ -2,6 +2,10 @@ let fs = require("fs");
 let path = require("path");
 
 let self = module.exports = {
+    
+    normPath(filePath){
+        return filePath.replace(/\\/g,'/');
+    },
 
     copyFile(sourcePath,toPath){
         fs.writeFileSync(toPath,fs.readFileSync(sourcePath))

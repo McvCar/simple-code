@@ -88,8 +88,12 @@ module.exports = {
 				if (data.item.extname == ".fire") {
 					Editor.Ipc.sendToAll('scene:open-by-uuid', data.item.uuid);
 				}else{
-					Editor.Selection.select('asset', data.item.uuid)
-					setTimeout(()=>this.parent.openActiveFile(true),50) 
+					if(data.item.uuid == 'outside'){
+						this.parent.openOutSideFile(data.item.meta,true)
+					}else{
+						Editor.Selection.select('asset', data.item.uuid)
+						setTimeout(()=>this.parent.openActiveFile(true),50) 
+					}
 				}
 			}
 		}
@@ -98,7 +102,14 @@ module.exports = {
 		if (cmd == "findFileGoto")
 		{
 			// 打开搜索框: 文件定位转跳
-			this.parent.openSearchBox("",this.parent.file_list_buffer,(data)=>onSearchAccept(cmd,data));
+			let fileList = []
+			this.parent.file_list_buffer.forEach((v)=>
+			{
+				if (v.uuid != 'outside'){
+					fileList.push(v)
+				}
+			});
+			this.parent.openSearchBox("",fileList,(data)=>onSearchAccept(cmd,data));
 		}else if (cmd == "findFileAndOpen")
 		{
 			// 打开场景转跳

@@ -131,6 +131,15 @@
 			"accelerator": ""
 		}
 	},
+	"runtime-resource": {
+		"path": "plugin",
+		"name": "plugin"
+	},
+	"reload": {
+		"ignore": [
+			"plugin/**/*"
+		]
+	},
 	"panel": {
 		"main": "panel/index.js",
 		"type": "dockable",
@@ -142,8 +151,11 @@
 		"main": "panel/preview.js",
 		"type": "dockable",
 		"title": "预览器",
-		"webSecurity":false,
+		"webSecurity": false,
 		"width": 400,
 		"height": 300
+	},
+	"dependencies": {
+		"chokidar": "^3.5.1"
 	}
 }

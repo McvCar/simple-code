@@ -132,6 +132,7 @@ let layer = {
 	initStartData(){
 		// 游戏资源路径缓存
 		this.file_list_buffer = [];
+		this.file_list_map 	  = {};
 		// 读取配置文件
 		this.$title0.hidden 	= true;
 		this.timer_map 			= {};
@@ -314,32 +315,33 @@ let layer = {
 		},false)
 
 		let inspector = document.getElementById('inspector');
-		
-		// 读取拖入的文件
-		inspector.addEventListener('drag',(e)=>{
-			// if(e.dataTransfer.files[0]){
-				e.preventDefault();
-				e.stopPropagation();
-			// }
-		},true)
-		
-		inspector.addEventListener('dragover',(e)=>{
-			// if(e.dataTransfer.files[0]){
-				e.preventDefault();
-				e.stopPropagation();
-			// }
-		},true)
-		
-		// 读取拖入的文件
-		inspector.addEventListener('drop',(e)=>{
-			var fileObj = e.dataTransfer.files[0];
-			if(fileObj && this.openOutSideFile(fileObj.path,true))
-			{
-				e.preventDefault();
-			}else{
-				Editor.log('暂不支持该文本类型');
-			}
-		},true)
+		if(inspector){
+			// 读取拖入的文件
+			inspector.addEventListener('drag',(e)=>{
+				// if(e.dataTransfer.files[0]){
+					e.preventDefault();
+					e.stopPropagation();
+				// }
+			},true)
+			
+			inspector.addEventListener('dragover',(e)=>{
+				// if(e.dataTransfer.files[0]){
+					e.preventDefault();
+					e.stopPropagation();
+				// }
+			},true)
+			
+			// 读取拖入的文件
+			inspector.addEventListener('drop',(e)=>{
+				var fileObj = e.dataTransfer.files[0];
+				if(fileObj && this.openOutSideFile(fileObj.path,true))
+				{
+					e.preventDefault();
+				}else{
+					Editor.log('暂不支持该文本类型');
+				}
+			},true)
+		}
 		
 		// 记录鼠标位置，用于菜单位置
 		let mousemove = (e)=>{
@@ -384,7 +386,7 @@ let layer = {
 				return;
 			}
 			let is_up_layout = this.is_init_finish && this.upLayout()
-			this.isIdleTsWorker()
+			this.upNeedImportListWorker()
 			this.onCheckLayout(is_up_layout)
 		}, 0.5);
 	},
@@ -969,7 +971,7 @@ let layer = {
 			if(!this.is_init_finish  || this.code_file_rename_buf.is_use || this.is_not_select_active) return;
 
 			this.checkAllCurrFileChange();
-			let url = Editor.remote.assetdb.uuidToUrl(info.uuid);
+			let url = info.uuid == 'outside' ? info.url : Editor.remote.assetdb.uuidToUrl(info.uuid); // outside额外做处理
 			if(url) return;
 
 			let edit_id = this.getTabIdByPath(url);
@@ -991,9 +993,12 @@ let layer = {
 				let urlI = this.getUriInfo(v.url)
 				if (urlI.extname != "" && this.SEARCH_BOX_IGNORE[urlI.extname] == null) 
 				{
-					let item = this.newFileInfo(urlI.extname, urlI.name, v.url, v.uuid)
-					this.file_list_buffer.push(item)
-					this.loadCompleterLib(item.meta, item.extname, true);
+					let isOutside = v.uuid == 'outside';// 内部修改
+					let item = this.newFileInfo(urlI.extname, urlI.name, v.url, v.uuid);
+					let fsPath = isOutside ? v.url : Editor.remote.assetdb.urlToFspath(v.url);
+					this.file_list_buffer.push(item);
+					this.file_list_map[fe.normPath(fsPath)] = item;
+					this.loadCompleterLib(item.meta, item.extname,isOutside);
 					this.upCompCodeFile();
 				}
 			})
@@ -1005,11 +1010,15 @@ let layer = {
 			if(!this.is_init_finish) return;
 			if (!info && this.file_list_buffer) return;
 
-			info.forEach((v) => {
+			info.forEach((v) => 
+			{
+				let isOutside = v.uuid == 'outside';
+				// 删除缓存
+				delete this.file_list_map[fe.normPath(v.path)];
 				for (let i = 0; i < this.file_list_buffer.length; i++) {
 					let item = this.file_list_buffer[i];
-					if (item.uuid == v.uuid) {
-						this.file_list_buffer.splice(i, 1)
+					if ( !isOutside && item.uuid == v.uuid || isOutside && v.url == item.meta ) {
+						this.file_list_buffer.splice(i, 1);
 						break;
 					}
 				}
@@ -1017,16 +1026,16 @@ let layer = {
 				let is_remove = false
 				
 				// 刷新编辑信息
-				let old_url = this.fsPathToUrl(v.path);
+				let old_url = isOutside ? v.path : this.fsPathToUrl(v.path) ;
 				let id = this.getTabIdByPath(old_url);
 				// 正在编辑的tab
 				if(id != null)
 				{
 					// 正在编辑的文件被删
 					let editInfo = this.edit_list[id] 
-					if (editInfo && v.uuid == editInfo.uuid) {
+					if (editInfo && ( !isOutside && v.uuid == editInfo.uuid || isOutside && v.path == editInfo.path)) {
 						editInfo.uuid = "outside";
-						editInfo.path = unescape(Editor.url(editInfo.path));
+						editInfo.path = isOutside ? v.path : unescape(Editor.url(editInfo.path));
 						editInfo.can_remove_model = 1;
 						if(editInfo.vs_model)
 						{
@@ -1050,7 +1059,7 @@ let layer = {
 					}
 				}else{
 					// 清缓存
-					let vs_model = this.monaco.editor.getModel(this.monaco.Uri.parse(this.fsPathToModelUrl(v.path)))
+					let vs_model = this.monaco.editor.getModel(this.monaco.Uri.parse(isOutside ? v.path : this.fsPathToModelUrl(v.path)))
 					if(vs_model) vs_model.dispose()
 				}
 
@@ -1071,12 +1080,14 @@ let layer = {
 				v.extname = urlI.extname;
 				
 				// 更新文件缓存
+				delete this.file_list_map[v.srcPath];
 				for (let i = 0; i < this.file_list_buffer.length; i++) {
 					let item = this.file_list_buffer[i];
 					if (item.uuid == v.uuid) {
 						item.extname = urlI.extname
 						item.value = urlI.name
 						item.meta = v.url
+						this.file_list_map[fe.normPath(v.destPath)] = item;
 						break;
 					}
 				}
@@ -1084,7 +1095,7 @@ let layer = {
 				// 重命名后检测引用路径
 				if(this.cfg.renameConverImportPath && ( urlI.extname == '.js' || urlI.extname == '.ts'))
 				{
-					this.isIdleTsWorker((isIdle)=>
+					this.upNeedImportListWorker((isIdle)=>
 					{
 						if(isIdle)
 						{	

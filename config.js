@@ -763,10 +763,10 @@ module.exports = {
 	// 代码提示编译选项,对应 ts.config.json配置 :https://www.cnblogs.com/cczlovexw/p/11527708.html
 	compilerOptions: {
 
-		// allowJs: true,
-		// allowSyntheticDefaultImports: true,
+		allowJs: true,
+		allowSyntheticDefaultImports: true,
 		experimentalDecorators: true,
-		// rootDirs:["x:/Users/mac/Desktop/MyGame/Live2dForCocosCreator-master/assets"] ,
+		// rootDirs:["/assets"] ,
 		// paths: {
 		//   "@/*": ["src/*"]
 		// },
@@ -798,7 +798,7 @@ module.exports = {
 		//     maxNodeModuleJsDepth?: number;
 		// module: 1,
 		//  target: 3,
-		// moduleResolution: 2,
+		moduleResolution: 2, // 1.Classic 2.NodeJs
 		//     newLine?: NewLineKind;
 		//     noEmitHelpers?: boolean;
 		//     noEmitOnError?: boolean;
@@ -980,6 +980,10 @@ module.exports = {
 			},
 			"JS高性能函数跳转/提示": {
 				path: "enabledGlobalSugges",
+				defaultValue: true,
+			},
+			"加载node_modules目录": {
+				path: "enabledNpmDir",
 				defaultValue: true,
 			},
 			"显示代码预览": {

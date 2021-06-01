@@ -249,7 +249,7 @@ module.exports = {
 		}else
 		{
 			// JS 解析代码格式是否正常的,
-			let esprima = Editor.require('packages://simple-code/tools/esprima/esprima')
+			let esprima = Editor.require('packages://simple-code/node_modules/esprima/esprima')
 			try {
 			    esprima.parse(text)
 			} catch (error) {

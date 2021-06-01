@@ -29,13 +29,14 @@ let layer =
 	// 忽略文件
 	IGNORE_FILE: ["png", "jpg", "zip", "labelatlas", "ttf", "mp3", "mp4", "wav", "ogg", "rar", 'fire', 'prefab', 'plist'],
 	// 打开文件格式对应的类型
-	FILE_OPEN_TYPES: { md: "markdown", js: "javascript", ts: "typescript", effect: "yaml", coffee: "coffeescript", lua: "lua", sql: "mysql", php: "php", xml: "xml", html: "html", css: "css", json: "json", manifest: "json", plist: "xml", gitignore: "gitignore", glsl: "glsl",text:"markdown",txt:"markdown",c:"c",cpp:"cpp",h:"cpp" },
+	FILE_OPEN_TYPES: { md: "markdown", js: "typescript", ts: "typescript", effect: "yaml", coffee: "coffeescript", lua: "lua", sql: "mysql", php: "php", xml: "xml", html: "html", css: "css", json: "json", manifest: "typescript", plist: "xml", gitignore: "gitignore", glsl: "glsl",text:"markdown",txt:"markdown",c:"c",cpp:"cpp",h:"cpp" },
 
 	// 启动事件
 	initVsEditor(callback) 
 	{
 		this.timer_map 			= {};
 		this.file_list_buffer  	= this.file_list_buffer || [];
+		this.file_list_map 	  	= this.file_list_map || {};
 
 		this.initVsCode(() => {
 		this.initFileListBuffer(()=>{
@@ -49,7 +50,7 @@ let layer =
 
 	initVsCode(callback) {
 		if(Promise.prototype.finally == null){
-			// Editor.require('packages://simple-code/tools/promise.prototype.finally').shim();
+			// Editor.require('packages://simple-code/node_modules/promise.prototype.finally').shim();
 			Promise.prototype.finally = function (callback) {
 				let P = this.constructor;
 				return this.then(
@@ -66,7 +67,7 @@ let layer =
 		vsLoader.require(['vs/editor/editor.main'], () => 
 		{
 			this.monaco = Editor.monaco = Editor.monaco || monaco;
-			config.vsEditorConfig.language = 'javascript';  // 预热 javascript模块
+			config.vsEditorConfig.language = 'javascript';  // 预热 typescript模块。json、javascript脚本统一交给typescript解析器一起解析，方便混合编码
 			config.vsEditorConfig.value = ``
 			var editor = monaco.editor.create(this.$editorB,config.vsEditorConfig);
 
@@ -84,17 +85,17 @@ let layer =
 				monaco.languages.typescript.getTypeScriptWorker().then((func)=>{func().then((tsWr)=>{
 					this.tsWr = tsWr;// ts文件静态解析器
 					this.tsWr.getEditsForFileRename('inmemory://model/1','inmemory://model/2');// 预热模块
-					if(this.tsWr && this.jsWr){
+					// if(this.tsWr && this.jsWr){
 						callback();
-					}
+					// }
 				})})
-				monaco.languages.typescript.getJavaScriptWorker().then((func)=>{func().then((jsWr)=>{
-					this.jsWr = jsWr;// js文件静态解析器
-					this.jsWr.getEditsForFileRename('inmemory://model/1','inmemory://model/2')// 预热模块
-					if(this.tsWr && this.jsWr){
-						callback();
-					}
-				})})
+				// monaco.languages.typescript.getJavaScriptWorker().then((func)=>{func().then((jsWr)=>{
+				// 	this.jsWr = jsWr;// js文件静态解析器
+				// 	this.jsWr.getEditsForFileRename('inmemory://model/1','inmemory://model/2')// 预热模块
+				// 	if(this.tsWr && this.jsWr){
+				// 		callback();
+				// 	}
+				// })})
 			},100)
 		})
 	},
@@ -115,9 +116,9 @@ let layer =
 		// 	// 	temp();
 		// 	// }
 		// }), 1.5, { count: 0 });
-		Editor.assetdb.queryAssets('db://assets/**/*', '', (err, results)=> {
+		Editor.assetdb.queryAssets('db://**/*', '', (err, results)=> {
 			if(this.file_list_buffer && this.file_list_buffer.length >0) return;
-			let fileList = []; // 文件列表
+			
 			for (let i = 0; i < results.length; i++) 
 			{
 				let result = results[i];
@@ -126,14 +127,14 @@ let layer =
 				{
 					let name = info.name;
 					result.extname = info.extname
-					let item_cfg = this.newFileInfo(result.extname, name, result.url, result.uuid,result.destPath)
-					fileList.push(item_cfg);
+					let item_cfg = this.newFileInfo(result.extname, name, result.url, result.uuid,result.path)
+					this.file_list_buffer.push(item_cfg);
+					this.file_list_map[fe.normPath( result.path )] = item_cfg;
 				}
 			}
 
-			this.file_list_buffer = fileList;
 			this.sortFileBuffer();
-			if(callback && fileList.length > 0) 
+			if(callback && this.file_list_buffer.length > 0) 
 			{
 				let temp = callback;
 				callback = null;
@@ -157,6 +158,7 @@ let layer =
 			extname: extname,//格式
 			value: name == "" ? url : name,
 			meta: url,
+			url: url,
 			score: 0,//搜索优先级
 			fsPath:fsPath,
 			// matchMask: i,
@@ -183,7 +185,7 @@ let layer =
 			cfg.minimap = {enabled :cfg.enabledMinimap}
 		}
 		if (cfg["language"]) {
-			this.monaco.editor.setModelLanguage(this.vs_editor.getModel(), vs_cfg['language']);
+			this.monaco.editor.setModelLanguage(this.vs_editor.getModel(), cfg['language']);
 		}
 		if(cfg.theme != null){
 			this.setTheme(cfg.theme);
@@ -240,7 +242,7 @@ let layer =
 	// 读取系统字体列表
 	loadSysFonts()
 	{
-		let fontList = Editor.require('packages://simple-code/tools/node-font-list-master/index.js');
+		let fontList = Editor.require('packages://simple-code/node_modules/node-font-list-master/index.js');
 		fontList.getFonts()
 		.then(fonts => {
 			for (let i = 0; i < fonts.length; i++) 
@@ -262,7 +264,9 @@ let layer =
 			let language = list[i];
 			for (let n = 0; n < language.extensions.length; n++) {
 				const ext = language.extensions[n];
-				this.FILE_OPEN_TYPES[ext.substr(1)] = language.id;
+				if(this.FILE_OPEN_TYPES[ext.substr(1)] == null){
+					this.FILE_OPEN_TYPES[ext.substr(1)] = language.id;
+				}
 			}
 			config.optionGroups.Main["语言"].items.push({ caption: language.id, value: language.id });
 		}
@@ -286,19 +290,26 @@ let layer =
 		{
 			this.oepnDefindFile();
 			// 打开历史文件tab列表
+			let showId;
 			for (const key in this.file_cfg) {
 				let info = this.file_cfg[key];
 				if (key.indexOf("db://") != -1) {
 					let uuid = Editor.remote.assetdb.urlToUuid(key);
 					if (!uuid) continue;
 					let temp = this.getFileUrlInfoByUuid(uuid);
-					let file_info = this.openFile(temp, info.is_show);
+					let file_info = this.openFile(temp, true);
 					if (file_info) {
 						this.setLockEdit(true,file_info.id);
+					}
+					if(info.is_show){
+						showId = file_info.id;
 					}
 				}
 			}
 			this.openActiveFile();
+			if(showId){
+				this.setTabPage(showId)
+			}
 			if(callback) callback()
 		},2);
 	},
@@ -324,7 +335,7 @@ let layer =
 		(document.getElementById("tools") || this).transformTool = "move";//因为键盘事件吞噬不了,需要锁定场景操作为移动模式
 		let model_url = model.uri._formatted;
 		this.setTimeoutById(()=>{
-			this.jsWr.deleteFunctionDefindsBuffer(model_url);
+			// this.jsWr.deleteFunctionDefindsBuffer(model_url);
 			this.tsWr.deleteFunctionDefindsBuffer(model_url);
 		},1000,'removeModelBuffer');
 	},
@@ -372,14 +383,20 @@ let layer =
 			this.setWaitIconActive(true);
 		});
 		
+		// 创建view缓存model事件
+		this.monaco.editor.onDidCreateModel((model)=>{
+			this.upNeedImportListWorker()
+		});
+
 		// 删除代码文件 view缓存model
 		this.monaco.editor.onWillDisposeModel((model)=>{
-			this.jsWr.deleteFunctionDefindsBuffer(model.uri._formatted);
+			// this.jsWr.deleteFunctionDefindsBuffer(model.uri._formatted);
 			this.tsWr.deleteFunctionDefindsBuffer(model.uri._formatted);
+			this.upNeedImportListWorker()
 		});
 
 		// 转跳定义
-		this.monaco.languages.registerDefinitionProvider("javascript", {
+		this.monaco.languages.registerDefinitionProvider("typescript", {
 			provideDefinition:  (model, position, token)=> 
 			{
 				let wordInfo = model.getWordAtPosition(position);
@@ -398,7 +415,7 @@ let layer =
 					if(!wordInfo || !this.cfg.enabledGlobalSugges){
 						return resolve([]);
 					}
-					this.jsWr.getFunctionDefinds(wordInfo.word).then((hitnMap)=>
+					this.tsWr.getFunctionDefinds(wordInfo.word).then((hitnMap)=>
 					{
 						let list = []
 						for (const url in hitnMap) 
@@ -433,13 +450,13 @@ let layer =
 		})
 
 		// 鼠标悬停提示
-		this.monaco.languages.registerHoverProvider("javascript", {
+		this.monaco.languages.registerHoverProvider("typescript", {
 			provideHover:  (model, position, token)=> {
 				let wordInfo = model.getWordAtPosition(position);
 				
 				var p = new Promise( (resolve, reject )=>{
 					if(wordInfo && this.cfg.enabledGlobalSugges){
-						this.jsWr.getFunctionDefindHover(wordInfo.word,model.uri._formatted).then((text)=>
+						this.tsWr.getFunctionDefindHover(wordInfo.word,model.uri._formatted).then((text)=>
 						{
 							text = text || '';
 							let toInd = text.indexOf('\n');
@@ -478,7 +495,7 @@ let layer =
 		};
 		
 		// 代码格式化
-		// this.monaco.languages.registerDocumentRangeFormattingEditProvider("javascript", {
+		// this.monaco.languages.registerDocumentRangeFormattingEditProvider("typescript", {
 		// 	provideDocumentRangeFormattingEdits(model , range , options , token){
 		// 		// let text = model.getValueInRange(range);
 		// 		setTimeout(()=>
@@ -542,7 +559,7 @@ let layer =
 		// 	}
 		// })
 		// 跳转到实现
-		// this.monaco.languages.registerImplementationProvider("javascript",{provideImplementation: function (model,position, token) {
+		// this.monaco.languages.registerImplementationProvider("typescript",{provideImplementation: function (model,position, token) {
 		// 	return Promise.resolve([{
 		// 		// contents: [ {isTrusted:true, value: 'hello world' } ],
 		// 		range: { startLineNumber:1, startColumn:1, endLineNumber: 1, endColumn: 1 },
@@ -551,7 +568,7 @@ let layer =
 		// }})
 
 		// 编辑器内部链接操作
-		// this.monaco.languages.registerLinkProvider("javascript",{provideLinks: function (model, token) {
+		// this.monaco.languages.registerLinkProvider("typescript",{provideLinks: function (model, token) {
 		// 	return Promise.resolve([{
 		// 		links: [{range:null,tooltip:"",url:""}],
 		// 	}]);
@@ -620,7 +637,7 @@ let layer =
 						suggestions.push.apply(suggestions,this.all_sym_sugges)
 						retSuggesFunc();
 					}else{
-						this.jsWr.hasCompletionsAtPosition(model.uri.toString(),offset).then((isHasSym)=>{
+						this.tsWr.hasCompletionsAtPosition(model.uri.toString(),offset).then((isHasSym)=>{
 							if(isHasSym)
 							{
 								// 存在精准的内置代码提示，不使用模糊代码提示
@@ -646,7 +663,6 @@ let layer =
 		// }
 		}
 		//Register the custom completion function into Monaco Editor    
-		this.monaco.languages.registerCompletionItemProvider('javascript',obj );
 		this.monaco.languages.registerCompletionItemProvider('typescript',obj );
 		this.monaco.languages.registerCompletionItemProvider('plaintext',obj );
 
@@ -697,7 +713,7 @@ let layer =
 		// 防止短时间内大量重复调用
 		this.setTimeoutById(()=>
 		{
-			this.jsWr.getAllSuggests().then((suggeList)=>
+			this.tsWr.getAllSuggests().then((suggeList)=>
 			{
 				this.all_sym_sugges = suggeList;
 			});
@@ -762,14 +778,14 @@ let layer =
 				// js的 d.ts提示文件
 				if (isTs && !isUrlType && code) 
 				{
-					this.monaco.languages.typescript.javascriptDefaults.addExtraLib(code,'lib://model/' + file_name); 
-				}
-				let vs_model = this.loadVsModel(file_path,extname,isUrlType,false);
-				if(isCover || vs_model.getValue() == ''){
-					vs_model.setValue(code)
+					// this.monaco.languages.typescript.javascriptDefaults.addExtraLib(code,'lib://model/' + file_name); 
+					let vs_model = this.loadVsModel(file_path,extname,isUrlType,false);
+					if(isCover || vs_model.getValue() == ''){
+						vs_model.setValue(code)
+					}
 				}
 				if(finishCallback) {
-					finishCallback(vs_model);
+					finishCallback();
 				}
 			}
 			if(isSasync){
@@ -837,7 +853,7 @@ let layer =
 	},
 
 	fsPathToModelUrl(fsPath){
-		let str_uri = Editor.isWin32 ? fsPath.replace(/ /g,'').replace(/\\/g,'/') : "X:/"+fsPath.substr(1)
+		let str_uri = Editor.isWin32 ? fsPath.replace(/ /g,'').replace(/\\/g,'/') : fsPath;
 		return str_uri;
 	},
 	
@@ -940,7 +956,7 @@ let layer =
 		Editor.assetdb.saveExists(url, text, (err, meta)=> {
 			if (err) {
 				fs.writeFileSync(Editor.remote.assetdb.urlToFspath(url), text); //外部文件
-				Editor.warn("保存的脚本存在语法错误:",url,err,meta);
+				Editor.warn("保存的脚本存在语法错误或是只读文件:",url,err,meta);
 			}else{
 				// 刚刚保存了，creator还没刷新
 				this.is_save_wait_up = 1;
@@ -1291,6 +1307,9 @@ let layer =
 		}
 	},
 
+	getModelByFsPath(fsPath){
+		return this.monaco.editor.getModel(this.monaco.Uri.parse(this.fsPathToModelUrl(fsPath)))
+	},
 
 	// 打开node上的文件到编辑器
 	openActiveFile(isShow,isCloseUnmodifiedTabs = true) {
@@ -1427,11 +1446,11 @@ let layer =
 		})
 	},
 
-	// 检测js/ts解析器进程是否处于空闲状态
-	isIdleTsWorker(callback,timeOut=500)
+	// 检测是否存在需要import的路径，以及检查js/ts解析器进程是否处于空闲状态
+	upNeedImportListWorker(callback,timeOut=500)
 	{
 		let isIdleTs = false;
-		let isIdleJs = false;
+		// let isIdleJs = false;
 		let isTimeOut = false;
 		let timeoutId ; 
 		// 超时检查
@@ -1449,7 +1468,7 @@ let layer =
 
 		let check = ()=>
 		{
-			if(!isIdleTs || !isIdleJs){
+			if(!isIdleTs ){
 				return; //
 			}
 
@@ -1467,31 +1486,119 @@ let layer =
 			}
 		}
 
-		// 调用进程,检测是否空闲
-		this.jsWr.isIdleTsWorker().then(()=>{
-			isIdleTs = true;
-			check()
-		});
+		let loadImportPath = (needImportPaths)=>{
+			let isNull = true
+			for(var key in needImportPaths) {isNull = false ; break;}
+			if(isNull){
+				isIdleTs = true;
+				check()
+			}else{
+				this.loadNeedImportPaths(needImportPaths)
+			}
+		}
 
-		this.jsWr.isIdleTsWorker().then(()=>{
-			isIdleJs = true;
-			check()
-		});
+		// 调用进程,检测是否空闲
+		this.tsWr.getNeedImportPaths().then((needImportPaths)=>loadImportPath(needImportPaths) );
+	},
+
+	// 加载import引用路径上的文件
+	loadNeedImportPaths(needImportPaths,isTs)
+	{
+		console.log(needImportPaths);
+		let loadFunc = (tryPath,isCompareName)=>
+		{
+			tryPath = tryPath.substr(0,7) == 'file://' ? tryPath.substr(7) : tryPath; // 去掉前缀
+
+			let fileItem 
+			if(isCompareName)
+			{
+				// cocos专用只对比文件名的方式加载
+				let index = tryPath.lastIndexOf('/');
+				if(index != -1){
+					tryPath = tryPath.substr(index+1);
+				}
+				for (const fsPath in this.file_list_map) 
+				{
+					let fileName = fsPath;
+					let _fileItem = this.file_list_map[fsPath];
+					if(_fileItem.extname == '.ts' || _fileItem.extname == '.js' || _fileItem.extname == '.json')
+					{
+						index = fileName.lastIndexOf('/');
+						if(index != -1){
+							fileName = fileName.substr(index+1);
+						}
+						index = fileName.lastIndexOf('.');
+						if(index != -1){
+							fileName = fileName.substr(0,index);
+						}
+						if(tryPath == fileName){
+							fileItem = _fileItem
+							break;
+						}
+					}
+				}
+			}else{
+				// 正常node路径加载
+				fileItem = this.file_list_map[fe.normPath(tryPath)];
+			}
+
+			if(!fileItem){
+				// console.warn("测试失败import:",importPath,tryPath)
+				return 1;
+			}
+			let vs_model = this.getModelByFsPath(tryPath);
+			if(vs_model && vs_model.getValue() != ''){
+				return 0; // 已经存在缓存，不再继续读取
+			}
+			// 2.加载文件
+			let isOutside = fileItem.uuid == "outside";
+			let filePath = fileItem.meta;
+			this.loadVsModel(filePath, this.getUriInfo(filePath).extname , !isOutside)
+			console.log("加载import:",filePath)
+			return 0;
+		}
+
+		for (const importPath in needImportPaths) 
+		{
+			let tryPaths = needImportPaths[importPath];
+			let isImport = false;
+			for (let i = 0; i < tryPaths.length; i++) 
+			{
+				// 1.从缓存找出路径文件是否存在
+				let tryPath = tryPaths[i];
+				let retState = loadFunc(tryPath);
+				if(retState == 1){
+					continue;
+				}else if(retState == 0){
+					isImport = true;
+					break;
+				}
+			}
+			// 2.正常路径方式找不到文件时切换为只对比文件名的方式加载
+			if( tryPaths.length && !isImport ){
+				loadFunc(tryPaths[0],true)
+			}
+			// 告诉解析器这边已经处理此路径了
+			// isTs ? this.tsWr.removeNeedImportPath(importPath) : this.jsWr.removeNeedImportPath(importPath) 
+			this.tsWr.removeNeedImportPath(importPath)
+		}
+		this.setTimeoutById(()=>this.upCompCodeFile(),1000,'loadNeedImportPaths')
 	},
 	
 	// 编译编辑中的代码
 	upCompCodeFile(){
-		let edits = [{
-			range:{startLineNumber:0,startColumn:0,endLineNumber:0,endColumn:0,},
-			text:' ',
-			forceMoveMarkers:false,
-		}]
+		// let edits = [{
+		// 	range:{startLineNumber:0,startColumn:0,endLineNumber:0,endColumn:0,},
+		// 	text:' ',
+		// 	forceMoveMarkers:false,
+		// }]
 		this.edit_list.forEach((editInfo, id) => {
 			if(editInfo && editInfo.vs_model)
 			{
-				editInfo.vs_model.pushStackElement();
-				editInfo.vs_model.pushEditOperations([], edits);
-				editInfo.vs_model.undo()
+				// 只是为了触发解析格式事件，防止import后没有及时刷新
+				let language = editInfo.vs_model.getLanguageIdentifier().language;
+				this.monaco.editor.setModelLanguage(editInfo.vs_model,"markdown");
+				this.monaco.editor.setModelLanguage(editInfo.vs_model,language);
 			}
 		});
 	},
@@ -1677,7 +1784,7 @@ let layer =
 	loadCodeFileRenameInfo(oldFileName,newFileName,extname,callback)
 	{
 		// 检测需要修改的文件
-		let wr = extname == ".js" ? this.jsWr : this.tsWr;
+		let wr =  this.tsWr//extname == ".js" ? this.jsWr : this.tsWr;
 		wr.getEditsForFileRename(oldFileName,newFileName).then((edit_files)=>{
 			callback(edit_files,wr)
 		},()=>{
