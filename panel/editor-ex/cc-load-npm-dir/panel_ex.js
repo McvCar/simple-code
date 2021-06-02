@@ -6,7 +6,7 @@
 var path 	= require('path');
 var fs 		= require('fs');
 var fe 	= Editor.require('packages://simple-code/tools/FileTools.js');
-var chokidar = Editor.require('packages://simple-code/node_modules/chokidar');
+var watch = Editor.require('packages://simple-code/node_modules/watch');
 
 const prsPath 			= Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
 const node_modules_path = path.join(prsPath,'node_modules');
@@ -24,37 +24,87 @@ module.exports = {
 	
 	// 设置选项
 	setOptions(cfg,isInit) 
-	{	
-		if(cfg.enabledNpmDir && isInit){
-			
-			this.loadModuleDir()
-			this.watcher = chokidar.watch(prsPath, {
-				ignored: /[\/\\]\./, persistent: true
-			});
-			
-			// 监听文件夹改动
-			this.watcher
-			.on('add', this.addNodeModuleFile.bind(this))
-			.on('change', this.changeNodeModuleFile.bind(this))
-			.on('unlink', this.unlinkNodeModuleFile.bind(this))
-
-			.on('error', (error)=> {  console.log('Error happened', error); })
-			// .on('addDir', (path)=> { log('Directory', path, 'has been added'); })
-			// .on('unlinkDir', (path)=> { log('Directory', path, 'has been removed'); })
-			// .on('ready', ()=> { log('Initial scan complete. Ready for changes.'); })
-			// .on('raw', (event, path, details)=> { log('Raw event info:', event, path, details); })
-		}else if(this.watcher)
+	{	if(cfg.enabledNpmDir == null) return;
+		
+		if(cfg.enabledNpmDir){
+			if(!isInit){
+				return Editor.log("加载node_modules设置 重启creator后生效")
+			}
+			this.initWatch()
+		}else if(!cfg.enabledNpmDir && this._isInit)
 		{
-			this.watcher.close();
-			delete this.watcher;
+			this.stop()
+			this.unlinkNodeModuleDir(node_modules_path)
 		}
 	},
 
-	loadModuleDir(){
+	// 初始化文件夹监听
+	initWatch(){
 		if(!fe.isDirectory(node_modules_path)){
+			// 监听npm目录的创建
+			this.check_timeout = setTimeout(this.initWatch.bind(this),5000);
+			return;
+		}
+		delete this.check_timeout;
+
+		this._isInit = true
+		// this.loadModuleDir()
+		watch.watchTree(node_modules_path, (f, curr, prev)=> 
+		{
+			if (typeof f == "object" && prev === null && curr === null) 
+			{
+				// Finished walking the tree
+				let c_files = []
+				for (let filePath in f) {
+					const state = f[filePath];
+					if(state.isFile()){
+						
+						filePath = filePath.replace(/\\/g,'/');
+						c_files.push({
+							url : filePath,
+							uuid: 'outside'
+						})
+					}
+				}
+				this.parent.messages['asset-db:assets-created'].bind(this.parent)(0,c_files)
+			}else
+			{
+				// if(!this.isNodeModuleDir(f)) return;
+
+				if (prev === null) {
+					// f is a new file
+					if(curr.isDirectory()){
+						this.addNodeModuleDir(f)
+					}else{
+						this.addNodeModuleFile(f)
+					}
+				} else if (curr.nlink === 0) {
+					// f was removed
+					if(prev.isDirectory()){
+						this.unlinkNodeModuleDir(f)
+					}else{
+						this.unlinkNodeModuleFile(f)
+					}
+				} else {
+					// f was changed
+					if(curr.isFile()){
+						this.changeNodeModuleFile(f)
+					}
+				}
+			}
+			
+		})
+	},
+
+	isNodeModuleDir(path){
+		return path && path.indexOf(node_modules_path) != -1;
+	},
+
+	addNodeModuleDir(dirPath){
+		if(!fe.isDirectory(dirPath)){
 			return
 		}
-		let files = fe.getDirAllFiles(node_modules_path,[]);
+		let files = fe.getDirAllFiles(dirPath,[]);
 		let c_files = []
 		for (let i = 0; i < files.length; i++) 
 		{
@@ -69,17 +119,13 @@ module.exports = {
 			})
 		}
 
-		console.log(c_files)
+		// console.log('添加文件夹：',c_files)
 		this.parent.messages['asset-db:assets-created'].bind(this.parent)(0,c_files)
 	},
 	
-	isNodeModuleDir(path){
-		return path && path.indexOf(node_modules_path) != -1;
-	},
-
 	// 新增文件
 	addNodeModuleFile(path){
-		if(!this.isNodeModuleDir(path)) return;
+		// if(!this.isNodeModuleDir(path)) return;
 		path = path.replace(/\\/g,'/');
 
 		let info = [{
@@ -98,7 +144,7 @@ module.exports = {
 
 	// 改变文件
 	changeNodeModuleFile(path){
-		if(!this.isNodeModuleDir(path)) return;
+		// if(!this.isNodeModuleDir(path)) return;
 		path = path.replace(/\\/g,'/');
 
 		let info = {
@@ -109,8 +155,29 @@ module.exports = {
 	},
 
 	// 移除文件
+	unlinkNodeModuleDir(path){
+		// if(!this.isNodeModuleDir(path)) return;
+		path = path.replace(/\\/g,'/');
+		let removeFiles = []
+		for (const filePath in this.parent.file_list_map) 
+		{
+			const item = this.parent.file_list_map[filePath];
+			if(item.uuid.length == 7 && filePath.indexOf(path) != -1){ // 8 == 'outside'
+				removeFiles.push({
+					url : filePath,
+					path : filePath,
+					uuid: 'outside'
+				});
+			}
+		}
+
+		// console.log('移除文件夹：',removeFiles)
+		this.parent.messages['asset-db:assets-deleted'].bind(this.parent)(0,removeFiles)
+	},
+
+	// 移除文件
 	unlinkNodeModuleFile(path){
-		if(!this.isNodeModuleDir(path)) return;
+		// if(!this.isNodeModuleDir(path)) return;
 		path = path.replace(/\\/g,'/');
 
 		let info = [{
@@ -121,18 +188,25 @@ module.exports = {
 		this.parent.messages['asset-db:assets-deleted'].bind(this.parent)(0,info)
 	},
 
+	stop(){
+		if(this._isInit){
+			watch.unwatchTree(node_modules_path);
+			delete this._isInit;
+		}
+		if(this.check_timeout){
+			clearTimeout(this.check_timeout);
+			delete this.check_timeout;
+		}
+	},
+
 	// 面板销毁
 	onDestroy(){
-		if(this.watcher){
-			this.watcher.close();
-			delete this.watcher;
-		}
+		this.stop()
 	},
 	/*************  事件 *************/  
 
 	messages:{
 		'scene:saved'(){
-			// Editor.log("事件 save")
 		}
 	},
 	

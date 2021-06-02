@@ -464,11 +464,15 @@ define('vs/language/typescript/languageFeatures',["require", "exports", "./lib/l
             _this._disposables.push(_this._defaults.onDidChange(recomputeDiagostics));
             _this._disposables.push(_this._defaults.onDidExtraLibsChange(recomputeDiagostics));
             monaco_editor_core_1.editor.getModels().forEach(onModelAdd);
+            // // 修改：添加手动编译事件
+            // _this._listen_event_id = Editor.monaco.listenEvent('upCompCodeFile',_this._doValidate.bind(_this));
             return _this;
         }
         DiagnosticsAdapter.prototype.dispose = function () {
+
             this._disposables.forEach(function (d) { return d && d.dispose(); });
             this._disposables = [];
+            // Editor.monaco.listenEvent('upCompCodeFile',this._listen_event_id);
         };
         DiagnosticsAdapter.prototype._doValidate = function (model) {
             return __awaiter(this, void 0, void 0, function () {

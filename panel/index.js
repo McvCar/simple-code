@@ -138,7 +138,6 @@ let layer = {
 		this.timer_map 			= {};
 		this.cfg 				= config.getLocalStorage();
 		this.pro_cfg 			= config.getProjectLocalStorage()
-		
 	},
 
 	// 设置选项
@@ -893,7 +892,11 @@ let layer = {
 				this.file_cfg[editInfo.path].is_show = editInfo.vs_model == this.vs_editor.getModel() ? 1 : 0;
 			}
 		});
-
+		for (const url in this.file_cfg) {
+			if(this.getTabIdByPath(url) == null){
+				delete this.file_cfg[url];
+			}
+		}
 		for (let key in this.file_cfg) {
 			if (!temp_path_map[key]) delete this.file_cfg[key];
 		}
@@ -902,8 +905,9 @@ let layer = {
 			this.closeTab(id);
 		});
 		
-		for (const key in this.monaco.editor.getModels()) {
-			const model = this.monaco.editor.getModels[key];
+		let models = this.monaco.editor.getModels();
+		for (const key in models) {
+			const model = models[key];
 			if(model) model.dispose();
 		}
 
@@ -971,15 +975,19 @@ let layer = {
 			if(!this.is_init_finish  || this.code_file_rename_buf.is_use || this.is_not_select_active) return;
 
 			this.checkAllCurrFileChange();
-			let url = info.uuid == 'outside' ? info.url : Editor.remote.assetdb.uuidToUrl(info.uuid); // outside额外做处理
-			if(url) return;
+			let isOutside = info.uuid == 'outside';// 内部修改
+			let url = isOutside ? info.url : Editor.remote.assetdb.uuidToUrl(info.uuid); // outside额外做处理
+			if(!url) return;
 
 			let edit_id = this.getTabIdByPath(url);
 			if(edit_id == null || !this.edit_list[edit_id] || !this.edit_list[edit_id].is_need_save)
 			{
 				// 刷新文件/代码提示,只有未被编辑情况下才刷新
-				let urlI = this.getUriInfo(url)
-				this.loadCompleterLib(url, urlI.extname, true);
+				let urlI = this.getUriInfo(url);
+				let model = isOutside ? this.getModelByFsPath(url) : this.getModelByUrl(url) 
+				if(model){
+					this.loadVsModel(url, urlI.extname, !isOutside);
+				}
 			}
 			// this.openActiveFile();
 		},
@@ -998,10 +1006,10 @@ let layer = {
 					let fsPath = isOutside ? v.url : Editor.remote.assetdb.urlToFspath(v.url);
 					this.file_list_buffer.push(item);
 					this.file_list_map[fe.normPath(fsPath)] = item;
-					this.loadCompleterLib(item.meta, item.extname,isOutside);
-					this.upCompCodeFile();
+					this.loadCompleterLib(item.meta, item.extname,!isOutside);
 				}
 			})
+			this.upCompCodeFile();
 			this.upAllSymSuggests()
 		},
 
@@ -1015,7 +1023,7 @@ let layer = {
 				let isOutside = v.uuid == 'outside';
 				// 删除缓存
 				delete this.file_list_map[fe.normPath(v.path)];
-				for (let i = 0; i < this.file_list_buffer.length; i++) {
+				for (let i = this.file_list_buffer.length-1; i >= 0 ; i--) {
 					let item = this.file_list_buffer[i];
 					if ( !isOutside && item.uuid == v.uuid || isOutside && v.url == item.meta ) {
 						this.file_list_buffer.splice(i, 1);
@@ -1095,6 +1103,14 @@ let layer = {
 				// 重命名后检测引用路径
 				if(this.cfg.renameConverImportPath && ( urlI.extname == '.js' || urlI.extname == '.ts'))
 				{
+					let model = this.getModelByFsPath(v.srcPath)  
+					if(model == null){
+						// 加载旧路径的代码文件到缓存
+						model = this.loadVsModel(v.srcPath,v.extname,false,false);
+						let jsText = fs.readFileSync(v.destPath).toString() ;
+						model.setValue(jsText);
+					}
+					
 					this.upNeedImportListWorker((isIdle)=>
 					{
 						if(isIdle)
@@ -1108,7 +1124,7 @@ let layer = {
 							this.onMoveFile(v);
 							// console.log("停止检测·")
 						}
-					})
+					},3000)
 				}else{
 					// 不需要检测引用路径的文件
 					this.onMoveFile(v);
@@ -1127,11 +1143,11 @@ let layer = {
 		// vs功能:打开网页
 		'vs-open-url'(event,url) 
 		{
-			let uri = this.monaco.Uri.parse(url)
-			if (uri.scheme == "file"){
-				url = "http://"+uri.path;
-			}
-			exec(Editor.isWin32 ? "cmd /c start "+url : "open "+url); 
+			// let uri = this.monaco.Uri.parse(url)
+			// if (uri.scheme == "file"){
+			// 	url = "http://"+uri.path;
+			// }
+			// exec(Editor.isWin32 ? "cmd /c start "+url : "open "+url); 
 		},
 
 		// vs功能:焦点

@@ -862,17 +862,16 @@ module.exports = {
 				type: "select",
 				items: []
 			},
-			"标签栏大小": {
-				path: "titleBarFontSize",
-				type: "number",
-				defaultValue: 12,
-				defaults: [
-					{ caption: "8px", value: 8 },
-					{ caption: "10px", value: 10 },
-					{ caption: "12px", value: 12 },
-					{ caption: "14px", value: 14 },
-					{ caption: "16px", value: 16 }
-				],
+			"新建文件格式": {
+				type: "buttonBar",
+				path: "newFileType",
+				defaultValue: "ts",
+				items: [
+					{ caption: "js文件", value: "js" },
+					{ caption: "ts文件", value: "ts" },
+					{ caption: "coffe文件", value: "coffee" },
+					{ caption: "lua文件", value: "lua" }
+				]
 			},
 			"字体大小": {
 				path: "fontSize",
@@ -918,74 +917,6 @@ module.exports = {
 					{ caption: "VSCode", value: "ace/keyboard/vscode" }
 				]
 			},
-			"新建文件格式": {
-				type: "buttonBar",
-				path: "newFileType",
-				defaultValue: "ts",
-				items: [
-					{ caption: "js文件", value: "js" },
-					{ caption: "ts文件", value: "ts" },
-					{ caption: "coffe文件", value: "coffee" },
-					{ caption: "lua文件", value: "lua" }
-				]
-			},
-			"触发编译方式": {
-				type: "buttonBar",
-				path: "codeCompileMode",
-				defaultValue: "save",
-				items: [
-					{ caption: "保存后", value: "save" },
-					{ caption: "退出编辑后", value: "blur" },
-					{ caption: "手动编译", value: "manual" },
-				]
-			},
-
-			"光标在边缘位置": {
-				path: "scrollPredominantAxis",
-				type: "number",
-				defaultValue: 5,
-			},
-			"tab缩进数量": {
-				path: "tabSize",
-				type: "number",
-				defaultValue: 4,
-			},
-			"tab空格缩进": {
-				path: "insertSpaces",
-				defaultValue: false,
-			},
-			"自动适配缩进格式": {
-				path: "detectIndentation",
-				defaultValue: true,
-			},
-			"粘贴自动格式化": {
-				path: "formatOnPaste",
-				defaultValue: true,
-			},
-			"保存自动格式化": {
-				path: "formatOnSaveFile",
-				defaultValue: false,
-			},
-			"点击后自动显示代码": {
-				path: "clickToViewCode",
-				defaultValue: true,
-			},
-			"vim编辑模式": {
-				path: "enabledVim",
-				defaultValue: false,
-			},
-			"重命名同步修改import路径": {
-				path: "renameConverImportPath",
-				defaultValue: true,
-			},
-			"JS高性能函数跳转/提示": {
-				path: "enabledGlobalSugges",
-				defaultValue: true,
-			},
-			"加载node_modules目录": {
-				path: "enabledNpmDir",
-				defaultValue: true,
-			},
 			"显示代码预览": {
 				path: "enabledMinimap",
 				defaultValue: true,
@@ -1017,6 +948,74 @@ module.exports = {
 			"显示控制台按钮": {
 				path: "enabledConsoleBtn",
 				defaultValue: true,
+			},
+			"点击Node自动显示代码": {
+				path: "clickToViewCode",
+				defaultValue: true,
+			},
+			"光标在边缘位置": {
+				path: "scrollPredominantAxis",
+				type: "number",
+				defaultValue: 5,
+			},
+
+			"触发编译方式": {
+				type: "buttonBar",
+				path: "codeCompileMode",
+				defaultValue: "save",
+				items: [
+					{ caption: "保存后", value: "save" },
+					{ caption: "退出编辑后", value: "blur" },
+					{ caption: "手动编译", value: "manual" },
+				]
+			},
+			"加载代码方式": {
+				path: "readCodeMode",
+				type: "select",
+				defaultValue: "auto",
+				items: [{ caption: '自动', value: 'auto' }, { caption: '全部加载(使用js智能提示推荐)', value: 'all' }, { caption: 'import时加载(使用ts推荐)', value: 'atImportTo' }]
+			},
+			"vim编辑模式": {
+				path: "enabledVim",
+				defaultValue: false,
+			},
+			"重命名同步修改import路径": {
+				path: "renameConverImportPath",
+				defaultValue: true,
+			},
+			"JS模糊输入提示/函数跳转": {
+				path: "enabledJsGlobalSugges",
+				defaultValue: true,
+			},
+			"TS模糊输入提示/函数跳转": {
+				path: "enabledTsGlobalSugges",
+				defaultValue: false,
+			},
+			"加载node_modules目录": {
+				path: "enabledNpmDir",
+				defaultValue: true,
+			},
+
+			"tab缩进数量": {
+				path: "tabSize",
+				type: "number",
+				defaultValue: 4,
+			},
+			"tab空格缩进": {
+				path: "insertSpaces",
+				defaultValue: false,
+			},
+			"自动适配缩进格式": {
+				path: "detectIndentation",
+				defaultValue: true,
+			},
+			"粘贴自动格式化": {
+				path: "formatOnPaste",
+				defaultValue: true,
+			},
+			"保存自动格式化": {
+				path: "formatOnSaveFile",
+				defaultValue: false,
 			},
 		},
 		More: {
@@ -1066,7 +1065,20 @@ module.exports = {
 				]
 			},
 
-			"任务栏位置": {
+			"工具栏大小": {
+				path: "titleBarFontSize",
+				type: "number",
+				defaultValue: 12,
+				defaults: [
+					{ caption: "8px", value: 8 },
+					{ caption: "10px", value: 10 },
+					{ caption: "12px", value: 12 },
+					{ caption: "14px", value: 14 },
+					{ caption: "16px", value: 16 }
+				],
+			},
+
+			"工具栏位置": {
 				type: "buttonBar",
 				path: "tabBarPos",
 				defaultValue: "",

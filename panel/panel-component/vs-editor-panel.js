@@ -11,6 +11,8 @@ const path 	= require("fire-path");
 const exec 	= require('child_process').exec;
 const md5 	= require('md5');
 const { isArray } = require('../../monaco-editor/dev/vs/editor/editor.main');
+const eventMgr 	= require('../../tools/eventMgr');
+const fileMgr 	= require('./vs-editor-file-mgr');
 
 const prsPath = Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
 
@@ -37,10 +39,11 @@ let layer =
 		this.timer_map 			= {};
 		this.file_list_buffer  	= this.file_list_buffer || [];
 		this.file_list_map 	  	= this.file_list_map || {};
+		this.fileMgr 			= new fileMgr(this);
 
 		this.initVsCode(() => {
-		this.initFileListBuffer(()=>{
-				this.initEditorData();
+			this.initEditorData();
+			this.fileMgr.initFileListBuffer(()=>{
 				this.initEditorEvent();
 				this.initCustomCompleter();
 				this.initSceneData(callback);
@@ -72,7 +75,8 @@ let layer =
 			var editor = monaco.editor.create(this.$editorB,config.vsEditorConfig);
 
 			Editor.monaco.vs_editor = this.vs_editor = editor;
-			
+			eventMgr.merge(this.monaco); // 添加事件分发函数
+
 			for (const key in config.compilerOptions) {
 				const v = config.compilerOptions[key];
 				monaco.languages.typescript.typescriptDefaults._compilerOptions[key] = v;
@@ -130,6 +134,7 @@ let layer =
 					let item_cfg = this.newFileInfo(result.extname, name, result.url, result.uuid,result.path)
 					this.file_list_buffer.push(item_cfg);
 					this.file_list_map[fe.normPath( result.path )] = item_cfg;
+					this.file_counts[result.extname] = (this.file_counts[result.extname] || 0) + 1
 				}
 			}
 
@@ -205,6 +210,11 @@ let layer =
 		this.edit_list = [];
 		// 全局快捷键配置
 		this.key_cfg = [];
+		// 文件数量统计
+		this.file_counts = {
+			'.js':0,
+			'.ts':0,
+		}
 		// 重命名缓存
 		this.code_file_rename_buf = {
 			move_files : [],
@@ -399,20 +409,24 @@ let layer =
 		this.monaco.languages.registerDefinitionProvider("typescript", {
 			provideDefinition:  (model, position, token)=> 
 			{
+				// 高亮场景node
 				let wordInfo = model.getWordAtPosition(position);
-				if(wordInfo)
-				{
-					this.is_not_select_active = 1;
-					this.setTimeoutById(()=>{
-						this.is_not_select_active = 0;
-					},1000,'defindToNode')
-					Editor.Scene.callSceneScript('simple-code', 'hint-node', wordInfo.word);
-				}
+				// if(wordInfo)
+				// {
+				// 	this.is_not_select_active = 1;
+				// 	this.setTimeoutById(()=>{
+				// 		this.is_not_select_active = 0;
+				// 	},1000,'defindToNode')
+				// 	Editor.Scene.callSceneScript('simple-code', 'hint-node', wordInfo.word);
+				// }
 				
+				let isJs = 	this.getUriInfo(model.uri.toString()).extname == '.js'
+				let enable = isJs && this.cfg.enabledJsGlobalSugges ||  !isJs && this.cfg.enabledTsGlobalSugges
+
 				// 异步等待返回
 				var p = new Promise( (resolve, reject )=>
 				{
-					if(!wordInfo || !this.cfg.enabledGlobalSugges){
+					if(!wordInfo || !enable){
 						return resolve([]);
 					}
 					this.tsWr.getFunctionDefinds(wordInfo.word).then((hitnMap)=>
@@ -454,8 +468,11 @@ let layer =
 			provideHover:  (model, position, token)=> {
 				let wordInfo = model.getWordAtPosition(position);
 				
+				let isJs = 	this.getUriInfo(model.uri.toString()).extname == '.js'
+				let enable = isJs && this.cfg.enabledJsGlobalSugges ||  !isJs && this.cfg.enabledTsGlobalSugges
+
 				var p = new Promise( (resolve, reject )=>{
-					if(wordInfo && this.cfg.enabledGlobalSugges){
+					if(wordInfo && enable){
 						this.tsWr.getFunctionDefindHover(wordInfo.word,model.uri._formatted).then((text)=>
 						{
 							text = text || '';
@@ -482,17 +499,17 @@ let layer =
 			}
 		})
 
-		let getTabNum = (text)=>{
-			let tabNum = 0;
-			if(text[0] == ' '){
-				let findObj = text.match(/[ ]+/);
-				tabNum = Math.round(findObj[0].length / options.tabSize)
-			}else if (text[0] == '	'){
-				let findObj = text.match(/[ ]+/);
-				tabNum = findObj[0].length;
-			}
-			return tabNum;
-		};
+		// let getTabNum = (text)=>{
+		// 	let tabNum = 0;
+		// 	if(text[0] == ' '){
+		// 		let findObj = text.match(/[ ]+/);
+		// 		tabNum = Math.round(findObj[0].length / options.tabSize)
+		// 	}else if (text[0] == '	'){
+		// 		let findObj = text.match(/[ ]+/);
+		// 		tabNum = findObj[0].length;
+		// 	}
+		// 	return tabNum;
+		// };
 		
 		// 代码格式化
 		// this.monaco.languages.registerDocumentRangeFormattingEditProvider("typescript", {
@@ -603,41 +620,45 @@ let layer =
 			}
 			var p = new Promise( (resolve, reject )=> 
 			{
-				let suggestions = []
-				let text = model.getLineContent(position.lineNumber);
-				let is_has_string = text.indexOf('"') != -1 || text.indexOf("'") !=-1;
-				let isJs = 	this.getUriInfo(model.uri.toString()).extname == '.js'
-				for (let i = 0; i < this._comp_cfg.length; i++) {
-					const v = this._comp_cfg[i];
-					// 只在字符串中提示文件路径
-					if(!is_has_string && v.kind == this.monaco.languages.CompletionItemKind.Folder){
-						continue;
-					}
-					suggestions.push(v)
-				}
-				
-				let retSuggesFunc = ()=>
-				{
-					for (let i = 0; i < suggestions.length; i++) {
-						const v = suggestions[i];
-						delete v.range;
-						delete v.sortText;
-						delete v.preselect;
-					}
-					resolve( {suggestions,incomplete:false});
-				}
-
-				// 全部代码文件的代码提示合集
-				if(isJs && this.cfg.enabledGlobalSugges && this.all_sym_sugges && this.all_sym_sugges.length > 0){
-					let offset = model.getOffsetAt(position);
-
-					if(text.match(/[a-zA-Z_$][\w$]{1,30}/) == null)
+				let offset = model.getOffsetAt(position);
+				// 检测是否存在精准的内置代码提示
+				this.tsWr.hasCompletionsAtPosition(model.uri.toString(),offset).then((isHasSym)=>
+				{	
+					let suggestions = []
+					let text = model.getLineContent(position.lineNumber);
+					let is_has_string = text.indexOf('"') != -1 || text.indexOf("'") !=-1;
+					for (let i = 0; i < this._comp_cfg.length; i++) 
 					{
-						// 使用全文件模糊代码提示
-						suggestions.push.apply(suggestions,this.all_sym_sugges)
-						retSuggesFunc();
-					}else{
-						this.tsWr.hasCompletionsAtPosition(model.uri.toString(),offset).then((isHasSym)=>{
+						const v = this._comp_cfg[i];
+						if(!is_has_string && v.kind == this.monaco.languages.CompletionItemKind.Folder || // 只在字符串中提示文件路径
+							isHasSym && v.kind == this.monaco.languages.CompletionItemKind.Reference ){ // 精准提示时不使用模块名提示 
+							continue;
+						}
+						suggestions.push(v)
+					}
+					
+					let retSuggesFunc = ()=>
+					{
+						for (let i = 0; i < suggestions.length; i++) {
+							const v = suggestions[i];
+							delete v.range;
+							delete v.sortText;
+							delete v.preselect;
+						}
+						resolve( {suggestions,incomplete:false});
+					}
+
+					// 全部代码文件的代码提示合集
+					let isJs = 	this.getUriInfo(model.uri.toString()).extname == '.js'
+					let enable = isJs && this.cfg.enabledJsGlobalSugges ||  !isJs && this.cfg.enabledTsGlobalSugges
+					if(enable && this.all_sym_sugges && this.all_sym_sugges.length > 0)
+					{
+						if(text.match(/[a-zA-Z_$][\w$]{1,30}/) == null)
+						{
+							// 使用全文件模糊代码提示
+							suggestions.push.apply(suggestions,this.all_sym_sugges)
+							retSuggesFunc();
+						}else{
 							if(isHasSym)
 							{
 								// 存在精准的内置代码提示，不使用模糊代码提示
@@ -646,13 +667,12 @@ let layer =
 								suggestions.push.apply(suggestions,this.all_sym_sugges)
 								retSuggesFunc();
 							}
-						})
+						}
+					}else{
+						if(isJs) this.upAllSymSuggests();
+						retSuggesFunc();
 					}
-				}else{
-					if(isJs) this.upAllSymSuggests();
-					retSuggesFunc();
-				}
-
+				})
 				
 			})
 			return p;
@@ -707,7 +727,7 @@ let layer =
 
 	upAllSymSuggests()
 	{
-		if(!this.cfg.enabledGlobalSugges){
+		if(!this.cfg.enabledJsGlobalSugges && !this.cfg.enabledTsGlobalSugges){
 			return;
 		}
 		// 防止短时间内大量重复调用
@@ -756,48 +776,54 @@ let layer =
 	},
 
 	// 读取vs默认文件代码提示功能,异步读取文件,只在初始化时调用该函数
-	loadCompleterLib(file_path, extname, isUrlType = false, isCover=true, isSasync = true, finishCallback){
+	loadCompleterLib(filePath, extname, isUrlType = false, isCover=true, isSasync = true, finishCallback){
 		let isJs = extname == ".js";
 		let isTs = extname == ".ts";
-		let file_name = file_path.substr(file_path.lastIndexOf('/') + 1)
+		let file_name = filePath.substr(filePath.lastIndexOf('/') + 1)
 		if(isJs || isTs)
 		{
-			let fsPath = isUrlType ? Editor.remote.assetdb.urlToFspath(file_path) : file_path;
+			let fsPath = isUrlType ? Editor.remote.assetdb.urlToFspath(filePath) : filePath;
 			if (!fe.isFileExit(fsPath)) return;
 			// 插入模块名字提示
 			let word = file_name.substr(0,file_name.lastIndexOf('.'))
 			this.addCustomCompleter(word,word,file_name,this.monaco.languages.CompletionItemKind.Reference);
-
-			let loadFunc = (err,code)=>
+			
+			let isRead = 
+				file_name.indexOf('.d.ts') != -1 || // ts提示文件必加载
+				this.cfg.readCodeMode == 'all' && isUrlType || // 加载全部文件方式
+				this.cfg.readCodeMode == 'auto' && isUrlType && this.file_counts['.js'] > this.file_counts['.ts']  // js文件多则加载全部文件方式，否则按import需求加载
+			
+			console.log("lib: ",filePath)
+			if(isRead)
 			{
-				if(err){
-					return Editor.info('读取文件失败:',err);
-				}
-				code = code.toString()
-
-				// js的 d.ts提示文件
-				if (isTs && !isUrlType && code) 
+				let loadFunc = (err,code)=>
 				{
+					if(err){
+						return Editor.info('读取文件失败:',err);
+					}
+					code = code.toString()
+					// js的 d.ts提示文件
 					// this.monaco.languages.typescript.javascriptDefaults.addExtraLib(code,'lib://model/' + file_name); 
-					let vs_model = this.loadVsModel(file_path,extname,isUrlType,false);
+					let vs_model = this.loadVsModel(filePath,extname,isUrlType,false);
 					if(isCover || vs_model.getValue() == ''){
 						vs_model.setValue(code)
 					}
+					if(finishCallback) finishCallback();
 				}
-				if(finishCallback) {
-					finishCallback();
+				
+				if(isSasync){
+					fs.readFile(fsPath,loadFunc);
+				}else{
+					let code = fs.readFileSync(fsPath);
+					loadFunc(0,code);
 				}
-			}
-			if(isSasync){
-				fs.readFile(fsPath,loadFunc);
 			}else{
-				let code = fs.readFileSync(fsPath);
-				loadFunc(0,code);
+				if(finishCallback) finishCallback();
 			}
 			return true
 		}else if(isUrlType){
 			// 插入模块文件名提示
-			let word = file_path.substr(12,file_path.lastIndexOf('.')-12)
+			let word = filePath.substr(12,filePath.lastIndexOf('.')-12)
 			this.addCustomCompleter(word,word,'',this.monaco.languages.CompletionItemKind.Folder);
 		}
 	},
@@ -810,7 +836,7 @@ let layer =
 		{
 			let fsPath = isUrlType ? Editor.remote.assetdb.urlToFspath(file_path) : file_path;
 			let file_name = file_path.substr(file_path.lastIndexOf('/') + 1)
-			let model = this.monaco.editor.getModel(this.monaco.Uri.parse(this.fsPathToModelUrl(fsPath)));
+			let model = this.monaco.editor.getModel(this.fsPathToModelUrl(fsPath));
 			let js_text = ""
 			if(model) js_text = model.getValue();
 			else js_text = fs.readFileSync(fsPath).toString();
@@ -832,8 +858,6 @@ let layer =
 		let file_type = this.FILE_OPEN_TYPES[extname.substr(1).toLowerCase()];
 		if(file_type)
 		{
-			let isJs = extname == ".js";
-			let isTs = extname == ".ts";
 			let fsPath = isUrlType ? Editor.remote.assetdb.urlToFspath(file_path) : file_path;
 			if (isReadText && !fe.isFileExit(fsPath)) return;
 			let js_text = isReadText ? fs.readFileSync(fsPath).toString() : "";
@@ -854,7 +878,7 @@ let layer =
 
 	fsPathToModelUrl(fsPath){
 		let str_uri = Editor.isWin32 ? fsPath.replace(/ /g,'').replace(/\\/g,'/') : fsPath;
-		return str_uri;
+		return this.monaco.Uri.parse(str_uri).toString();
 	},
 	
 	fsPathToUrl(fsPath){
@@ -1019,7 +1043,10 @@ let layer =
 			this.vs_editor.setScrollTop(info.scroll_top)
 		}
 
+		// 两次切换是为了解决个别时候import路径没刷新报错bug，触发更新编译
+		this.monaco.editor.setModelLanguage(this.vs_editor.getModel(),"markdown");
 		this.monaco.editor.setModelLanguage(this.vs_editor.getModel(), this.FILE_OPEN_TYPES[info.file_type || ""] || "markdown");
+
 		// 自适应缩进格式
 		if(this.cfg.detectIndentation) this.setOptions({detectIndentation:true});
 		// this.editor.selection.clearSelection();
@@ -1126,7 +1153,7 @@ let layer =
 		file_info.selection = undefined;
 		if (!file_info.vs_model) 
 		{
-			let vs_model = this.loadVsModel(path, this.getUriInfo(path).extname , uuid != "outside",false);
+			let vs_model = this.loadVsModel(path, this.getUriInfo(path).extname , uuid != "outside",is_not_draw);
 			if(!vs_model) {
 				delete this.edit_list[id];
 				Editor.warn("<代码编辑>读取文件失败:",path);
@@ -1308,7 +1335,12 @@ let layer =
 	},
 
 	getModelByFsPath(fsPath){
-		return this.monaco.editor.getModel(this.monaco.Uri.parse(this.fsPathToModelUrl(fsPath)))
+		return this.monaco.editor.getModel(this.fsPathToModelUrl(fsPath))
+	},
+
+	
+	getModelByUrl(url){
+		return this.getModelByFsPath(Editor.remote.assetdb.urlToFspath(url))
 	},
 
 	// 打开node上的文件到编辑器
@@ -1504,18 +1536,21 @@ let layer =
 	// 加载import引用路径上的文件
 	loadNeedImportPaths(needImportPaths,isTs)
 	{
-		console.log(needImportPaths);
+		// console.log(needImportPaths);
+		let isHasImport = false
 		let loadFunc = (tryPath,isCompareName)=>
 		{
+			tryPath = fe.normPath(tryPath)
 			tryPath = tryPath.substr(0,7) == 'file://' ? tryPath.substr(7) : tryPath; // 去掉前缀
 
 			let fileItem 
 			if(isCompareName)
 			{
 				// cocos专用只对比文件名的方式加载
-				let index = tryPath.lastIndexOf('/');
+				let _tryPath = tryPath;
+				let index = _tryPath.lastIndexOf('/');
 				if(index != -1){
-					tryPath = tryPath.substr(index+1);
+					_tryPath = _tryPath.substr(index+1);
 				}
 				for (const fsPath in this.file_list_map) 
 				{
@@ -1531,30 +1566,33 @@ let layer =
 						if(index != -1){
 							fileName = fileName.substr(0,index);
 						}
-						if(tryPath == fileName){
-							fileItem = _fileItem
+						if(_tryPath == fileName){
+							fileItem = _fileItem;
 							break;
 						}
 					}
 				}
 			}else{
 				// 正常node路径加载
-				fileItem = this.file_list_map[fe.normPath(tryPath)];
+				fileItem = this.file_list_map[tryPath];
 			}
 
 			if(!fileItem){
 				// console.warn("测试失败import:",importPath,tryPath)
 				return 1;
 			}
-			let vs_model = this.getModelByFsPath(tryPath);
+
+			let isOutside = fileItem.uuid == "outside";
+			let filePath = fileItem.meta;
+			let vs_model = isOutside ? this.getModelByFsPath(filePath) : this.getModelByUrl(filePath);
 			if(vs_model && vs_model.getValue() != ''){
 				return 0; // 已经存在缓存，不再继续读取
 			}
+
 			// 2.加载文件
-			let isOutside = fileItem.uuid == "outside";
-			let filePath = fileItem.meta;
 			this.loadVsModel(filePath, this.getUriInfo(filePath).extname , !isOutside)
-			console.log("加载import:",filePath)
+			console.log("加载import:",filePath);
+			isHasImport = true;
 			return 0;
 		}
 
@@ -1582,7 +1620,10 @@ let layer =
 			// isTs ? this.tsWr.removeNeedImportPath(importPath) : this.jsWr.removeNeedImportPath(importPath) 
 			this.tsWr.removeNeedImportPath(importPath)
 		}
-		this.setTimeoutById(()=>this.upCompCodeFile(),1000,'loadNeedImportPaths')
+		if(isHasImport){
+			// 刷新编译
+			this.setTimeoutById(()=>this.upCompCodeFile(),3000,'loadNeedImportPaths')
+		}
 	},
 	
 	// 编译编辑中的代码
@@ -1595,6 +1636,7 @@ let layer =
 		this.edit_list.forEach((editInfo, id) => {
 			if(editInfo && editInfo.vs_model)
 			{
+				// Editor.monaco.sendEvent('upCompCodeFile',editInfo.vs_model);0
 				// 只是为了触发解析格式事件，防止import后没有及时刷新
 				let language = editInfo.vs_model.getLanguageIdentifier().language;
 				this.monaco.editor.setModelLanguage(editInfo.vs_model,"markdown");
@@ -1637,7 +1679,7 @@ let layer =
 			}
 		}else{
 			// 修改缓存
-			let vs_model = this.monaco.editor.getModel(this.monaco.Uri.parse(this.fsPathToModelUrl(v.srcPath)))
+			let vs_model = this.monaco.editor.getModel(this.fsPathToModelUrl(v.srcPath))
 			if(vs_model) {
 				let text = vs_model.getValue();
 				vs_model.dispose()
@@ -1671,7 +1713,7 @@ let layer =
 		
 		// 异步等待读取重命名信息
 		this.setWaitIconActive(true);
-		this.loadCodeFileRenameInfo(oldUrl,newUrl,assets_info.extname,(edit_files,wrObj)=>
+		this.loadCodeFileRenameInfo(oldUrl,newUrl,(edit_files,wrObj)=>
 		{
 			if(edit_files.length>0)
 			{
@@ -1700,7 +1742,6 @@ let layer =
 				// 重新生成vs_model
 				this.onMoveFile(assets_info);
 				// 检测wr线程读取vs_model完成没有
-				let try_count = 0;
 				let isLoadModel = ()=>{
 					wrObj._getModel(newUrl).then((model)=>
 					{
@@ -1781,15 +1822,16 @@ let layer =
 	},
 	
 	// 重命名文件引用路径
-	loadCodeFileRenameInfo(oldFileName,newFileName,extname,callback)
+	loadCodeFileRenameInfo(oldFileName,newFileName,callback)
 	{
 		// 检测需要修改的文件
-		let wr =  this.tsWr//extname == ".js" ? this.jsWr : this.tsWr;
-		wr.getEditsForFileRename(oldFileName,newFileName).then((edit_files)=>{
-			callback(edit_files,wr)
+		oldFileName = monaco.Uri.parse(oldFileName).toString()
+		newFileName = monaco.Uri.parse(newFileName).toString()
+		this.tsWr.getEditsForFileRename(oldFileName,newFileName).then((edit_files)=>{
+			callback(edit_files,this.tsWr)
 		},()=>{
 			console.warn("代码编辑器:读取重命名文件引用路径失败:"+oldFileName+" to " +newFileName);
-			callback([],wr);
+			callback([],this.tsWr);
 		})
 	},
 
