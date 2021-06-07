@@ -69,7 +69,7 @@ module.exports = {
 				return;
 			}
 
-			let file_ 	  = this.parent.getUriInfo(fileInfo.url);
+			let file_ 	  = this.parent.fileMgr.getUriInfo(fileInfo.url);
 			let symbolName = file_.name;
 			if(file_.extname != ''){
 				symbolName = symbolName.substr(0,symbolName.lastIndexOf('.'));
@@ -212,7 +212,7 @@ module.exports = {
 		let file_url  = this.parent.file_info.path;
 		let vs_model  = this.parent.file_info.vs_model;
 		let text 	  = vs_model.getValue()
-		let file_ 	  = this.parent.getUriInfo(file_url);
+		let file_ 	  = this.parent.fileMgr.getUriInfo(file_url);
 		let isTs  	  = file_.extname != '.js';
 		let symbols   = this.parseSctSymbolInfo(text,isTs);
 		return {

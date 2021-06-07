@@ -250,10 +250,46 @@ module.exports = {
 			//注意如果你一个model都没有注册的话，这里什么都拿不到
 			//举个例子啊，下面将一个路径为filePath，语言为lang，文件内容为fileContent的本地文件注册为model
 			//monaco.editor.createModel(fileContent, lang, monaco.Uri.file(filePath))
+			let model = this.parent.monaco.editor.getModel('inmemory://model/1')
+			if(!model) model = this.parent.monaco.editor.createModel('','markdown',this.parent.monaco.Uri.parse('inmemory://model/1'))
+			
+			for (const fsPath in this.parent.file_list_map) 
+			{
+				const item = this.parent.file_list_map[fsPath];
+				if(item.data){
+					let file_name  =  fsPath.substr(fsPath.lastIndexOf('/'))
+					if(file_name.indexOf('.d.ts') != -1) continue;
+					model.setValueNotUndo(item.data)
+
+					for (let match of model.findMatches(searchText)) 
+					{
+						let text = model.getLineContent(match.range.startLineNumber);
+
+						for (let i = 0; i < text.length; i++) 
+						{
+							const c = text[i];
+							if(c!=" " && c!="	"){
+								text = text.substr(i);		
+								break;
+							}
+						}
+						result.push({
+							meta : text,
+							uri : Editor.monaco.Uri.parse(fsPath),
+							fsPath:fsPath,
+							value: file_name,
+							range: match.range,
+							score:0,
+						})
+					}
+				}
+			}
+			for (let i = 0; i < this.parent.file_list_buffer.length; i++) {
+				
+			}
 			this.parent.monaco.editor.getModels().forEach(model => 
 			{
 				let file_name  =  model.uri.path.substr(model.uri.path.lastIndexOf('/'))
-				if(file_name.indexOf('.d.ts') != -1) return;
 
 				for (let match of model.findMatches(searchText)) 
 				{
@@ -283,7 +319,6 @@ module.exports = {
 	
 	// 全局搜索
 	openGlobalSearch(){
-
 		this.parent.openSearchBox("",[],(data,cmdLine)=>
 		{
 			let searchText = cmdLine.getValue();
@@ -301,7 +336,7 @@ module.exports = {
 		// 下拉框选中后操作事件
 		let onSearchAccept = (data,cmdLine)=>
 		{
-			if(is_has && data.item) Editor.Ipc.sendToPanel('simple-code','vs-open-file-tab',{uri:data.item.uri,selection:data.item.range});
+			if(is_has && data.item) Editor.monaco.sendEvent('vs-open-file-tab',{fsPath:data.item.fsPath,uri:data.item.uri,selection:data.item.range});
 			else this.openGlobalSearch()
 		}
 		// 修改搜索框时，通过该函数读取显示的实时显示下拉列表内容, cmdLine为输入文本框对象
@@ -405,7 +440,7 @@ module.exports = {
 		},
 
 		'open-global-search'(){
-			this.openGlobalSearch();
+			this.parent.setTimeoutById(()=>this.openGlobalSearch(),100,'open-global-search')
 		},
 
 		'scene:saved'(){

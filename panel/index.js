@@ -29,7 +29,6 @@ let layer = {
 				<div id="editorB"></div>
 				<div id="layoutTab" class="layout horizontal justified titleBarFontSize">
 					<div id="tabList" class="layout horizontal">
-						<img src=file://${Editor.url("packages://simple-code/panel/images/settingIco.png")} id="waitIco" class="turnAnim"></img> <span></span> <span></span>
 						<div id="title0" class="closeTab">
 							<div class="tabTitle"><nobr>无文件<nobr></div>
 							<div class="closeBtn"><nobr> x <nobr></div>
@@ -37,9 +36,12 @@ let layer = {
 
 					</div>
 					<div id="toolsPanel" class="layout horizontal">
+						
+						&nbsp
 						<ui-checkbox id="lockChk">锁标签</ui-checkbox>
 						<ui-checkbox id="lockWindowChk">锁窗</ui-checkbox>
 						<ui-checkbox id="cmdMode">调试</ui-checkbox>
+						<img src=file://${Editor.url("packages://simple-code/panel/images/settingIco.png")} id="waitIco" class="turnAnim"></img> <span></span> <span></span>
 						<ui-button id="manualCompile" class="">编译</ui-button>
 						<ui-button id="gotoFileBtn" class="blue">定位</ui-button>
 						<ui-button id="settingBtn" class="green">设置</ui-button>
@@ -243,12 +245,10 @@ let layer = {
 			this.openMenu()
 		},false);
 
-		
-
 		// 重置
 		this.$resetBtn.addEventListener('confirm', () => {
 			if (this.file_info) {
-				let text = this.checkCurrFileChange(this.file_info);
+				let text = this.fileMgr.checkCurrFileChange(this.file_info);
 				if (this.file_info.data != this.vs_editor.getValue()) {
 					if (text) {
 						this.vs_editor.setValue(text);
@@ -936,6 +936,20 @@ let layer = {
 		})
 	},
 
+	// 扩展使用的事件
+	onAssetsChangedEvent(file){
+		this.runExtendFunc('onAssetsChangedEvent',file)
+	},
+	onAssetsCreatedEvent(files){
+		this.runExtendFunc('onAssetsCreatedEvent',files)
+	},
+	onAssetsDeletedEvent(files){
+		this.runExtendFunc('onAssetsDeletedEvent',files)
+	},
+	onAssetsMovedEvent(files){
+		this.runExtendFunc('onAssetsMovedEvent',files)
+	},
+
 	messages: {
 
 		// 场景保存
@@ -974,244 +988,38 @@ let layer = {
 		'asset-db:asset-changed'(event, info) {
 			if(!this.is_init_finish  || this.code_file_rename_buf.is_use || this.is_not_select_active) return;
 
-			this.checkAllCurrFileChange();
-			let isOutside = info.uuid == 'outside';// 内部修改
-			let url = isOutside ? info.url : Editor.remote.assetdb.uuidToUrl(info.uuid); // outside额外做处理
-			if(!url) return;
-
-			let edit_id = this.getTabIdByPath(url);
-			if(edit_id == null || !this.edit_list[edit_id] || !this.edit_list[edit_id].is_need_save)
-			{
-				// 刷新文件/代码提示,只有未被编辑情况下才刷新
-				let urlI = this.getUriInfo(url);
-				let model = isOutside ? this.getModelByFsPath(url) : this.getModelByUrl(url) 
-				if(model){
-					this.loadVsModel(url, urlI.extname, !isOutside);
-				}
-			}
-			// this.openActiveFile();
+			this.fileMgr.assetsChangedEvent(info);
+			this.onAssetsChangedEvent(info);
 		},
 
 		// 项目资源创建
-		'asset-db:assets-created'(event, info) {
+		'asset-db:assets-created'(event, files) {
 			if(!this.is_init_finish) return;
-			if (!info && this.file_list_buffer) return;
+			if (!files && this.file_list_buffer) return;
 
-			info.forEach((v, i) => {
-				let urlI = this.getUriInfo(v.url)
-				if (urlI.extname != "" && this.SEARCH_BOX_IGNORE[urlI.extname] == null) 
-				{
-					let isOutside = v.uuid == 'outside';// 内部修改
-					let item = this.newFileInfo(urlI.extname, urlI.name, v.url, v.uuid);
-					let fsPath = isOutside ? v.url : Editor.remote.assetdb.urlToFspath(v.url);
-					this.file_list_buffer.push(item);
-					this.file_list_map[fe.normPath(fsPath)] = item;
-					this.loadCompleterLib(item.meta, item.extname,!isOutside);
-				}
-			})
-			this.upCompCodeFile();
-			this.upAllSymSuggests()
+			this.fileMgr.assetsCreatedEvent(files)
+			this.onAssetsCreatedEvent(files);
 		},
 
 		// 项目文件被删除
-		'asset-db:assets-deleted'(event, info) {
+		'asset-db:assets-deleted'(event, files) {
 			if(!this.is_init_finish) return;
-			if (!info && this.file_list_buffer) return;
+			if (!files && this.file_list_buffer) return;
 
-			info.forEach((v) => 
-			{
-				let isOutside = v.uuid == 'outside';
-				// 删除缓存
-				delete this.file_list_map[fe.normPath(v.path)];
-				for (let i = this.file_list_buffer.length-1; i >= 0 ; i--) {
-					let item = this.file_list_buffer[i];
-					if ( !isOutside && item.uuid == v.uuid || isOutside && v.url == item.meta ) {
-						this.file_list_buffer.splice(i, 1);
-						break;
-					}
-				}
-
-				let is_remove = false
-				
-				// 刷新编辑信息
-				let old_url = isOutside ? v.path : this.fsPathToUrl(v.path) ;
-				let id = this.getTabIdByPath(old_url);
-				// 正在编辑的tab
-				if(id != null)
-				{
-					// 正在编辑的文件被删
-					let editInfo = this.edit_list[id] 
-					if (editInfo && ( !isOutside && v.uuid == editInfo.uuid || isOutside && v.path == editInfo.path)) {
-						editInfo.uuid = "outside";
-						editInfo.path = isOutside ? v.path : unescape(Editor.url(editInfo.path));
-						editInfo.can_remove_model = 1;
-						if(editInfo.vs_model)
-						{
-							// 刷新 model 信息，不然函数转跳不正确
-							let text  = editInfo.vs_model.getValue();
-							editInfo.vs_model.dispose()
-							let model = this.loadVsModel(editInfo.path,this.getUriInfo(editInfo.path).extname,false,false)
-							if(model)
-							{
-								let is_show = this.vs_editor.getModel() == null;
-								model.setValue(text)
-								editInfo.vs_model = model;
-								if(is_show){
-									this.setTabPage(id);
-								}
-							}
-						}
-
-						this.checkCurrFileChange(editInfo);
-						is_remove = true
-					}
-				}else{
-					// 清缓存
-					let vs_model = this.monaco.editor.getModel(this.monaco.Uri.parse(isOutside ? v.path : this.fsPathToModelUrl(v.path)))
-					if(vs_model) vs_model.dispose()
-				}
-
-			})
-
-			this.upCompCodeFile();
+			
+			this.fileMgr.assetsDeletedEvent(files)
+			this.onAssetsDeletedEvent(files);
 		},
 
 		// 项目文件被移动了
-		'asset-db:assets-moved'(event, list) 
+		'asset-db:assets-moved'(event, files) 
 		{
 			if(!this.is_init_finish) return;
-			if (!list) return;
+			if (!files) return;
 
-			list.forEach((v, i) => 
-			{
-				let urlI = this.getUriInfo(v.url)
-				v.extname = urlI.extname;
-				
-				// 更新文件缓存
-				delete this.file_list_map[v.srcPath];
-				for (let i = 0; i < this.file_list_buffer.length; i++) {
-					let item = this.file_list_buffer[i];
-					if (item.uuid == v.uuid) {
-						item.extname = urlI.extname
-						item.value = urlI.name
-						item.meta = v.url
-						this.file_list_map[fe.normPath(v.destPath)] = item;
-						break;
-					}
-				}
-				
-				// 重命名后检测引用路径
-				if(this.cfg.renameConverImportPath && ( urlI.extname == '.js' || urlI.extname == '.ts'))
-				{
-					let model = this.getModelByFsPath(v.srcPath)  
-					if(model == null){
-						// 加载旧路径的代码文件到缓存
-						model = this.loadVsModel(v.srcPath,v.extname,false,false);
-						let jsText = fs.readFileSync(v.destPath).toString() ;
-						model.setValue(jsText);
-					}
-					
-					this.upNeedImportListWorker((isIdle)=>
-					{
-						if(isIdle)
-						{	
-							// 解析器进程处于空闲状态
-							this.code_file_rename_buf.move_files.push(v);
-							this.upCodeFileRename();
-							// console.log("检测·")
-						}else{
-							// 解析器进程非常繁忙,不执行自动修改文件引用路径。一般是项目刚打开的时候
-							this.onMoveFile(v);
-							// console.log("停止检测·")
-						}
-					},3000)
-				}else{
-					// 不需要检测引用路径的文件
-					this.onMoveFile(v);
-				}
-			})
+			this.fileMgr.assetsMovedEvent(files)
+			this.onAssetsMovedEvent(files);
 		},
-
-		// vs功能:在文件夹打开文件
-		'vs-reveal-in-finder'(event) 
-		{
-			if (this.file_info.uuid == null) return;
-			let url =  (this.file_info.uuid == "outside" ? this.file_info.path.replace(new RegExp('/','g'),path.sep) : Editor.remote.assetdb.urlToFspath(this.file_info.path));
-			exec(Editor.isWin32 ? 'Explorer /select,"'+url+'"' : "open -R " + url)
-		},
-
-		// vs功能:打开网页
-		'vs-open-url'(event,url) 
-		{
-			// let uri = this.monaco.Uri.parse(url)
-			// if (uri.scheme == "file"){
-			// 	url = "http://"+uri.path;
-			// }
-			// exec(Editor.isWin32 ? "cmd /c start "+url : "open "+url); 
-		},
-
-		// vs功能:焦点
-		'vs-editor-focus'(event,url) 
-		{
-			if(Editor.Panel.getFocusedPanel() == this){
-				this.vs_editor.focus();
-			}
-		},
-		
-		// vs功能: 
-		'vs-up-code-file'(event) 
-		{
-			this.upCompCodeFile();
-		},
-		
-		// vs功能:打开文件、转跳到实现、定义
-		'vs-open-file-tab'(event,info) 
-		{
-			let uuid;
-			let url_info ;
-			let vs_model = this.monaco.editor.getModel(info.uri._formatted);
-			if(vs_model == null){
-				if(info.uri.scheme == 'http' || info.uri.scheme == 'https'){
-					exec(Editor.isWin32 ? "cmd /c start "+info.uri._formatted : "open "+info.uri._formatted); 
-				}else{
-					Editor.warn('未找到文件,vs_model == null:',info.uri && info.uri._formatted);
-				}
-				return 
-			}
-			
-			for (let i = 0; i < this.file_list_buffer.length; i++) 
-			{
-				const _file_info = this.file_list_buffer[i];
-				if(_file_info.meta == vs_model.dbUrl){
-					uuid  = _file_info.uuid;
-					break;
-				}
-			}
-			
-			if(uuid){
-				url_info = this.getFileUrlInfoByUuid(uuid) 
-			}else{
-				// 项目根目录的代码提示文件
-				if(fe.isFileExit(vs_model.fsPath)){
-					url_info = this.getFileUrlInfoByFsPath(vs_model.fsPath);
-				}
-			}
-
-			if(url_info){
-				let file_info = this.openFile(url_info,true);
-				if(file_info && info.selection && this.vs_editor.getModel() == file_info.vs_model) 
-				{
-					if(uuid == null){
-						delete file_info.new_data;
-						this.setTabPage(file_info.id);
-					}
-					//把选中的位置放到中间显示
-					this.vs_editor.setSelection(info.selection)
-					this.vs_editor.revealRangeInCenter(info.selection)
-				};
-			}
-		},
-		
 		
 		'run-command-code'(event, type) {
 			if (this.file_info.uuid == null || !this.cfg.is_cmd_mode) return Editor.log("只能在命令模式执行代码预览");

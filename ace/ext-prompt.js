@@ -1805,7 +1805,7 @@ var Autocomplete = function() {
         if (!this.editor.isFocused() && document.activeElement == el)
             this.editor.focus();
 
-        Editor.Ipc.sendToPanel('simple-code','vs-editor-focus');
+        Editor.monaco.sendEvent('vs-editor-focus');
         this.tooltipNode = null;
         if (el.parentNode)
             el.parentNode.removeChild(el);
@@ -2031,7 +2031,7 @@ module.exports.overlayPage = function overlayPage(editor, contentElement, callba
             editor.focus();
         }
         closer = null;
-        Editor.Ipc.sendToPanel('simple-code','vs-editor-focus');
+        Editor.monaco.sendEvent('vs-editor-focus');
         callback && callback();
     }
     function setIgnoreFocusOut(ignore) {
@@ -2448,7 +2448,7 @@ function prompt(editor, message, options, callback) {
     function done() {
         overlay.close();
         callback && callback();
-        Editor.Ipc.sendToPanel('simple-code','vs-editor-focus');
+        Editor.monaco.sendEvent('vs-editor-focus');
         openPrompt = null;
     }
 

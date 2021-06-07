@@ -12,9 +12,9 @@ declare let MonacoEnvironment: monaco.Environment | undefined;
 
 declare namespace monaco {
 
-    export type Thenable<T> = PromiseLike<T>;
+    export  type Thenable<T> = PromiseLike<T>;
 
-    export interface Environment {
+    export  interface Environment {
         baseUrl?: string;
         getWorker?(workerId: string, label: string): Worker;
         getWorkerUrl?(workerId: string, label: string): string;

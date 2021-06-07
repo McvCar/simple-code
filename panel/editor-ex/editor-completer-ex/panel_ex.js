@@ -5,17 +5,30 @@
 'use strict';
 var path 	= require('path');
 var fs 		= require('fs');
-var md5     = require('md5');
 
 
 
 module.exports = {
 
-	// 面板初始化
-	onLoad(parent){
+	// 
+	ready(parent){
 		// index.js 对象
 		this.parent = parent; 
+
+		let EditorCompletion = require('./editor-completion');
+		this.completor = new EditorCompletion.default(this.parent);
+	},
+
+	// 编辑器启动完成
+	onLoad(parent){
+		this.initCompletionEvent()
 		this.loadCompleter()
+	},
+
+	initCompletionEvent(){
+		this.completor.onLoad(this.parent.vs_editor)
+		this.parent.monaco.languages.registerCompletionItemProvider('typescript',this.completor);
+		this.parent.monaco.languages.registerCompletionItemProvider('plaintext',this.completor);
 	},
 
 	// 配置代码输入提示
@@ -25,29 +38,39 @@ module.exports = {
 		let text = fs.readFileSync(Editor.url('packages://simple-code/template/hint_text.txt', 'utf8')).toString()
 		// 提示列表格式 : arrWord = ["cat", "this.node.runAction( cc.MoveTo(0,cc.p(0,0) ))",...]
 		let arrWord = text.split(" ");
-		this.parent.addCustomCompleters(arrWord)
+		this.completor.addCustomCompleters(arrWord)
 
 		// 动态添加提示
-		// this.parent.addCustomCompleters(["cc.Sequence([new cc.delayTime(1),new cc.MoveTo(0.1,pos),new cc.CallFunc(()=>{})])"])
+		// this.completor.addCustomCompleters(["cc.Sequence([new cc.delayTime(1),new cc.MoveTo(0.1,pos),new cc.CallFunc(()=>{})])"])
 		// // 提示缩写, 只需输入 "delay"就有提示
-		// this.parent.addCustomCompleter("delay","cc.Sequence([new cc.delayTime(1)],new cc.CallFunc(()=>{})])","延时动作回调")
+		// this.completor.addCustomCompleter("delay","cc.Sequence([new cc.delayTime(1)],new cc.CallFunc(()=>{})])","延时动作回调")
 		
-		// this.parent.addCustomCompleter("this.ui.","this.ui.","命令模式下该ui保存场景所有节点")
-		// this.parent.addCustomCompleter("this.node.","this.node.","命令模式下该node保存当前鼠标选择的节点")
+		// this.completor.addCustomCompleter("this.ui.","this.ui.","命令模式下该ui保存场景所有节点")
+		// this.completor.addCustomCompleter("this.node.","this.node.","命令模式下该node保存当前鼠标选择的节点")
 		
-		this.parent.addCustomCompleter("forEach in","forEach((value,key)=>{${1: }})","遍历数组",27,true)
-		this.parent.addCustomCompleter("for","for (let ${1:i} = 0; ${1:i} < ${2:arr}.length; i++) {\n	let ${3:vaule} = ${2:arr}[${1:i}];\n}","for(let i=0; i<array.length;i++)",27,true)
-		this.parent.addCustomCompleter("for loop","for (let ${1:i} = 0; ${1:i} < ${2:arr}.length; i++) {\n	let ${3:vaule} = ${2:arr}[${1:i}];\n}","for(let i=0; i<array.length;i++)",27,true)
-		this.parent.addCustomCompleter("for re loop","for (let ${1:i} = ${2:arr}.length-1; ${1:i} >= 0; i--) {\n	let ${3:vaule} = ${2:arr}[${1:i}];\n}","for(let i=array.length -1; i>=0;i--)",27,true)
-		this.parent.addCustomCompleter("for in","for (let ${1:k} in ${2:object}) {\n	let ${3:vaule} = ${2:object}[${1:k}];\n}","for (let k in object)",27,true)
-		this.parent.addCustomCompleter("while","while (${1:true}) {\n	${2: }\n}","while (true)",27,true)
-		this.parent.addCustomCompleter("if","if (${1:true}) {\n	${2: }\n}","if (true)",27,true)
-		this.parent.addCustomCompleter("else if","else if(${1:true}) {\n	${2: }\n}","else if(true){}",27,true)
-		this.parent.addCustomCompleter("switch (key)","switch (${1:key}) {\n	case value:\n		\n		break;\n\n	default:\n		break;\n}",'',27,true)
-		this.parent.addCustomCompleter("try catch","try {\n		${2: }	\n} catch (${1:error}) {\n ${3: }\n}",'try catch(err)',27,true)
-		this.parent.addCustomCompleter("import  from; ",'import ${1:model} from"${2:model}"','',27,true)
+		this.completor.addCustomCompleter("forEach in","forEach((value,key)=>{${1: }})","遍历数组",27,true)
+		this.completor.addCustomCompleter("for","for (let ${1:i} = 0; ${1:i} < ${2:arr}.length; i++) {\n	let ${3:vaule} = ${2:arr}[${1:i}];\n}","for(let i=0; i<array.length;i++)",27,true)
+		this.completor.addCustomCompleter("for loop","for (let ${1:i} = 0; ${1:i} < ${2:arr}.length; i++) {\n	let ${3:vaule} = ${2:arr}[${1:i}];\n}","for(let i=0; i<array.length;i++)",27,true)
+		this.completor.addCustomCompleter("for re loop","for (let ${1:i} = ${2:arr}.length-1; ${1:i} >= 0; i--) {\n	let ${3:vaule} = ${2:arr}[${1:i}];\n}","for(let i=array.length -1; i>=0;i--)",27,true)
+		this.completor.addCustomCompleter("for in","for (let ${1:k} in ${2:object}) {\n	let ${3:vaule} = ${2:object}[${1:k}];\n}","for (let k in object)",27,true)
+		this.completor.addCustomCompleter("while","while (${1:true}) {\n	${2: }\n}","while (true)",27,true)
+		this.completor.addCustomCompleter("if","if (${1:true}) {\n	${2: }\n}","if (true)",27,true)
+		this.completor.addCustomCompleter("else if","else if(${1:true}) {\n	${2: }\n}","else if(true){}",27,true)
+		this.completor.addCustomCompleter("switch (key)","switch (${1:key}) {\n	case value:\n		\n		break;\n\n	default:\n		break;\n}",'',27,true)
+		this.completor.addCustomCompleter("try catch","try {\n		${2: }	\n} catch (${1:error}) {\n ${3: }\n}",'try catch(err)',27,true)
+		this.completor.addCustomCompleter("import  from; ",'import ${1:model} from"${2:model}"','',27,true)
 	},
 
+	onSaveFile(fileInfo){
+		// 保存后刷新下
+		if(!this.parent.is_save_wait_up){
+			this.completor.upAllSymSuggests()
+		}
+	},
+
+	onAssetsCreatedEvent(files){
+		this.completor.upAllSymSuggests()
+	},
 	
 	// 刷新场景内节点信息
 	onCurrSceneChildrenInfo(currSceneChildrenInfo)
@@ -58,7 +81,44 @@ module.exports = {
 		{
 			// 动态添加当前场景所有节点的name输入提示
 			// 名字，名字，节点路径深度描述，类型图标，是否覆盖
-			this.parent.addCustomCompleter(info.name,info.name,info.path,12,true)
+			this.completor.addCustomCompleter(info.name,info.name,info.path,this.parent.monaco.languages.CompletionItemKind.Unit,true)
+		})
+	},
+
+	onLoadAssetAndCompleter(filePath, extname, isUrlType,isScript)
+	{
+		// if(isScript){
+		// 	// 插入模块名字提示
+		// 	let file_name = filePath.substr(filePath.lastIndexOf('/') + 1)
+		// 	let word = file_name.substr(0,file_name.lastIndexOf('.'))
+		// 	this.completor.addCustomCompleter(word,word,file_name,this.parent.monaco.languages.CompletionItemKind.Reference,true);
+		// }
+		// else 
+		if(isUrlType){
+			// 插入模块文件名提示
+			let word = filePath.substr(12,filePath.lastIndexOf('.')-12)
+			let matchInfo = filePath.match(/resources\/(.+)/)
+			if(matchInfo){
+				word = matchInfo[1];
+				if(word.lastIndexOf('.plist') == -1){
+					this.completor.addCustomCompleter(word,word,'',this.parent.monaco.languages.CompletionItemKind.Folder,true);
+				}
+			}
+		}
+	},
+
+	loadModelCompleter(model){
+		let m_url = model.uri.toString()
+		let ls_i = m_url.lastIndexOf('.');
+		if(ls_i == -1) return;
+
+		let s_i = m_url.lastIndexOf('/');
+		let name = m_url.substr(s_i+1,ls_i-s_i-1)
+		this.completor.imports.saveFile(
+			{
+			  path: m_url.substr(0,ls_i),
+			  aliases: [name],
+			  imports: AutoImport.regexTokeniser(model.getValue())
 		})
 	},
 
@@ -67,7 +127,6 @@ module.exports = {
 
 	},
 	/*************  事件 *************/  
-
 
 
 	messages:{

@@ -231,5 +231,45 @@ let self = module.exports = {
         }
         pattern += ')$';
         return new RegExp(pattern, 'i').test(filename);
-    }
+    },
+
+    getFileName(filePath)
+    {
+        let s_i = filePath.lastIndexOf('/');
+        if(s_i == -1) s_i = filePath.lastIndexOf('\\');
+        let name = filePath
+        if (s_i != -1) name = name.substr(s_i + 1)
+        s_i = name.lastIndexOf('.');
+        if (s_i != -1) {
+            name = name.substr(0,s_i)
+        }
+        return name;
+    },
+
+    getFileExtname(filePath)
+    {
+		let s_i = filePath.lastIndexOf('.');
+		let extname = ""
+		if (s_i != -1) {
+			extname = filePath.substr(s_i).toLowerCase()
+		}
+        return extname;
+    },
+
+    
+	getUrlInfo(url) {
+		let s_i = url.lastIndexOf('/');
+		if(s_i == -1) s_i = url.lastIndexOf('\\');
+		
+		let name = ""
+		if (s_i != -1) name = url.substr(s_i + 1)
+
+		s_i = name.lastIndexOf('.');
+		let extname = ""
+		if (s_i != -1) {
+			extname = name.substr(s_i).toLowerCase()
+		}
+		return { name, extname,url }
+	}
+	
 }

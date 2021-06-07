@@ -65,6 +65,9 @@ module.exports = {
 
 	upVimCursor(selections)
 	{
+		if(selections == null || this.vim_cursor == null){
+			return;
+		}
 		let len = selections.length > this.vim_cursor.length ?  selections.length : this.vim_cursor.length;
 		if(len == 0 || this.vim_mode == null){
 			return;
