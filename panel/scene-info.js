@@ -2,8 +2,7 @@
 const path 		= require('path');
 const fs 		= require('fs');
 const md5     	= require('md5');
-const fe    	= Editor.require('packages://simple-code/tools/FileTools.js');
-const tools    	= Editor.require('packages://simple-code/tools/tools.js');
+const fe    	= Editor.require('packages://simple-code/tools/tools.js');
 
 // 工作路径
 let prsPath  = Editor.importPath.split('library'+path.sep)[0] ;
@@ -814,8 +813,8 @@ var eventFuncs =
 };
 
 // 合并事件函数,分发
-let info 		= Editor.require("packages://simple-code/panel/event-merge").eventvMerge(eventFuncs,"scene_ex.js")
-let fileList 	= fe.getDirAllFiles(Editor.url("packages://simple-code/panel/editor-ex"),[])
+let info 		=  Editor.require('packages://simple-code/tools/eventMerge').eventMerge(eventFuncs,"scene_ex.js")
+let fileList 	= fe.getDirAllFiles(Editor.url("packages://simple-code/extensions"),[])
 eventFuncs 		= info.messages
 
 

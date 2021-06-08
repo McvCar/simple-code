@@ -43,10 +43,6 @@ module.exports = {
 			"message": "simple-code:run-node-js",
 			"accelerator": "alt+shift+e"
 		},
-		"i18n:代码编辑器/编辑/打开外部编辑": {
-			"message": "simple-code:openNodeFileByOutside",
-			"accelerator": "f4"
-		},
 		"i18n:代码编辑器/编辑/批量重命名 (D)": {
 			"message": "simple-code:rename",
 			"accelerator": "alt+enter"
@@ -119,7 +115,11 @@ module.exports = {
 			"message": "simple-code:newFileDir",
 			"accelerator": ""
 		},
-		"i18n:代码编辑器/项目管理/配置功能快捷键": {
+		"i18n:代码编辑器/项目管理/配置快捷键": {
+			"message": "simple-code:openKeyMap",
+			"accelerator": ""
+		},
+		"i18n:代码编辑器/项目管理/配置其它功能": {
 			"message": "simple-code:openConfig",
 			"accelerator": ""
 		},
@@ -129,10 +129,12 @@ module.exports = {
 		},
 	},
 
+	
+
 	// 外部编辑器路径配置，win路径分隔符注意使用 ‘\\’
-	"editorPath": {
-		"win": "C:\\Program Files\\Sublime Text 3\\sublime_text.exe",
-		"mac": "/Applications/Sublime Text.app/Contents/MacOS/Sublime Text",
+	editorPath: {
+		win: "C:\\Program Files\\Sublime Text 3\\sublime_text.exe",
+		mac: "/Applications/Sublime Text.app/Contents/MacOS/Sublime Text",
 	},
 
 
@@ -1092,6 +1094,10 @@ module.exports = {
 				path: "hideToolsBar",
 				defaultValue: false,
 			},
+			"拖拽变量快速生成(使用文件名)": {
+				path: "isQuickDrag",
+				defaultValue: true,
+			},
 		},
 	},
 
@@ -1113,7 +1119,7 @@ module.exports = {
 		if(this.pro_cfg){
 			return this.pro_cfg;
 		}
-		const fe 	= Editor.require('packages://simple-code/tools/FileTools.js');
+		const fe 	= Editor.require('packages://simple-code/tools/tools.js');
 		const path 	= require("path");
 		const prsPath = Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
 
@@ -1123,7 +1129,7 @@ module.exports = {
 	},
 	
 	saveStorage(){
-		const fe 	= Editor.require('packages://simple-code/tools/FileTools.js');
+		const fe 	= Editor.require('packages://simple-code/tools/tools.js');
 		const path 	= require("path");
 		const fs 	= require("fs");
 		const prsPath = Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;

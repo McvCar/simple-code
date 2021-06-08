@@ -1,16 +1,16 @@
 let fs = require("fs");
 let path = require("path");
 
-let checkFsPath = new RegExp("\\.\\./", "g"); 
-const inputType = {"text":1,"password":1,"number":1,"date":1,"color":1,"range":1,"month":1,"week":1,"time":1,"email":1,"search":1,"url":1,"textarea":1}
+let checkFsPath = new RegExp("\\.\\./", "g");
+const inputType = { "text": 1, "password": 1, "number": 1, "date": 1, "color": 1, "range": 1, "month": 1, "week": 1, "time": 1, "email": 1, "search": 1, "url": 1, "textarea": 1 }
 
 module.exports = {
 
 	// 不是输入状态是时
-	inputTypeChk(e){
-		if (e.path[0] ){
-			let type = e.path[0].type ;
-			if ( inputType[type]){
+	inputTypeChk(e) {
+		if (e.path[0]) {
+			let type = e.path[0].type;
+			if (inputType[type]) {
 				return true
 			}
 		}
@@ -20,20 +20,20 @@ module.exports = {
 	// newObj 子类
 	// baseObj 父类
 	// mergeFuncs = ["init"]; 新旧类的同名函数合并一起
-	extendTo(newObj,baseObj,mergeFuncs = []){
+	extendTo(newObj, baseObj, mergeFuncs = []) {
 		if (!baseObj || !newObj) return;
-		
-		for(let k in baseObj){
+
+		for (let k in baseObj) {
 			let v = baseObj[k]
-			if (newObj[k] == null){
+			if (newObj[k] == null) {
 				newObj[k] = v
 			}
 			// 函数继承使用 "this._super()" 调用父类
-			else if (typeof v == "function" && typeof newObj[k] == "function" && !newObj[k]._isExend){
+			else if (typeof v == "function" && typeof newObj[k] == "function" && !newObj[k]._isExend) {
 				let newFunc = newObj[k];
-				newObj[k] = function(){
+				newObj[k] = function () {
 					this._super = v;
-					let ret = newFunc.apply(this,arguments);// 执行函数并传入传参
+					let ret = newFunc.apply(this, arguments);// 执行函数并传入传参
 					delete this._super;
 					return ret;
 				};
@@ -42,7 +42,7 @@ module.exports = {
 		}
 	},
 
-	copyToClipboard(str){
+	copyToClipboard(str) {
 		var input = str;
 		const el = document.createElement('textarea');
 		el.value = input;
@@ -65,7 +65,7 @@ module.exports = {
 		var success = false;
 		try {
 			success = document.execCommand('copy');
-		} catch (err) {}
+		} catch (err) { }
 
 		document.body.removeChild(el);
 
@@ -78,20 +78,18 @@ module.exports = {
 	},
 
 	// 获得import路径
-	getImportStringPaths(codeText) 
-	{
-		
-        var regEx = /(require\(|import )(.{0,}['"])(.+)['"]/g;
+	getImportStringPaths(codeText) {
+
+		var regEx = /(require\(|import |reference path=)(.{0,}['"])(.+)['"]/g;
 		var match = regEx.exec(codeText);
 		var bracketStack = []
 		var imports = []
-		while (match) 
-		{
-			let start = match.index+match[1].length+match[2].length;
+		while (match) {
+			let start = match.index + match[1].length + match[2].length;
 			imports.push({
-				path : match[3],
-				start : start,
-				length : match[3].length,
+				path: match[3],
+				start: start,
+				length: match[3].length,
 			})
 			match = regEx.exec(codeText);
 		}
@@ -99,39 +97,313 @@ module.exports = {
 	},
 
 	//将相对路径转为绝对路径
-	relativePathTofsPath(relativePath, absolutePath) 
-	{
+	relativePathTofsPath(absolutePath, relativePath) {
 		var uplayCount = 0; // 相对路径中返回上层的次数。
 		var m = relativePath.match(checkFsPath);
 		if (m) uplayCount = m.length;
-	
+
 		var lastIndex = absolutePath.length - 1;
 		var subString = absolutePath
 		for (var i = 0; i <= uplayCount; i++) {
 			lastIndex = subString.lastIndexOf("/", lastIndex);
 			subString = subString.substr(0, lastIndex)
 		}
-		return subString + "/" + relativePath.substr(relativePath.lastIndexOf('./')+2);
+		return subString + "/" + relativePath.substr(relativePath.lastIndexOf('./') + 2);
+	},
+
+	//将绝对路径转为相对路径
+	fsPathToRelativePath(currPath, importPath) {
+		let s_i = currPath.lastIndexOf('/')
+		if (s_i != -1) currPath = currPath.substr(0, s_i);
+		let relativePath = path.relative(currPath, importPath);
+		if (relativePath[0] != '.') {
+			relativePath = './' + relativePath;
+		}
+		return relativePath;
 	},
 
 
 	//转换相对路径
-	converRelative(relativePath,oldFilePath,newFilePath) 
-	{
+	converRelative(relativePath, oldFilePath, newFilePath) {
 		let s_i = oldFilePath.lastIndexOf('/')
-		if(s_i != -1) oldFilePath = oldFilePath.substr(0,s_i);
+		if (s_i != -1) oldFilePath = oldFilePath.substr(0, s_i);
 		s_i = newFilePath.lastIndexOf('/')
-		if(s_i != -1) newFilePath = newFilePath.substr(0,s_i);
+		if (s_i != -1) newFilePath = newFilePath.substr(0, s_i);
 
-		let rve_to_abs = path.resolve(oldFilePath,relativePath);
-		relativePath = path.relative(newFilePath,rve_to_abs);
-		if(relativePath[0] != '.'){
-			relativePath = './'+relativePath;
+		let rve_to_abs = path.resolve(oldFilePath, relativePath);
+		relativePath = path.relative(newFilePath, rve_to_abs);
+		if (relativePath[0] != '.') {
+			relativePath = './' + relativePath;
 		}
 		return relativePath;
 	},
-	
 
-	parseJavaScript(program,fileName){
+
+
+	normPath(filePath) {
+		return filePath.replace(/\\/g, '/');
 	},
+
+	copyFile(sourcePath, toPath) {
+		fs.writeFileSync(toPath, fs.readFileSync(sourcePath))
+	},
+
+	// copyFile(sourcePath,toPath){
+	//     fs.readFile(sourcePath,function(err,data){
+	//         if(err) throw new Error('复制失败:'+sourcePath+" TO "+data);
+	//         fs.writeFile(toPath,data,function(err){
+	//             if(err) throw new Error('复制写入失败'+sourcePath+" TO "+data);
+	//         })
+	//     })
+	// },
+
+	moveDir(sourcePath, toPath) {
+		if (!fs.existsSync(sourcePath)) {
+			console.log("不存在目录:", sourcePath);
+			return;
+		}
+
+		if (sourcePath[sourcePath.length - 1] != path.sep) {
+			sourcePath += path.sep;// 加猴嘴
+		}
+		if (toPath[toPath.length - 1] != path.sep) {
+			toPath += path.sep;// 加猴嘴
+		}
+
+		let list = this.getDirAllFiles(sourcePath, []);
+		list.forEach((fileName, i) => {
+
+			let toFilePath = fileName.replace(sourcePath, toPath);
+			console.log("执行:", fileName, toFilePath);
+			let dirName = path.dirname(toFilePath);
+			this.createDir(dirName);
+			// 移动文件
+			fs.renameSync(fileName, toFilePath);
+		})
+	},
+
+	createDir(dirPath) {
+		if (fs.existsSync(dirPath)) return;
+		let paths = dirPath.split(path.sep);//分割路径
+		let path_ = "";
+
+		// c:\
+		let n = 0
+		let max = paths.length
+		if (paths[0].indexOf(":") != -1) {
+			path_ = paths[0];
+			n++;
+		}
+
+		if (paths[max - 1].indexOf(".")) {
+			max--;
+		}
+
+		for (n; n < max; n++) {
+			path_ += path.sep + paths[n];
+			if (!fs.existsSync(path_)) {
+				fs.mkdirSync(path_);
+			}
+		}
+	},
+
+	// 获得文件夹列表
+	getDirList(dirPath, result) {
+		let files = fs.readdirSync(dirPath);
+		files.forEach((val, index) => {
+			let fPath = path.join(dirPath, val);
+			if (fs.existsSync(fPath) && fs.statSync(fPath).isDirectory()) {
+				result.push(fPath);
+			}
+		});
+		return result;
+	},
+
+	// 获得文件列表
+	getFileList(dirPath, result) {
+		let files = fs.readdirSync(dirPath);
+		files.forEach((val, index) => {
+			let fPath = path.join(dirPath, val);
+			if (fs.existsSync(fPath) && fs.statSync(fPath).isFile()) {
+				result.push(fPath);
+			}
+		});
+		return result;
+	},
+
+	isDirectory(fPath) {
+		return fs.existsSync(fPath) && fs.statSync(fPath).isDirectory()
+	},
+
+	getDirAllFiles(dirPath, result) {
+		let files = fs.readdirSync(dirPath);
+		files.forEach((val, index) => {
+			let fPath = path.join(dirPath, val);
+			if (fs.existsSync(fPath) && fs.statSync(fPath).isDirectory()) {
+				this.getDirAllFiles(fPath, result);
+			} else if (fs.statSync(fPath).isFile()) {
+				result.push(fPath);
+			}
+		});
+		return result;
+	},
+
+	getFileString(fileList, options) {
+		let curIndex = 0;
+		let totalIndex = fileList.length;
+		let str = {};
+		for (let key in fileList) {
+			let filePath = fileList[key];
+			let b = this._isFileExit(filePath);
+			if (b) {
+				fs.readFile(filePath, 'utf-8', function (err, data) {
+					if (!err) {
+						self._collectString(data, str);
+					} else {
+						console.log("error: " + filePath);
+					}
+					self._onCollectStep(filePath, ++curIndex, totalIndex, str, options);
+				})
+			} else {
+				self._onCollectStep(filePath, ++curIndex, totalIndex, str, options);
+			}
+		}
+	},
+
+	_onCollectStep(filePath, cur, total, str, data) {
+		if (data && data.stepCb) {
+			data.stepCb(filePath, cur, total);
+		}
+		if (cur >= total) {
+			self._onCollectOver(str, data);
+		}
+	},
+	_onCollectOver(collectObjArr, data) {
+		let strArr = [];
+		let str = "";
+		for (let k in collectObjArr) {
+			str += k;
+			strArr.push(k);
+		}
+		// console.log("一共有" + strArr.length + "个字符, " + strArr);
+		console.log("一共有" + strArr.length + "个字符");
+		if (data && data.compCb) {
+			data.compCb(str);
+		}
+	},
+	mkDir(path) {
+		try {
+			fs.mkdirSync(path);
+		} catch (e) {
+			if (e.code !== 'EEXIST') throw e;
+		}
+	},
+	isFileExit(file) {
+		try {
+			fs.accessSync(file, fs.F_OK);
+		} catch (e) {
+			return false;
+		}
+		return true;
+	},
+	_collectString(data, collectObject) {
+		for (let i in data) {
+			let char = data.charAt(i);
+			if (collectObject[char]) {
+				collectObject[char]++;
+			} else {
+				collectObject[char] = 1;
+			}
+		}
+	},
+	emptyDir(rootFile) {
+		//删除所有的文件(将所有文件夹置空)
+		let emptyDir = function (fileUrl) {
+			let files = fs.readdirSync(fileUrl);//读取该文件夹
+			for (let k in files) {
+				let filePath = path.join(fileUrl, files[k]);
+				let stats = fs.statSync(filePath);
+				if (stats.isDirectory()) {
+					emptyDir(filePath);
+				} else {
+					fs.unlinkSync(filePath);
+					console.log("删除文件:" + filePath);
+				}
+			}
+		};
+		//删除所有的空文件夹
+		let rmEmptyDir = function (fileUrl) {
+			let files = fs.readdirSync(fileUrl);
+			if (files.length > 0) {
+				for (let k in files) {
+					let rmDir = path.join(fileUrl, files[k]);
+					rmEmptyDir(rmDir);
+				}
+				if (fileUrl !== rootFile) {// 不删除根目录
+					fs.rmdirSync(fileUrl);
+					console.log('删除空文件夹' + fileUrl);
+				}
+			} else {
+				if (fileUrl !== rootFile) {// 不删除根目录
+					fs.rmdirSync(fileUrl);
+					console.log('删除空文件夹' + fileUrl);
+				}
+			}
+		};
+		emptyDir(rootFile);
+		rmEmptyDir(rootFile);
+	},
+	/*
+		is_fileType($('#uploadfile').val(), 'doc,pdf,txt,wps,odf,md,png,gif,jpg')
+	* */
+	is_fileType(filename, types) {
+		types = types.split(',');
+		let pattern = '\.(';
+		for (let i = 0; i < types.length; i++) {
+			if (0 !== i) {
+				pattern += '|';
+			}
+			pattern += types[i].trim();
+		}
+		pattern += ')$';
+		return new RegExp(pattern, 'i').test(filename);
+	},
+
+	getFileName(filePath) {
+		let s_i = filePath.lastIndexOf('/');
+		if (s_i == -1) s_i = filePath.lastIndexOf('\\');
+		let name = filePath
+		if (s_i != -1) name = name.substr(s_i + 1)
+		s_i = name.lastIndexOf('.');
+		if (s_i != -1) {
+			name = name.substr(0, s_i)
+		}
+		return name;
+	},
+
+	getFileExtname(filePath) {
+		let s_i = filePath.lastIndexOf('.');
+		let extname = ""
+		if (s_i != -1) {
+			extname = filePath.substr(s_i).toLowerCase()
+		}
+		return extname;
+	},
+
+
+	getUrlInfo(url) {
+		let s_i = url.lastIndexOf('/');
+		if (s_i == -1) s_i = url.lastIndexOf('\\');
+
+		let name = ""
+		if (s_i != -1) name = url.substr(s_i + 1)
+
+		s_i = name.lastIndexOf('.');
+		let extname = ""
+		if (s_i != -1) {
+			extname = name.substr(s_i).toLowerCase()
+		}
+		return { name, extname, url }
+	}
+
 }

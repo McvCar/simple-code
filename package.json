@@ -46,10 +46,6 @@
 			"message": "simple-code:run-node-js",
 			"accelerator": "alt+shift+e"
 		},
-		"i18n:代码编辑器/编辑/打开外部编辑": {
-			"message": "simple-code:openNodeFileByOutside",
-			"accelerator": "f4"
-		},
 		"i18n:代码编辑器/编辑/批量重命名 (D)": {
 			"message": "simple-code:rename",
 			"accelerator": "alt+enter"
@@ -131,17 +127,8 @@
 			"accelerator": ""
 		}
 	},
-	"runtime-resource": {
-		"path": "plugin",
-		"name": "plugin"
-	},
-	"reload": {
-		"ignore": [
-			"plugin/**/*"
-		]
-	},
 	"panel": {
-		"main": "panel/index.js",
+		"main": "panel/vs-panel/vs-panel.js",
 		"type": "dockable",
 		"title": "代码编辑器",
 		"width": 400,

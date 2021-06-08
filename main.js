@@ -2,7 +2,7 @@
 const path      = require('path');
 const electron  = require('electron');
 const exec 		= require('child_process').exec;
-let fs 			= require("fire-fs");
+let fs 			= require("fs");
 
 
 let _lastUuid ;//最后打开的预制节点,记录当前打开层的uuid
@@ -60,10 +60,10 @@ module.exports =
   // 读取扩展逻辑文件
   initExtend()
   {
-  	const fe     = Editor.require('packages://simple-code/tools/FileTools.js'); 
+  	const fe     = Editor.require('packages://simple-code/tools/tools.js'); 
 
 	this.scripts = [];
-	let fileList = fe.getDirAllFiles(Editor.url("packages://simple-code/panel/editor-ex"),[]);
+	let fileList = fe.getDirAllFiles(Editor.url("packages://simple-code/extensions"),[]);
 	fileList.forEach((v)=>
 	{
 		if(v.substr(v.lastIndexOf(path.sep)+1) == "main_ex.js")
@@ -170,6 +170,11 @@ module.exports =
 		// 打开目录
 		exec( (Editor.isWin32 ? "start " : "open ")+Editor.url("packages://simple-code/config.js") )
 	},
+	
+	'openKeyMap'(){
+		// 打开目录
+		exec( (Editor.isWin32 ? "start " : "open ")+Editor.url("packages://simple-code/keyMap.js") )
+	},
 
 	'openConfigHitn'(){
 		// 打开目录
@@ -178,7 +183,7 @@ module.exports =
 
 	'openConfigExtendDir'(){
 		// 打开目录
-		exec( (Editor.isWin32 ? "start " : "open ")+Editor.url("packages://simple-code/panel/editor-ex") )
+		exec( (Editor.isWin32 ? "start " : "open ")+Editor.url("packages://simple-code/extensions") )
 	},
 
 	'newFileDir'(){
