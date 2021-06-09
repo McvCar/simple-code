@@ -108,7 +108,7 @@ module.exports = {
 			lastIndex = subString.lastIndexOf("/", lastIndex);
 			subString = subString.substr(0, lastIndex)
 		}
-		return subString + "/" + relativePath.substr(relativePath.lastIndexOf('./') + 2);
+		return this.normPath( subString  + "/" + relativePath.substr(relativePath.lastIndexOf('./') + 2));
 	},
 
 	//将绝对路径转为相对路径
@@ -119,7 +119,7 @@ module.exports = {
 		if (relativePath[0] != '.') {
 			relativePath = './' + relativePath;
 		}
-		return relativePath;
+		return this.normPath(relativePath);
 	},
 
 
@@ -130,8 +130,8 @@ module.exports = {
 		s_i = newFilePath.lastIndexOf('/')
 		if (s_i != -1) newFilePath = newFilePath.substr(0, s_i);
 
-		let rve_to_abs = path.resolve(oldFilePath, relativePath);
-		relativePath = path.relative(newFilePath, rve_to_abs);
+		let rve_to_abs = this.normPath(path.resolve(oldFilePath, relativePath));
+		relativePath = this.normPath(path.relative(newFilePath, rve_to_abs));
 		if (relativePath[0] != '.') {
 			relativePath = './' + relativePath;
 		}

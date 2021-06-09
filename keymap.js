@@ -6,10 +6,12 @@ module.exports = {
 	'moveDown' : { win32:[["Ctrl",'j']] , mac:[["Meta",'j']] },  
 	// 设置
 	'openSetting' : { win32:[["F12"]] , mac:[["F12"]] },  
+	// 关闭tab标签
+	'closeTab' : { win32:[["Ctrl",'w']] , mac:[["Meta",'w']] },  
 	// 跳到上一个tab窗口
-	'prevView' : { win32:[["Ctrl",'i']] , mac:[["Meta",'j']] },  
+	'prevView' : { win32:[["Ctrl", "Alt", "j"], ["Ctrl", "Alt", "ArrowLeft"], ["Ctrl", "PageUp"]] , mac:[["Meta", "Alt", "j"], ["Meta", "Alt", "ArrowLeft"], ["Alt", "Shift", "Tab"]] },  
 	// 跳到下一个tab窗口
-	'nextView' : { win32:[["Ctrl",'i']] , mac:[["Meta",'j']] },  
+	'nextView' : { win32:[["Ctrl", "Alt", "l"], ["Ctrl", "Alt", "ArrowRight"], ["Ctrl", "PageDown"]] , mac:[["Meta", "Alt", "l"], ["Meta", "Alt", "ArrowRight"], ["Alt", "Tab"]] },  
 	// 执行命令行代码
 	'execCode' : { win32:[["Alt","e"],["Ctrl","e"]] , mac:[["Meta",'e']] }, 
 	// 执行整个场景代码(不推荐使用,已不维护)
@@ -19,7 +21,7 @@ module.exports = {
 	// 进入、退出命令模式
 	'cmdMode' : { win32:[["F2"]] , mac:[["F2"]] },  
 	// 记录当前场景 node tree 选中状态
-	'setNodeTreeTag' : { win32:[[["Alt",'`']]] , mac:[["Alt",'Dead']] },  
+	'setNodeTreeTag' : { win32:[["Alt",'`']] , mac:[["Alt",'Dead']] },  
 	// node tree 选中状态恢复到标记的状态
 	'getNodeTreeTag' : { win32:[["`"]] , mac:[["`"]] },  
 	// 快速选中同名node,类似vscode的 Ctrl + D
@@ -42,8 +44,8 @@ module.exports = {
 	// 搜索节点
 	'findNodes' : { win32:[["f"]] , mac:[["f"]] },  
 
-	// 跳到下个书签
-	'nextBookmark' : { win32:[["Alt",'F1']] , mac:[["Meta",'F1']] },  
+	// 跳到下个书签, 鼠标点击行数栏标记位置
+	'nextBookmark' : { win32:[["Alt",'`']] , mac:[["Meta",'F1']] },  
 	// 打开控制台
 	'openConsole' : { win32:[["Ctrl","Shift",'y']] , mac:[["Ctrl","Shift",'y']] },  
 }

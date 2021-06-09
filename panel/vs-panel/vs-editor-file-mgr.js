@@ -6,6 +6,7 @@ const fe 	= Editor.require('packages://simple-code/tools/tools.js');
 const fs 	= require('fs');
 const config = Editor.require('packages://simple-code/config.js');
 const path 	= require("path");
+const tools = require('../../tools/tools');
 
 const prsPath = Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
 
@@ -66,7 +67,7 @@ class FileMgr{
 			meta: url,
 			url: url,
 			score: 0,//搜索优先级
-			fsPath:fsPath,
+			fsPath:tools.normPath(fsPath),
 			// matchMask: i,
 			// exactMatch: 0,
 			uuid: uuid,
@@ -94,6 +95,7 @@ class FileMgr{
 		let url = Editor.remote.assetdb.uuidToUrl(uuid);
 		let fs_path = Editor.remote.assetdb.urlToFspath(url);
 		if(url == null || fs_path == null) return;
+		fs_path = fs_path.replace(/\\/g,'/');
 
 		let name = url.substr(url.lastIndexOf('/') + 1);
 		let file_type = name.substr(name.lastIndexOf('.') + 1)
@@ -107,6 +109,7 @@ class FileMgr{
 
 	getFileUrlInfoByFsPath(fs_path) 
 	{
+		fs_path = fs_path.replace(/\\/g,'/');
 		let uuid = Editor.remote.assetdb.fspathToUuid(fs_path) || "outside";
 		let url = uuid == "outside" ? fs_path.replace(/\\/g,'/') : Editor.remote.assetdb.uuidToUrl(uuid);
 
@@ -135,7 +138,7 @@ class FileMgr{
 	
 	fsPathToUrl(fsPath){
 		fsPath = fsPath.replace(/\\/g,'/')
-		let ind = fsPath.indexOf(prsPath+"/assets");
+		let ind = fsPath.indexOf(fe.normPath( prsPath)+"/assets");
 		let str_uri;
 		if(ind != -1){
 			ind = prsPath.length;
@@ -198,7 +201,6 @@ class FileMgr{
 		let isHasImport = false
 		let loadFunc = (tryPath,isCompareName,isFromSystemRead)=>
 		{
-			tryPath = fe.normPath(tryPath)
 			tryPath = tryPath.substr(0,7) == 'file://' ? tryPath.substr(7) : tryPath; // 去掉前缀
 
 			let fileItem 
@@ -414,6 +416,8 @@ class FileMgr{
 		{
 			let urlI = this.getUriInfo(v.url)
 			v.extname = urlI.extname;
+			v.srcPath = fe.normPath(v.srcPath);
+			v.destPath = fe.normPath(v.destPath);
 			
 			// 更新文件缓存
 			delete this.parent.file_list_map[v.srcPath];
@@ -421,14 +425,14 @@ class FileMgr{
 				let item = this.parent.file_list_buffer[i];
 				if (item.uuid == v.uuid) 
 				{
-					this.parent.file_list_map[item.fsPath] = item;
 					let s_i = this.parent.refresh_file_list.indexOf(item.meta)
 					if(s_i != -1) this.parent.refresh_file_list[s_i] = v.url; // 需要手动编译的文件
 					item.extname = urlI.extname
 					item.value = urlI.name
 					item.meta = v.url
 					item.url = v.url
-					item.fsPath = fe.normPath(v.destPath)
+					item.fsPath = v.destPath;
+					this.parent.file_list_map[item.fsPath] = item;
 					break;
 				}
 			}

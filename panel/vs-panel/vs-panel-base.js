@@ -435,7 +435,7 @@ let layer =
 					return 
 				}else if(info.fsPath){
 					let url = Editor.remote.assetdb.fspathToUrl(info.fsPath);
-					vs_model = this.loadVsModel(url || info.fsPath,this.fileMgr.getUriInfo(url).extname,url != null)
+					vs_model = this.loadVsModel(url || info.fsPath,path.extname(url || info.fsPath),url != null)
 				}else{
 					Editor.warn('未找到文件,vs_model == null:',info.uri && info.uri._formatted);
 					return 
