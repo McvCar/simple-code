@@ -251,7 +251,7 @@ let layer = {
 		// 读取拖入的文件
 		this.$editorB.addEventListener('dragover',(e)=>{
 			// if(e.dataTransfer.files[0]){
-				this.$dropBg.style.display = "block"
+				this.$dropBg.style.display = "block";
 				e.preventDefault();
 				e.stopPropagation();
 			// }
@@ -259,14 +259,13 @@ let layer = {
 		
 		// 读取拖入的文件
 		this.$editorB.addEventListener('drop',(e)=>{
-			this.$dropBg.style.display = "none"
+			this.$dropBg.style.display = "none";
 			this.onDrag(e);
 		},false);
 
 		
 		this.$editorB.addEventListener('dragleave',(e)=>{
-			this.$dropBg.style.display = "none"
-			console.log(e)
+			this.$dropBg.style.display = "none";
 		},false);
 		
 		

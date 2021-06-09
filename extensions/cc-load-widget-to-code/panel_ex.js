@@ -12,6 +12,8 @@ const prsPath 		= Editor.Project && Editor.Project.path ? Editor.Project.path : 
 let is_lock			= false;
 let ASSETS_TYPE_MAP = {'sprite-atlas':"cc.SpriteAtlas",'sprite-frame':"cc.SpriteFrame",'texture':"cc.SpriteFrame",'prefab':"cc.Prefab",'audio-clip':'cc.AudioClip','raw-asset':'cc.RawAsset'};
 let IS_URL_TYPE 	= ['cc.AudioClip','cc.RawAsset']
+let QUICK_LOAD_TYPE_ORDER 	= ['cc.Sprite','cc.Label','cc.EditBox','cc.RichText']
+
 module.exports = {
 
 	// 面板初始化
@@ -25,19 +27,36 @@ module.exports = {
 	insertWidgetAction(isQuick,symbolName)
 	{
 		let nodes = Editor.Selection.curSelection('node');
-		let uuid = nodes && nodes[0];
 
-		Editor.Scene.callSceneScript('simple-code', 'getNodeName',uuid, (err, name) => 
+		Editor.Scene.callSceneScript('simple-code', 'getNodesInfo',nodes || [], (err, nodeInfos) => 
 		{ 
+			if(!nodeInfos.length) return;
+
 			let codeInfo = this.getCurrEditorFileInfo();
 			if(isQuick)
 			{
-				if(name) this.loadWidgetToCode(symbolName,name,codeInfo);
+				// 加载多个变量
+				let names = [];
+				let symbolNames = [];
+				for (let i = 0; i < nodeInfos.length; i++) {
+					const nodeInfo = nodeInfos[i];
+					let symbolName = 'cc.Node';
+					for (let i = 0; i < QUICK_LOAD_TYPE_ORDER.length; i++) {
+						if( nodeInfo.compNames.indexOf(QUICK_LOAD_TYPE_ORDER[i]) != -1){
+							symbolName = QUICK_LOAD_TYPE_ORDER[i];
+							break;
+						}
+					}
+					names.push(nodeInfo.name);
+					symbolNames.push(symbolName);
+				}
+				this.loadWidgetsToCode(symbolNames,names,codeInfo);
 			}else{
+				// 加载单个变量
 				this.loadSymbolName((name)=>
 				{
 					this.loadWidgetToCode(symbolName,name,codeInfo);
-				},name || '',codeInfo.symbols)
+				},nodeInfos[0].name || '',codeInfo.symbols)
 			}
 		})
 	},
@@ -89,7 +108,48 @@ module.exports = {
 		});
 	},
 
-	// 加载组件到代码
+	// 加载多个组件到代码
+	loadWidgetsToCode(widgetTypes,symbolNames,codeInfo,insertUuids=null,isAssets=false){
+		if(this.parent.file_info == null || this.parent.file_info.uuid != codeInfo.editInfo.uuid ){
+			return;
+		}
+
+		//1.获得当前打开的脚本是否该场景内节点绑定的
+		//2.获得与当前脚本绑定的Nodes
+		//3.往脚本添加组件类型字段
+		//4.往脚本的类型字段写入当前选中的组件或资源
+		this.getCurrEditorFileBindNodes(codeInfo.editInfo.uuid, (bindInfos)=>
+		{
+			if(!bindInfos || bindInfos.length == 0){
+				console.info("生成拖拽组件失败,当前场景Nodes没有绑定当前编辑中的脚本")
+				return;
+			}
+			if(this.parent.file_info.uuid != codeInfo.editInfo.uuid) {
+				return;
+			}
+
+			for (let i = 0; i < symbolNames.length; i++) 
+			{
+				const widgetType = widgetTypes[i];
+				const symbolName = symbolNames[i];
+				if(symbolName.match(/[a-zA-Z_$][\w$]*/) == null){
+					Editor.info('生成拖拽组件:变量命名不符合规范:',symbolName);
+					continue;
+				}
+
+				this.insertTextToModel(widgetType,symbolName,codeInfo,false);
+				setTimeout(()=>{
+					// 2.添加引用
+					this.insertWidgetInfo(bindInfos,widgetType,symbolName,false,insertUuids,isAssets);
+				},100);
+			}
+			// 1.保存刷新creator生成变量拖拽组件
+			this.parent.saveFile(true,true);
+
+		});
+	},
+
+	// 加载单个或数组组件到代码
 	loadWidgetToCode(widgetType,symbolName,codeInfo,insertUuids=null,isAssets=false){
 		if(symbolName.match(/[a-zA-Z_$][\w$]*/) == null){
 			Editor.info('生成拖拽组件:变量命名不符合规范:',symbolName);
@@ -114,8 +174,11 @@ module.exports = {
 			}
 			let isArray = Editor.Selection.curSelection(isAssets ? 'asset':'node').length>1 ;
 
-			this.insertTextToFile(widgetType,symbolName,codeInfo,isArray);
-			this.insertWidgetInfo(bindInfos,widgetType,symbolName,isArray,insertUuids,isAssets);
+			this.insertTextToModel(widgetType,symbolName,codeInfo,isArray);
+			this.parent.saveFile(true,true);
+			setTimeout(()=>{
+				this.insertWidgetInfo(bindInfos,widgetType,symbolName,isArray,insertUuids,isAssets);
+			},100);
 		});
 	},
 
@@ -139,7 +202,7 @@ module.exports = {
 	},
 	
 	//3.往脚本添加组件类型字段
-	insertTextToFile(widgetType,symbolName,codeInfo,isArray)
+	insertTextToModel(widgetType,symbolName,codeInfo,isArray)
 	{
 		// 1.获得脚本变量插入text位置
 		// 2.获得插入组件文本内容
@@ -164,7 +227,7 @@ module.exports = {
 			}
 			vs_model.pushStackElement();
 			vs_model.setValue(text);
-			this.parent.saveFile(true,true);
+			// this.parent.saveFile(true,true);
 		}
 	},
 
