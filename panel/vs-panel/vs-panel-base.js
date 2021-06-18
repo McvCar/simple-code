@@ -435,7 +435,7 @@ let layer =
 					return 
 				}else if(info.fsPath){
 					let url = Editor.remote.assetdb.fspathToUrl(info.fsPath);
-					vs_model = this.loadVsModel(url || info.fsPath,this.fileMgr.getUriInfo(url).extname,url != null)
+					vs_model = this.loadVsModel(url || info.fsPath,path.extname(url || info.fsPath),url != null)
 				}else{
 					Editor.warn('未找到文件,vs_model == null:',info.uri && info.uri._formatted);
 					return 
@@ -1181,7 +1181,7 @@ let layer =
 			tabBg.className = id == tabBg._id ? "openTab" : "closeTab";
 		}
 
-		if (this.edit_list[this.edit_id]) {
+		if (this.edit_id != 0 && this.edit_list[this.edit_id]) {
 			// 记录切换页面前编辑的数据
 			this.edit_list[this.edit_id].new_data = this.vs_editor.getValue();
 			this.edit_list[this.edit_id].scroll_top = this.vs_editor.getScrollTop()

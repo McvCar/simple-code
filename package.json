@@ -5,6 +5,7 @@
 	"description": "内置代码编辑器",
 	"author": "MCV",
 	"main": "main.js",
+	
 	"main-menu": {
 		"i18n:代码编辑器/打开": {
 			"message": "simple-code:open",
@@ -118,7 +119,11 @@
 			"message": "simple-code:newFileDir",
 			"accelerator": ""
 		},
-		"i18n:代码编辑器/项目管理/配置功能快捷键": {
+		"i18n:代码编辑器/项目管理/配置快捷键": {
+			"message": "simple-code:openKeyMap",
+			"accelerator": ""
+		},
+		"i18n:代码编辑器/项目管理/配置其它功能": {
 			"message": "simple-code:openConfig",
 			"accelerator": ""
 		},

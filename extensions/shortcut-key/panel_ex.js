@@ -42,7 +42,7 @@ module.exports = {
 		},1)
 
 		// 绑定页面全局快捷键事件,编辑器翻页
-		this.parent.addKeybodyEventByName('moveDowm',(e)=>
+		this.parent.addKeybodyEventByName('moveDown',(e)=>
 		{
 			// let is_vim_cmd_mode = Editor.monaco.vim_mode && !Editor.monaco.vim_mode.state.vim.insertMode;// vim模式禁止输入
 			// if(!is_vim_cmd_mode){

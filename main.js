@@ -52,8 +52,8 @@ module.exports =
 
   	if (isNeedSave){
   		packageJson["main-menu"] = menuCfg;
-  		Editor.log("替换编辑器插件快捷方式")
-  		fs.writeFile(Editor.url("packages://simple-code/package.json"),JSON.stringify( packageJson , null, "\t"));
+  		Editor.log("替换编辑器插件快捷方式",Editor.url("packages://simple-code/package.json"),JSON.stringify( packageJson , null, "\t"))
+  		fs.writeFile(Editor.url("packages://simple-code/package.json"),JSON.stringify( packageJson , null, "\t"), 'utf-8');
   	}
   },
 
@@ -67,7 +67,7 @@ module.exports =
 	fileList.forEach((v)=>
 	{
 		if(v.substr(v.lastIndexOf(path.sep)+1) == "main_ex.js")
-		{
+		{ 
 			let obj = require(v);
 			this.scripts.push(obj);
 			for(let name in obj.messages)
@@ -167,18 +167,18 @@ module.exports =
 	},
 	
 	'openConfig'(){
-		// 打开目录
-		exec( (Editor.isWin32 ? "start " : "open ")+Editor.url("packages://simple-code/config.js") )
+		// 打开配置
+		Editor.Ipc.sendToPanel('simple-code', 'open-code-file',{filePath:Editor.url("packages://simple-code/config.js")});
 	},
 	
 	'openKeyMap'(){
-		// 打开目录
-		exec( (Editor.isWin32 ? "start " : "open ")+Editor.url("packages://simple-code/keyMap.js") )
+		// 打开配置
+		Editor.Ipc.sendToPanel('simple-code', 'open-code-file',{filePath:Editor.url("packages://simple-code/keyMap.js")});
 	},
 
 	'openConfigHitn'(){
 		// 打开目录
-		exec( (Editor.isWin32 ? "start " : "open ")+Editor.url("packages://simple-code/template/hint_text.txt") )
+		Editor.Ipc.sendToPanel('simple-code', 'open-code-file',{filePath:Editor.url("packages://simple-code/template/hint_text.txt")});
 	},
 
 	'openConfigExtendDir'(){

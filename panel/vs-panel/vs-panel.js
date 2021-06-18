@@ -251,7 +251,7 @@ let layer = {
 		// 读取拖入的文件
 		this.$editorB.addEventListener('dragover',(e)=>{
 			// if(e.dataTransfer.files[0]){
-				this.$dropBg.style.display = "block"
+				this.$dropBg.style.display = "block";
 				e.preventDefault();
 				e.stopPropagation();
 			// }
@@ -259,14 +259,13 @@ let layer = {
 		
 		// 读取拖入的文件
 		this.$editorB.addEventListener('drop',(e)=>{
-			this.$dropBg.style.display = "none"
+			this.$dropBg.style.display = "none";
 			this.onDrag(e);
 		},false);
 
 		
 		this.$editorB.addEventListener('dragleave',(e)=>{
-			this.$dropBg.style.display = "none"
-			console.log(e)
+			this.$dropBg.style.display = "none";
 		},false);
 		
 		
@@ -426,14 +425,6 @@ let layer = {
 			if (className.indexOf('monaco') != -1 && (e.key == "w" || e.key == "e" || e.key == "r" || e.key == "t")) e.preventDefault()
 		}, false);
 
-		// 关闭页面
-		this.addKeybodyEvent([[Editor.isWin32 ? "Ctrl" : "Meta", "w"]], (e) => {
-			this.closeTab(this.edit_id);
-			e.preventDefault();// 吞噬捕获事件
-			return false;
-		}, 1, "keydown");
-
-
 		this.addKeybodyEvent([["Ctrl", "s"], ["Meta", "s"]], (e) => 
 		{
 			// 保存后格式化文档
@@ -451,15 +442,23 @@ let layer = {
 			return false;
 		}, 1, "keydown");
 
+		// 关闭页面
+		this.addKeybodyEventByName('closeTab', (e) => {
+			this.closeTab(this.edit_id);
+			e.preventDefault();// 吞噬捕获事件
+			return false;
+		}, 1, "keydown");
+
+
 		// tab 左移
-		this.addKeybodyEvent([["Meta", "Alt", "j"], [Editor.isWin32 ? "Ctrl" : "Meta", "Alt", "ArrowLeft"], ["Alt", "Shift", "Tab"]], (e) => {
+		this.addKeybodyEventByName('prevView', (e) => {
 			this.tabToLeft(true);
 			e.preventDefault();// 吞噬捕获事件
 			return false;
 		}, 1, "keydown");
 
 		// tab 右移
-		this.addKeybodyEvent([["Meta", "Alt", "l"], [Editor.isWin32 ? "Ctrl" : "Meta", "Alt", "ArrowRight"], ["Alt", "Tab"]], (e) => {
+		this.addKeybodyEventByName('nextView', (e) => {
 			this.tabToRight(true);
 			e.preventDefault();// 吞噬捕获事件
 			return false;
@@ -756,6 +755,11 @@ let layer = {
 
 			this.fileMgr.assetsMovedEvent(files)
 			this.onAssetsMovedEvent(files);
+		},
+
+
+		'open-code-file'(e,file){
+			this.openOutSideFile(file,true)
 		},
 		
 		'run-command-code'(event, type) {

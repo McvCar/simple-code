@@ -87,16 +87,29 @@ module.exports = {
 	messages:
 	{
 		
-		'getNodeName'(event, uuid, parent) 
+		'getNodesInfo'(event, uuids, parent) 
 		{
 
-			let node = cc.engine.getInstanceById(uuid || '');
-			let name = ''
-			if(node)
+			let nodeInfos = []
+			for (let i = 0; i < uuids.length; i++) 
 			{
-				name = node.name
+				const uuid = uuids[i];
+				let node = cc.engine.getInstanceById(uuid || '');
+				if(node){
+					let compNames = []
+					node._components.forEach((code_comp, i) => {
+						if (code_comp.__classname__ ) {
+							compNames.push(code_comp.__classname__)
+						}
+					});
+					nodeInfos.push({
+						name: node.name,
+						uuid: uuid,
+						compNames:compNames,
+					})
+				}
 			}
-			event.reply(null,name);
+			event.reply(null,nodeInfos);
 		},
 		'getNodeCompNames'(event, uuid, parent) 
 		{

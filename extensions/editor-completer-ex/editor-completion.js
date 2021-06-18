@@ -91,6 +91,8 @@ class ImportCompletion
             return {suggestions,incomplete:false};
         }
 
+        if(this.all_sym_sugges.length == 0) this.upAllSymSuggests();
+
         var p = new Promise( (resolve, reject )=> 
         {
             let offset = model.getOffsetAt(position);
@@ -114,28 +116,25 @@ class ImportCompletion
                 // 3.全部代码文件的代码提示合集
                 let isJs = 	this.parent.fileMgr.getUriInfo(m_path).extname == '.js'
                 let enable = isJs && this.parent.cfg.enabledJsGlobalSugges ||  !isJs && this.parent.cfg.enabledTsGlobalSugges
-                if(enable && this.all_sym_sugges.length > 0)
+                let wordInfo = model.getWordAtPosition(position);
+
+                // 文本头部
+                console.log(!wordInfo || text.substr(wordInfo.startColumn-2,1) != '.')
+                if(!wordInfo && text.substr(position.column-2,1) != '.'  || wordInfo && text.substr(wordInfo.startColumn-2,1) != '.')
                 {
-                    // 文本头部
-                    if(text.match(/[a-zA-Z_$][\w$]{1,30}/) == null)
-                    {
-                        // 4.使用 Auto import 提示
-                        this.parent.tsWr.getAutoImportSuggests(m_path).then((list)=>{
-                            for (let i = 0; i < list.length; i++) {
-                                let item = list[i];
-                                item.command = this.command;
-                            }
-                            suggestions.push.apply(suggestions,list)
-                            // 使用全文件模糊代码提示
-                            retSuggesFunc(true);
-                        });
-                    }else{
-                        // 4.存在精准的内置代码提示，不使用模糊代码提示
-                        retSuggesFunc(!isHasSym);
-                    }
+                    // 4.使用 Auto import 提示
+                    this.parent.tsWr.getAutoImportSuggests(m_path).then((list)=>{
+                        for (let i = 0; i < list.length; i++) {
+                            let item = list[i];
+                            item.command = this.command;
+                        }
+                        suggestions.push.apply(suggestions,list)
+                        // 使用全文件模糊代码提示
+                        retSuggesFunc(true && enable);
+                    });
                 }else{
-                    if(enable) this.upAllSymSuggests();
-                    retSuggesFunc();
+                    // 4.存在精准的内置代码提示，不使用模糊代码提示
+                    retSuggesFunc(!isHasSym && enable);
                 }
             })
             

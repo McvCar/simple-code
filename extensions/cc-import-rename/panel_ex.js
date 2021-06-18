@@ -81,7 +81,7 @@ module.exports = {
 		{
 			let item = this.parent.file_list_map[fsPath];
 			// 该文件引用的模块列表 
-			let importList = item.data && item.data.match(moduleCheckReg);
+			let importList = !usedList[fsPath] || usedList[fsPath].old_path != fsPath && usedList[fsPath].new_path != fsPath ? item.data && item.data.match(moduleCheckReg) : undefined;
 			if(importList)// js,ts文件数据
 			{ 
 				// 2，import被移动路径的文件
@@ -124,12 +124,13 @@ module.exports = {
 
 				// 转换相对路径
 				let importFspath = tools.relativePathTofsPath(info.old_path || info.new_path,importItem.path);
-				let importPathInfo = importFspath.lastIndexOf('.') == -1 ? usedList[importFspath+'.js'] || usedList[importFspath+'.ts'] : usedList[importFspath];
+				let extname = path.extname(importFspath);
+				let importPathInfo = extname == '' ? usedList[importFspath+'.js'] || usedList[importFspath+'.ts'] : usedList[importFspath];
 				let newImportPath = importItem.path;
 				if(importPathInfo){
 					newImportPath = tools.fsPathToRelativePath(info.new_path,importPathInfo.new_path);
 					let s_i = newImportPath.lastIndexOf('.');
-					if(importFspath.lastIndexOf('.') == -1 && s_i != -1) newImportPath = newImportPath.substr(0,s_i);
+					if(extname == '' && importFspath.lastIndexOf('.') == -1 && s_i != -1) newImportPath = newImportPath.substr(0,s_i);
 				}else{
 					newImportPath = tools.fsPathToRelativePath(info.new_path,importFspath);
 				}
