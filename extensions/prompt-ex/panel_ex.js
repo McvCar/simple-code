@@ -341,7 +341,7 @@ module.exports = {
 			let searchText = cmdLine.getValue();
 			this.showGlobalSearchListView(searchText)
 		},()=>{
-			return ["请输入全局搜索内容"]
+			return [fe.translate("global-search-hint")] // 请输入全局搜索内容
 		});
 	},
 
@@ -349,7 +349,7 @@ module.exports = {
 
 		let result = this.findAllMatches(searchText);
 		let is_has = result.length;
-		result = is_has ? result : ['未找到相关内容']
+		result = is_has ? result : [fe.translate("no-relevant-content-found")] // '未找到相关内容'
 		// 下拉框选中后操作事件
 		let onSearchAccept = (data,cmdLine)=>
 		{

@@ -1,5 +1,6 @@
 let fs = require("fs");
 let path = require("path");
+let packageCfg = require("../package.json")
 
 let checkFsPath = new RegExp("\\.\\./", "g");
 const inputType = { "text": 1, "password": 1, "number": 1, "date": 1, "color": 1, "range": 1, "month": 1, "week": 1, "time": 1, "email": 1, "search": 1, "url": 1, "textarea": 1 }
@@ -14,6 +15,18 @@ module.exports = {
 				return true
 			}
 		}
+	},
+
+	getLanguage(){
+		return window.navigator && window.navigator.language && window.navigator.language.split('-')[0];
+	},
+
+	translate(key){
+		return Editor.T(packageCfg.name+'.'+key)
+	},
+
+	translateZhAndEn(zeText,enText){
+		return this.getLanguage() == 'zh' ? zeText : enText;
 	},
 
 	// 拷贝本对象方法到目标对象

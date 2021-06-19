@@ -2,16 +2,17 @@
  * 1.管理vscode编辑器对象
  * 2.管理文件资源
  */
-
-const fe 	= Editor.require('packages://simple-code/tools/tools.js');
+const electron 		= require('electron')
+const fe 			= Editor.require('packages://simple-code/tools/tools.js');
+const config 		= Editor.require('packages://simple-code/config.js');
+const packageCfg 	= Editor.require('packages://simple-code/package.json');
 const fs 	= require('fs');
-const config = Editor.require('packages://simple-code/config.js');
 const path 	= require("path");
 const exec 	= require('child_process').exec;
 const md5 	= require('md5');
-const { isArray } = require('./monaco-editor/dev/vs/editor/editor.main');
-const eventMgr 	= require('../../tools/eventMgr');
-const fileMgr 	= require('./vs-editor-file-mgr');
+const { isArray } 	= require('./monaco-editor/dev/vs/editor/editor.main');
+const eventMgr 		= require('../../tools/eventMgr');
+const fileMgr 		= require('./vs-editor-file-mgr');
 
 const prsPath = Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
 
@@ -23,7 +24,7 @@ let layer =
 	// .d.ts 通用代码提示文件引入位置
 	TS_API_LIB_PATHS : [prsPath,Editor.url('packages://simple-code/template/api_doc')],
 	// 备忘录位置
-	MEMO_FILE_PATH : prsPath + path.sep + "temp" + path.sep + "备忘录.md",
+	MEMO_FILE_PATH : prsPath + path.sep + "temp" + path.sep + (fe.getLanguage() == 'zh' ? "备忘录.md" : "Memo.md"),
 	CMD_FILE_PATH : prsPath + path.sep + "temp" + path.sep + "commandLine.js",
 	// 下拉框 过滤文件类型 
 	SEARCH_BOX_IGNORE: {},//{".png":1,".jpg":1}
@@ -39,6 +40,7 @@ let layer =
 		this.file_list_buffer  	= this.file_list_buffer || [];
 		this.file_list_map 	  	= this.file_list_map || {};
 		this.fileMgr 			= new fileMgr(this);
+		this.menu  = null;
 
 		this.initVsCode(() => {
 			this.initEditorData();
@@ -46,6 +48,7 @@ let layer =
 				this.initEditorEvent();
 				this.initCustomCompleter();
 				this.initSceneData(callback);
+				this.initContextMenu();
 			});
 		});
 	},
@@ -64,7 +67,7 @@ let layer =
 
 		const vsLoader = Editor.require('packages://simple-code/panel/vs-panel/monaco-editor/dev/vs/loader.js');
 		// vs代码路径
-		vsLoader.require.config({ 'vs/nls': { availableLanguages: { '*': 'zh-cn' } }, paths: { 'vs': Editor.url('packages://simple-code/panel/vs-panel/monaco-editor/dev/vs', 'utf8') } });
+		vsLoader.require.config({ 'vs/nls': { availableLanguages: { '*': fe.getLanguage() == 'zh' ? 'zh-cn' : '' } }, paths: { 'vs': Editor.url('packages://simple-code/panel/vs-panel/monaco-editor/dev/vs', 'utf8') } });
 		// 创建vs编辑器，api参考 monaco.d.ts文件
 		vsLoader.require(['vs/editor/editor.main'], () => 
 		{
@@ -150,6 +153,81 @@ let layer =
 	   });
 	},
 
+	// 右键菜单初始化
+	initContextMenu(){
+		this.menu = electron.remote.Menu.buildFromTemplate([
+			// 关闭
+			{label:fe.translate('close'),click:()=>
+			{
+				if(this.menu.currTabId == null) return;
+				this.closeTab(this.menu.currTabId)
+			}},
+
+			// 关闭其它
+			{label:fe.translate('close-others'),click:()=>
+			{
+				for (let i = this.edit_list.length-1; i >= 0 ; i--) {
+					const file_info = this.edit_list[i];
+					if(!file_info || file_info.id == this.menu.currTabId) continue;
+					this.closeTab(file_info.id)
+				}
+			}},
+
+			// 关闭All
+			{label:fe.translate('close-all'),click:()=>
+			{
+				for (let i = this.edit_list.length-1; i >= 0 ; i--) {
+					const file_info = this.edit_list[i];
+					if(!file_info) continue;
+					this.closeTab(file_info.id)
+				}
+			}},
+
+			// 线条
+			{ type: 'separator' },
+			// 复制路径
+			{label:fe.translate('copy-path'),click:()=>
+			{
+				if(this.menu.currTabId == null || this.edit_list[this.menu.currTabId] == null) return;
+				let file_info = this.edit_list[this.menu.currTabId];
+				require('electron').clipboard.writeText(file_info.vs_model.fsPath);
+			}},
+
+			// 线条
+			{ type: 'separator' },
+			// 在文件夹中显示
+			{label:fe.translate('reveal-in-finder'),click:()=>
+			{
+				if(this.menu.currTabId == null || this.edit_list[this.menu.currTabId] == null) return;
+				let file_info = this.edit_list[this.menu.currTabId];
+				let url =  (file_info.uuid == "outside" ? file_info.path.replace(new RegExp('/','g'),path.sep) : Editor.remote.assetdb.urlToFspath(file_info.path));
+				exec(Editor.isWin32 ? 'Explorer /select,"'+url+'"' : "open -R " + url)
+			}},
+			// 跳到资源管理器
+			{label:fe.translate('reveal-in-side-bar'),click:()=>
+			{
+				if(this.menu.currTabId == null || this.edit_list[this.menu.currTabId] == null) return;
+				let file_info = this.edit_list[this.menu.currTabId];
+				Editor.Ipc.sendToAll('assets:hint', file_info.uuid);
+			}},
+		]);
+
+		// monaco 右击菜单,在文件夹中显示
+		this.vs_editor.addAction({
+			id: 'reveal-in-finder', // 菜单项 id
+			label: fe.translate('reveal-in-finder'), // 菜单项名称
+			// keybindings: [this.monaco.KeyMod.CtrlCmd | this.monaco.KeyCode.KEY_J], // 绑定快捷键
+			contextMenuGroupId: '9_cutcopypaste', // 所属菜单的分组
+			contextMenuOrder: 9,
+			run: () => {
+				// 点击后执行的操作
+				if (this.file_info.uuid == null) return;
+				let url =  (this.file_info.uuid == "outside" ? this.file_info.path.replace(new RegExp('/','g'),path.sep) : Editor.remote.assetdb.urlToFspath(this.file_info.path));
+				exec(Editor.isWin32 ? 'Explorer /select,"'+url+'"' : "open -R " + url)
+			}, 
+		})
+	},
+
 	// 排序:设置搜索优先级
 	sortFileBuffer() {
 		let getScore = (extname) => {
@@ -228,6 +306,7 @@ let layer =
 		this.file_cfg = this.pro_cfg.file_cfg = this.pro_cfg.file_cfg || {}
 		// 待刷新的文件url
 		this.refresh_file_list = this.pro_cfg.refresh_file_list = this.pro_cfg.refresh_file_list || []
+		this.currTabDiv = null;
 
 		this.loadDefineMeunCfg(this.cfg)
 		this.loadThemeList();
@@ -244,7 +323,7 @@ let layer =
 			for (let i = 0; i < fonts.length; i++) 
 			{
 				let fontName = fonts[i];
-				config.optionGroups.Main["字体"].items.push({ caption: fontName, value: fontName });
+				config.optionGroups.Main["fontFamily"].items.push({ caption: fontName, value: fontName });
 			}
 		})
 		.catch(err => {
@@ -264,7 +343,7 @@ let layer =
 					this.FILE_OPEN_TYPES[ext.substr(1)] = language.id;
 				}
 			}
-			config.optionGroups.Main["语言"].items.push({ caption: language.id, value: language.id });
+			config.optionGroups.Main["language"].items.push({ caption: language.id, value: language.id });
 		}
 	},
 
@@ -276,7 +355,7 @@ let layer =
 			let file = list[i].replace(/\\/g,'/');
 			let name = this.fileMgr.getUriInfo(file).name;
 			name = name.substr(0,name.lastIndexOf('.'))
-			config.optionGroups.Main["主题"].items.push({ caption: name, value: name });
+			config.optionGroups.Main["theme"].items.push({ caption: name, value: name });
 		}
 	},
 
@@ -392,12 +471,9 @@ let layer =
 		});
 		
 		// vs功能:在文件夹打开文件
-		this.monaco.listenEvent('vs-reveal-in-finder',(event)=> 
-		{
-			if (this.file_info.uuid == null) return;
-			let url =  (this.file_info.uuid == "outside" ? this.file_info.path.replace(new RegExp('/','g'),path.sep) : Editor.remote.assetdb.urlToFspath(this.file_info.path));
-			exec(Editor.isWin32 ? 'Explorer /select,"'+url+'"' : "open -R " + url)
-		})
+		// this.monaco.listenEvent('vs-reveal-in-finder',(event)=> 
+		// {
+		// })
 
 		// vs功能:打开网页
 		this.monaco.listenEvent('vs-open-url',(url) =>
@@ -494,7 +570,7 @@ let layer =
 				// }
 				
 				let isJs = 	this.fileMgr.getUriInfo(model.uri.toString()).extname == '.js'
-				let enable = isJs && this.cfg.enabledJsGlobalSugges ||  !isJs && this.cfg.enabledTsGlobalSugges
+				let enable = isJs && this.cfg.enabledJsGlobalSugges;
 
 				// 异步等待返回
 				var p = new Promise( (resolve, reject )=>
@@ -572,82 +648,6 @@ let layer =
 			}
 		})
 
-		// let getTabNum = (text)=>{
-		// 	let tabNum = 0;
-		// 	if(text[0] == ' '){
-		// 		let findObj = text.match(/[ ]+/);
-		// 		tabNum = Math.round(findObj[0].length / options.tabSize)
-		// 	}else if (text[0] == '	'){
-		// 		let findObj = text.match(/[ ]+/);
-		// 		tabNum = findObj[0].length;
-		// 	}
-		// 	return tabNum;
-		// };
-		
-		// 代码格式化
-		// this.monaco.languages.registerDocumentRangeFormattingEditProvider("typescript", {
-		// 	provideDocumentRangeFormattingEdits(model , range , options , token){
-		// 		// let text = model.getValueInRange(range);
-		// 		setTimeout(()=>
-		// 		{
-		// 			// 1.检测存在同级代码块
-		// 			// 2.获得最上级等号位置
-		// 			// 3.上级等号位置比变量长则执行对齐，否则以自身为上级等号
-		// 			// 4.每一行重复以上步骤
-		// 			let getLineInfo = (i)=>
-		// 			{
-		// 				let text = model.getLineContent(i);
-		// 				// 1.检测是否空行
-		// 				if(text.match(/\S/) == null){
-		// 					return {}
-		// 				}
-		// 				// 2.检测当前缩进位置
-		// 				let _tabNum = this.getTabNum(text);
-
-		// 				// 3.检测是否有等号以及位置
-		// 				let findObj = text.match(/([ ]{1,})([:=])/);
-		// 				if(findObj){
-		// 					let info = {
-		// 						tabNum:_tabNum,
-		// 						startPos: findObj.index+1,
-		// 						charPos: findObj.index+findObj[0].length+1
-		// 					}
-
-		// 					return info;
-		// 				}
-		// 				return {tabNum:_tabNum}
-		// 			}
-
-		// 			let up_info = {};
-		// 			for (let i = range.startLineNumber-1; i > Math.max(range.startLineNumber-10,0); i--) {
-		// 				up_info = getLineInfo(i);
-		// 				if(up_info.tabNum != null){
-		// 					// 检测不是否空行
-		// 					break;
-		// 				}
-		// 			}
-
-		// 			for (let i = range.startLineNumber; i <= range.endLineNumber; i++) {
-		// 				let curr_info = getLineInfo(i);
-		// 				if(curr_info.charPos != null)
-		// 				{
-		// 					// 跟上面某行不是同个缩进级别
-		// 					if(curr_info.tabNum != up_info.tabNum || up_info.charPos == null){
-		// 						up_info = curr_info
-		// 						continue;
-		// 					}
-		// 					// 检测等号缩进长度
-		// 				}
-		// 			}
-
-		// 		},50)
-		// 		return [];
-		// 		// return [{
-		// 		// 	text: YourFormatter(model.getValue()) // put formatted text here
-		// 		// 	range: model.getFullModelRange()
-		// 		// }];
-		// 	}
-		// })
 		// 跳转到实现
 		// this.monaco.languages.registerImplementationProvider("typescript",{provideImplementation: function (model,position, token) {
 		// 	return Promise.resolve([{
@@ -992,7 +992,7 @@ let layer =
 
 	// 获得新页面可用的页码
 	getNewPageInd(isIncludesInitPage = false, isIncludesInitNeedSave = true) {
-		for (var i = isIncludesInitPage ? 0 : 1; i < 50; i++) {
+		for (var i = isIncludesInitPage ? 0 : 1; i < 100; i++) {
 			let tabBg = this.getTabDiv(i);
 			if (!tabBg || !this.edit_list[i] || (!this.edit_list[i].is_need_save && isIncludesInitNeedSave)) {
 				return i;
@@ -1102,10 +1102,41 @@ let layer =
 		// 切换标题
 		tabBg._id = id;
 		tabBg.addEventListener('click', (e) => {
+			e.preventDefault();
 			this.setTabPage(tabBg._id);
 			setTimeout(()=> this.vs_editor.focus(),1)
 		})
+		
+		// 鼠标右键事件
+		tabBg.addEventListener('contextmenu', (e) => {
+			if(!this.menu) return;
+			e.preventDefault();
+			this.menu.currTabId = tabBg._id;
+			// 处于焦点时才能调用
+			if(electron.remote.BrowserWindow.getFocusedWindow()){ 
+				this.menu.popup()
+			}
+		})
 
+		// 移动tab事件
+		tabBg.addEventListener('mousedown', (e) => {
+			this.currTabDiv = tabBg;
+		});
+
+		// 移动tab事件
+		tabBg.addEventListener('mouseup', (e) => {
+			// console.log("moveup:",id,e)
+			if(!this.currTabDiv || this.currTabDiv == tabBg) return;
+
+			let rectB = tabBg.getBoundingClientRect()
+			if(e.clientX>rectB.left && e.clientX<rectB.right){
+				let rectA = this.currTabDiv.getBoundingClientRect()
+				rectA.left > rectB.left ? this.$tabList.insertBefore(this.currTabDiv,tabBg) : this.$tabList.insertBefore(this.currTabDiv,tabBg.nextSibling)
+			}
+			delete this.currTabDiv;
+		})
+		
+		
 		// 关闭页面
 		tabBg.getElementsByClassName("closeBtn")[0].addEventListener('click', () => {
 			this.closeTab(tabBg._id);
@@ -1277,7 +1308,16 @@ let layer =
 		// 没有备忘录就先复制一个
 		let filePath = this.cfg.is_cmd_mode ? this.CMD_FILE_PATH : this.MEMO_FILE_PATH;
 		if (!fe.isFileExit(filePath)) {
-			let template = this.cfg.is_cmd_mode ? "packages://simple-code/template/commandLine.md" : "packages://simple-code/template/readme.md";
+			let template = ''
+			if(this.cfg.is_cmd_mode){
+				template = "packages://simple-code/template/commandLine.md"
+			}else{
+				if(fe.getLanguage() == 'zh'){
+					template =  "packages://simple-code/template/readme-zh.md"
+				}else{
+					template =  "packages://simple-code/template/readme-en.md"
+				}
+			}
 			fe.copyFile(Editor.url(template), filePath);
 		}
 
@@ -1393,6 +1433,10 @@ let layer =
 		});
 	},
 
+
+	isFocused(){
+		return Editor.Panel.getFocusedPanel() == Editor.Panel.find('simple-code');
+	},
 
 	// 调用原生JS的定时器
 	setTimeoutById(func,time,id='com') 

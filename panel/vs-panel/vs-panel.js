@@ -4,10 +4,12 @@
 Editor.require('packages://simple-code/panel/vs-panel/ace/ace.js');
 
 const vsEditorPanel = Editor.require('packages://simple-code/panel/vs-panel/vs-panel-base.js');
-const acePanel = Editor.require('packages://simple-code/panel/vs-panel/ace-panel.js');
-const tools = Editor.require('packages://simple-code/tools/tools.js');
-const config = Editor.require('packages://simple-code/config.js');
-const keyMap = Editor.require('packages://simple-code/keyMap.js');
+const acePanel 		= Editor.require('packages://simple-code/panel/vs-panel/ace-panel.js');
+const tools 		= Editor.require('packages://simple-code/tools/tools.js');
+const config 		= Editor.require('packages://simple-code/config.js');
+const keyMap 		= Editor.require('packages://simple-code/keyMap.js');
+const packageCfg 	= Editor.require('packages://simple-code/package.json');
+const updater 		= Editor.require('packages://simple-code/tools/updater.js');
 const fs 	= require('fs');
 const path 	= require("path");
 
@@ -36,13 +38,13 @@ let layer = {
 
 					</div>
 					<div id="toolsPanel" class="layout horizontal">
-						<ui-checkbox id="lockChk">锁标签</ui-checkbox>
-						<ui-checkbox id="lockWindowChk">锁窗</ui-checkbox>
-						<ui-checkbox id="cmdMode">调试</ui-checkbox>
-						<ui-button id="manualCompile" class="">编译</ui-button>
-						<ui-button id="gotoFileBtn" class="blue">定位</ui-button>
-						<ui-button id="settingBtn" class="green">设置</ui-button>
-						<ui-button id="resetBtn" class="red">重置</ui-button>
+						<ui-checkbox id="lockChk">${tools.translate('lock-tab')}</ui-checkbox>
+						<ui-checkbox id="lockWindowChk">${tools.translate('lock-win')}</ui-checkbox>
+						<ui-checkbox id="cmdMode">${tools.translate('cmd-mode')}</ui-checkbox>
+						<ui-button id="manualCompile" class="">${tools.translate('manual-compile')}</ui-button>
+						<ui-button id="gotoFileBtn" class="blue">${tools.translate('goto-file-btn')}</ui-button>
+						<ui-button id="settingBtn" class="green">${tools.translate('set')}</ui-button>
+						<ui-button id="resetBtn" class="red">${tools.translate('reset')}</ui-button>
 					</div>
 				</div>
 				<div id="overlay" class="overlay"></div>
@@ -140,6 +142,10 @@ let layer = {
 		if(cfg.titleBarFontSize != null){
 			this.setCssByName('.titleBarFontSize',`{font-size: ${cfg.titleBarFontSize}px}`)
 		}
+		if(cfg.isCheckUpdater != null && cfg.isCheckUpdater){
+			this.checkUpdate();
+		}
+		
 		this.runExtendFunc("setOptions", cfg,isInit);
 	},
 
@@ -326,10 +332,6 @@ let layer = {
 		}
 	},
 
-	isFocused(){
-		return Editor.Panel.getFocusedPanel() == Editor.Panel.find('simple-code');
-	},
-
 	// 键盘键事件
 	initKeybody() {
 		let pressedKeys = {};
@@ -358,7 +360,7 @@ let layer = {
 							if (cfg.callback) {
 								removeKey = e.key;
 								// Array.prototype.push.apply(removeList,cfg.keys)
-								if(count == 1 && tools.inputTypeChk(e)){
+								if(count == 1 && e.key.length == 1 && tools.inputTypeChk(e)){
 									return; // 单键情况下且处于编辑文本状态则不触发快捷键
 								}
 								ret_type = ret_type && cfg.callback(e);
@@ -587,7 +589,8 @@ let layer = {
 		if (this.schFunc) this.schFunc();
 		if(this.mouse_move_event_closeFunc) this.mouse_move_event_closeFunc()
 		if(this.mouse_start_event_closeFunc) this.mouse_start_event_closeFunc()
-		
+		if(this.menu) this.menu.destroy()
+		this.menu = null;
 
 		// 保存编辑信息
 		let temp_path_map = {}
@@ -683,6 +686,15 @@ let layer = {
 	},
 	onAssetsMovedEvent(files){
 		this.runExtendFunc('onAssetsMovedEvent',files)
+	},
+
+	// 检查更新
+	async checkUpdate() {
+		const newVersionDesc = await updater.check();
+		// 打印到控制台
+		if (newVersionDesc) {
+			Editor.info(`[${packageCfg.description}]`, '发现有更新,更新内容如下:\n',newVersionDesc);
+		}
 	},
 
 

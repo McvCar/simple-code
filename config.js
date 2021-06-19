@@ -1,4 +1,6 @@
-// 配置信息请写在这里
+const tools = require("./tools/tools");
+
+// 配置信息请写在这里,修改完重启creator生效,注意语法不要写错!!
 module.exports = {
 	// 外部编辑器路径配置，win路径分隔符注意使用 ‘\\’
 	editorPath: {
@@ -721,32 +723,36 @@ module.exports = {
 
 	optionGroups: {
 		Main: {
-			"主题": {
-				path: "theme",
+			"theme": {
+				// 主题
+				path: "theme", 
 				type: "select",
 				defaultValue: "vs-dark-ex",
 				items: [{ caption: 'vs', value: 'vs' }, { caption: 'vs-dark', value: 'vs-dark' }, { caption: 'vs-dark-ex', value: 'vs-dark-ex' }, { caption: 'hc-black', value: 'hc-black' }]
 			},
-			"语言": {
-				path: "language",
+			"language": {
+				// 语言
+				path: "language", 
 				type: "select",
 				items: []
 			},
-			"新建文件格式": {
+			"newFileType": {
+				// 新建文件格式
+				path: "newFileType", 
 				type: "buttonBar",
-				path: "newFileType",
 				defaultValue: "ts",
 				items: [
-					{ caption: "js文件", value: "js" },
-					{ caption: "ts文件", value: "ts" },
-					{ caption: "coffe文件", value: "coffee" },
-					{ caption: "lua文件", value: "lua" }
+					{ caption: ".js", value: "js" },
+					{ caption: ".ts", value: "ts" },
+					{ caption: ".coffe", value: "coffee" },
+					{ caption: ".lua", value: "lua" }
 				]
 			},
-			"字体大小": {
+			"fontSize": {
+				//字体大小
 				path: "fontSize",
 				type: "number",
-				defaultValue: process.platform ? 13.5 : 12,
+				defaultValue: process.platform == 'darwin' ? 12 : 13.5 ,
 				defaults: [
 					{ caption: "8px", value: 8 },
 					{ caption: "10px", value: 10 },
@@ -756,18 +762,20 @@ module.exports = {
 					{ caption: "16px", value: 16 }
 				],
 			},
-			"字体": {
+			"fontFamily": {
+				// 字体
 				path: "fontFamily",
 				type: "select",
 				defaultValue: undefined,
-				items: [{ caption: '默认', value: undefined }]
+				items: [{ caption: 'default', value: undefined }]
 			},
-			"字体粗细": {
+			"fontWeight": {
+				// 字体粗细
 				path: "fontWeight",
 				type: "select",
-				defaultValue: "600",
+				defaultValue: process.platform == 'darwin' ? "normal" : "600",
 				items: [
-					{ caption: "默认", value: "normal" },
+					{ caption: "default", value: "normal" },
 					{ caption: "1号", value: "100" },
 					{ caption: "2号", value: "200" },
 					{ caption: "3号", value: "300" },
@@ -779,123 +787,165 @@ module.exports = {
 					{ caption: "9号", value: "900" },
 				]
 			},
-
-			"快捷键习惯": {
+			"wordWrap": {
+				// 自动换行
+				path: "wordWrap",
 				type: "buttonBar",
+				defaultValue: "off",
+				items: [
+					{ caption: "on", value: "on" },
+					{ caption: "off", value: "off" },
+				]
+			},
+			"keyboardHandler": {
+				// 快捷键习惯
 				path: "keyboardHandler",
+				type: "buttonBar",
 				defaultValue: "ace/keyboard/vscode",
 				items: [
 					{ caption: "VSCode", value: "ace/keyboard/vscode" }
 				]
 			},
-			"显示代码预览": {
+			"enabledMinimap": {
+				// 显示代码预览
 				path: "enabledMinimap",
 				defaultValue: true,
 			},
-			"彩虹缩进显示": {
+			"enabledRainbow": {
+				// 彩虹缩进显示
 				path: "enabledRainbow",
 				defaultValue: false,
 			},
-			"括号多重彩色": {
+			"enabledBracketColor": {
+				// 括号多重彩色
 				path: "enabledBracketColor",
 				defaultValue: true,
 			},
-			"翻页过渡效果": {
+			"smoothScrolling": {
+				// 翻页过渡效果
 				path: "smoothScrolling",
 				defaultValue: true,
 			},
-			"光标过渡效果": {
+			"cursorSmoothCaretAnimation": {
+				// 光标过渡效果
 				path: "cursorSmoothCaretAnimation",
 				defaultValue: false,
 			},
-			"Color字段色彩预览": {
+			"enabledCCColor": {
+				// Color字段色彩预览
 				path: "enabledCCColor",
 				defaultValue: true,
 			},
-			"显示调试按钮": {
+			"enabledDebugBtn": {
+				// 显示调试按钮
 				path: "enabledDebugBtn",
-				defaultValue: true,
+				defaultValue: false,
 			},
-			"显示控制台按钮": {
+			"enabledConsoleBtn": {
+				// 显示控制台按钮
 				path: "enabledConsoleBtn",
-				defaultValue: true,
+				defaultValue: false,
 			},
-			"点击Node自动显示代码": {
+			"clickToViewCode": {
+				// 点击Node自动显示代码
 				path: "clickToViewCode",
 				defaultValue: true,
 			},
-			"光标在边缘位置": {
+			"scrollPredominantAxis": {
+				// 光标在边缘位置
 				path: "scrollPredominantAxis",
 				type: "number",
 				defaultValue: 5,
 			},
 
-			"触发编译方式": {
-				type: "buttonBar",
+			"codeCompileMode": {
+				// 触发编译方式
 				path: "codeCompileMode",
+				type: "buttonBar",
 				defaultValue: "save",
 				items: [
-					{ caption: "保存后", value: "save" },
-					{ caption: "退出编辑后", value: "blur" },
-					{ caption: "手动编译", value: "manual" },
+					{ caption: tools.translate('whenSave' /*"保存后"*/), value: "save" },
+					{ caption: tools.translate('whenBlur' /*"退出编辑后"*/), value: "blur" },
+					{ caption: tools.translate('ManualComp' /*"手动编译"*/), value: "manual" },
 				]
 			},
-			"加载代码方式": {
+			"readCodeMode": {
+				// 加载代码方式
 				path: "readCodeMode",
 				type: "select",
 				defaultValue: "auto",
-				items: [{ caption: '自动', value: 'auto' }, { caption: '全部加载(使用js智能提示推荐)', value: 'all' }, { caption: 'import时加载(使用ts推荐)', value: 'atImportTo' }]
+				items: [
+					{ caption: tools.translate('auto' /*"自动"*/), value: 'auto' }, 
+					{ caption: tools.translate('allImport' /*"全部加载"*/), value: 'all' }, 
+					{ caption: tools.translate('atImportTo' /*"import时加载"*/), value: 'atImportTo' }
+				]
 			},
-			"vim编辑模式": {
+			"enabledVim": {
+				// vim编辑模式
 				path: "enabledVim",
 				defaultValue: false,
 			},
-			"重命名同步修改import路径": {
+			"renameConverImportPath": {
+				// 重命名同步修改import路径
 				path: "renameConverImportPath",
 				defaultValue: true,
 			},
-			"JS模糊输入提示/函数跳转": {
+			"enabledJsGlobalSugges": {
+				// JS模糊输入提示/函数跳转
 				path: "enabledJsGlobalSugges",
 				defaultValue: true,
 			},
-			"TS模糊输入提示/函数跳转": {
+			"enabledTsGlobalSugges": {
+				// TS模糊输入提示/函数跳转
 				path: "enabledTsGlobalSugges",
 				defaultValue: false,
 			},
-			"加载node_modules目录": {
+			"enabledNpmDir": {
+				// 加载node_modules目录
 				path: "enabledNpmDir",
 				defaultValue: true,
 			},
 
-			"tab缩进数量": {
+			"tabSize": {
+				// tab缩进数量
 				path: "tabSize",
 				type: "number",
 				defaultValue: 4,
 			},
-			"tab空格缩进": {
+			"insertSpaces": {
+				// tab空格缩进
 				path: "insertSpaces",
 				defaultValue: false,
 			},
-			"自动适配缩进格式": {
+			"detectIndentation": {
+				// 自动适配缩进格式
 				path: "detectIndentation",
 				defaultValue: true,
 			},
-			"粘贴自动格式化": {
+			"formatOnPaste": {
+				// 粘贴自动格式化
 				path: "formatOnPaste",
 				defaultValue: true,
 			},
-			"保存自动格式化": {
+			"formatOnSaveFile": {
+				// 保存自动格式化
 				path: "formatOnSaveFile",
 				defaultValue: false,
 			},
+			"enabledFormatFromPrettier": {
+				// 保存自动格式化
+				path: "enabledFormatFromPrettier",
+				defaultValue: true,
+			},
 		},
 		More: {
-			"自动窗口最小高度占比%": {
+			"autoLayoutMin": {
+				// 自动窗口最小高度占比%
 				path: "autoLayoutMin",
 				type: "number",
 				defaultValue: 10,
 				defaults: [
-					{ caption: "禁用功能", value: 0 },
+					{ caption: "disable", value: 0 },
 					{ caption: "60%", value: 60 },
 					{ caption: "40%", value: 40 },
 					{ caption: "20%", value: 20 },
@@ -903,40 +953,44 @@ module.exports = {
 				]
 			},
 
-			"自动窗口最大高度占比%": {
+			"autoLayoutMax": {
+				// 自动窗口最大高度占比%
 				path: "autoLayoutMax",
 				type: "number",
 				defaultValue: 80,
 				defaults: [
-					{ caption: "使用用户调整窗口后的值", value: 0 },
-					{ caption: "固定80%", value: 80 },
-					{ caption: "固定60%", value: 60 },
-					{ caption: "固定50%", value: 50 },
+					{ caption: tools.translate('userHabit' /*"使用用户调整窗口后的值"*/), value: 0 },
+					{ caption: tools.translate('fix')+" 80%", value: 80 },
+					{ caption: tools.translate('fix')+" 60%", value: 60 },
+					{ caption: tools.translate('fix')+" 50%", value: 50 },
 				]
 			},
 
-			"自动窗口过渡动画时间": {
+			"autoLayoutDt": {
+				// 自动窗口过渡动画时间
 				path: "autoLayoutDt",
 				type: "number",
 				defaultValue: 0,
 				defaults: [
-					{ caption: "禁用", value: 0 },
-					{ caption: "0.1秒", value: 0.1 },
-					{ caption: "0.2秒", value: 0.2 },
+					{ caption: "disable", value: 0 },
+					{ caption: "0.1s", value: 0.1 },
+					{ caption: "0.2s", value: 0.2 },
 				]
 			},
 
-			"自动窗口过渡动作延迟": {
+			"autoLayoutDelay": {
+				// 自动窗口过渡动作延迟
 				path: "autoLayoutDelay",
 				type: "number",
 				defaultValue: 0.1,
 				defaults: [
-					{ caption: "禁用", value: 0 },
-					{ caption: "0.1秒", value: 0.1 },
+					{ caption: "disable", value: 0 },
+					{ caption: "0.1s", value: 0.1 },
 				]
 			},
 
-			"工具栏大小": {
+			"titleBarFontSize": {
+				// 工具栏大小
 				path: "titleBarFontSize",
 				type: "number",
 				defaultValue: 12,
@@ -949,21 +1003,28 @@ module.exports = {
 				],
 			},
 
-			"工具栏位置": {
-				type: "buttonBar",
+			"tabBarPos": {
+				// 工具栏位置
 				path: "tabBarPos",
+				type: "buttonBar",
 				defaultValue: "",
 				items: [
-					{ caption: "顶部", value: "" },
-					{ caption: "低部", value: "1" },
+					{ caption: "top", value: "" },
+					{ caption: "bottom", value: "1" },
 				]
 			},
-
-			"隐藏工具栏": {
+			"hideToolsBar": {
+				// 隐藏工具栏
 				path: "hideToolsBar",
 				defaultValue: false,
 			},
-			"拖拽变量快速生成(使用文件名)": {
+			"isCheckUpdater": {
+				// 自动检测更新
+				path: "isCheckUpdater",
+				defaultValue: true,
+			},
+			"isQuickDrag": {
+				// 拖拽变量快速生成(使用文件名)
 				path: "isQuickDrag",
 				defaultValue: true,
 			},

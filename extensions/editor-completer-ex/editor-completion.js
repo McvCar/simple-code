@@ -9,12 +9,12 @@ exports.IMPORT_COMMAND = 'resolveImport';
 class ImportCompletion
 {
     // 触发提示字符
-    triggerCharacters = ['/','.'];
 
 	constructor(parent)
     {
 		this.parent = parent;
         this.parent = parent;
+        this.triggerCharacters = ['/','.'];
         this.all_sym_sugges = []
 		// 编辑代码提示 配置
 		this.comp_cfg_map = {};

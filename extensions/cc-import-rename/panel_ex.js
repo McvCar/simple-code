@@ -22,6 +22,7 @@ module.exports = {
 		this.move_files = []
 	},
 
+	// 文件被移动
 	onAssetsMovedEvent(files){
 		if(!this.parent.cfg.renameConverImportPath){
 			return;
@@ -96,6 +97,8 @@ module.exports = {
 				list.new_path = fsPath;
 			}
 		}
+		this.move_files = []
+
 		setTimeout(()=>{
 			// console.log("rename列表:",usedPaths)
 			this.updatedImports(usedPaths,usedList);
@@ -129,7 +132,7 @@ module.exports = {
 				let newImportPath = importItem.path;
 				if(importPathInfo){
 					newImportPath = tools.fsPathToRelativePath(info.new_path,importPathInfo.new_path);
-					let s_i = newImportPath.lastIndexOf('.');
+					let s_i = path.extname(newImportPath) != '' ? newImportPath.lastIndexOf('.') : -1;
 					if(extname == '' && importFspath.lastIndexOf('.') == -1 && s_i != -1) newImportPath = newImportPath.substr(0,s_i);
 				}else{
 					newImportPath = tools.fsPathToRelativePath(info.new_path,importFspath);
@@ -164,7 +167,6 @@ module.exports = {
 				}
 			}
 		}
-		this.move_files = []
 	},
 
 	// 面板销毁

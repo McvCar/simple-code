@@ -20,7 +20,6 @@ module.exports = {
 	onLoad(parent){
 		// index.js 对象
 		this.parent = parent;
-		
 	},
 
 	// 入口
@@ -412,8 +411,7 @@ module.exports = {
 			this.insertWidgetAction(this.parent.cfg.isQuickDrag,'cc.Node');
 		}
 	},
-
-
+	
 	messages:{
 		// 添加组件
 		'insertWidgetByName'(e,args)

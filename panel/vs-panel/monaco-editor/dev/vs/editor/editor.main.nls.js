@@ -488,7 +488,7 @@ define("vs/editor/editor.main.nls", {
 		"Paste",
 		"Paste",
 		"Copy With Syntax Highlighting",
-		"在文件夹中显示"
+		"Reveal in Finder"
 	],
 	"vs/editor/contrib/codeAction/codeActionCommands": [
 		"Kind of the code action to run.",

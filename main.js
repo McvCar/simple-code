@@ -168,17 +168,17 @@ module.exports =
 	
 	'openConfig'(){
 		// 打开配置
-		Editor.Ipc.sendToPanel('simple-code', 'open-code-file',{filePath:Editor.url("packages://simple-code/config.js")});
+		Editor.Ipc.sendToPanel('simple-code', 'open-code-file',Editor.url("packages://simple-code/config.js"));
 	},
 	
 	'openKeyMap'(){
 		// 打开配置
-		Editor.Ipc.sendToPanel('simple-code', 'open-code-file',{filePath:Editor.url("packages://simple-code/keyMap.js")});
+		Editor.Ipc.sendToPanel('simple-code', 'open-code-file',Editor.url("packages://simple-code/keyMap.js"));
 	},
 
 	'openConfigHitn'(){
 		// 打开目录
-		Editor.Ipc.sendToPanel('simple-code', 'open-code-file',{filePath:Editor.url("packages://simple-code/template/hint_text.txt")});
+		Editor.Ipc.sendToPanel('simple-code', 'open-code-file',Editor.url("packages://simple-code/template/hint_text.txt"));
 	},
 
 	'openConfigExtendDir'(){

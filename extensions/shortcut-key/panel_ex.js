@@ -82,7 +82,7 @@ module.exports = {
 		this.parent.addKeybodyEventByName('lockView',(e)=>
 		{
 			e.preventDefault();// 吞噬捕获事件
-			this.parent.setLockEdit(!this.parent.cfg.is_lock)
+			this.parent.setLockEdit(!this.parent.file_info.is_lock)
 		},1)
 
 		// 命令行模式切换

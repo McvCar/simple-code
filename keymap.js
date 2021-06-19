@@ -1,20 +1,21 @@
-// 键盘配置,修改后重启Cocos Creator生效
+// 键盘配置,修改后重启Cocos Creator生效, 注意语法不要写错!!
+// Keyboard configuration, restart Cocos Creator after modification, pay attention not to write wrong syntax!!
 module.exports = {
-	// 光标快速上移
+	// 光标快速上移 
 	'moveUp' : { win32:[["Ctrl",'i']] , mac:[["Meta",'i']] },  
-	// 光标快速下移
+	// 光标快速下移 
 	'moveDown' : { win32:[["Ctrl",'j']] , mac:[["Meta",'j']] },  
 	// 设置
 	'openSetting' : { win32:[["F12"]] , mac:[["F12"]] },  
 	// 关闭tab标签
 	'closeTab' : { win32:[["Ctrl",'w']] , mac:[["Meta",'w']] },  
-	// 跳到上一个tab窗口
+	// 跳到上一个tab窗口 
 	'prevView' : { win32:[["Ctrl", "Alt", "j"], ["Ctrl", "Alt", "ArrowLeft"], ["Ctrl", "PageUp"]] , mac:[["Meta", "Alt", "j"], ["Meta", "Alt", "ArrowLeft"], ["Alt", "Shift", "Tab"]] },  
-	// 跳到下一个tab窗口
+	// 跳到下一个tab窗口 
 	'nextView' : { win32:[["Ctrl", "Alt", "l"], ["Ctrl", "Alt", "ArrowRight"], ["Ctrl", "PageDown"]] , mac:[["Meta", "Alt", "l"], ["Meta", "Alt", "ArrowRight"], ["Alt", "Tab"]] },  
-	// 执行命令行代码
+	// 执行命令行代码 Execute command line code
 	'execCode' : { win32:[["Alt","e"],["Ctrl","e"]] , mac:[["Meta",'e']] }, 
-	// 执行整个场景代码(不推荐使用,已不维护)
+	// 执行整个场景代码(不推荐使用,已不维护) Execute the entire scenario code (not recommended, no longer maintained)
 	'execCodeByScene' : { win32:[["Alt","Shift","e"]] , mac:[["Meta","Shift","e"]] },   
 	// 锁定tab
 	'lockView' : { win32:[["F1"]] , mac:[["F1"]] },  

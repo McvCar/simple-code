@@ -1,3 +1,4 @@
+
 define("ace/ext/menu_tools/overlay_page",["ace_require","exports","module","ace/lib/dom"], function(ace_require, exports, module) {
 'use strict';
 var dom = ace_require("../../lib/dom");
@@ -666,7 +667,7 @@ var OptionPanel = function(editor,cfg) {
 };
 
 (function() {
-    
+    const tools = require("../../../tools/tools");
     oop.implement(this, EventEmitter);
     
     this.add = function(config) {
@@ -680,6 +681,8 @@ var OptionPanel = function(editor,cfg) {
         this.container.innerHTML = "";
         buildDom(["table", {role: "presentation", id: "controls"}, 
             this.renderOptionGroup(optionGroups.Main),
+
+            ["tr", {class: "ace_optionsMenuEntry"}, ["td",["label", {for: 'More', id: 'More1'}, 'More']]],
             ["tr", null, ["td", {colspan: 2},
                 ["table", {role: "presentation", id: "more-controls"}, 
                     this.renderOptionGroup(optionGroups.More)
@@ -695,7 +698,7 @@ var OptionPanel = function(editor,cfg) {
             if (!item.position)
                 item.position = i / 10000;
             if (!item.label)
-                item.label = key;
+                item.label = tools.translate(key);
             return item;
         }).sort(function(a, b) {
             return a.position - b.position;
