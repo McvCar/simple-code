@@ -933,9 +933,9 @@ module.exports = {
 				defaultValue: false,
 			},
 			"enabledFormatFromPrettier": {
-				// 保存自动格式化
+				// prettire 插件
 				path: "enabledFormatFromPrettier",
-				defaultValue: true,
+				defaultValue: Symbol.asyncIterator ? true : false, // 旧版js解析器不支持该库,则不开启
 			},
 		},
 		More: {

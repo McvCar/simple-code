@@ -13,6 +13,7 @@ const prsPath = Editor.Project && Editor.Project.path ? Editor.Project.path : Ed
 class FileMgr{
 	constructor(parent){
 		this.parent = parent;
+		this.importPathBuffer = {};
     }
 
 	// 更新游戏项目文件列表缓存
@@ -197,7 +198,6 @@ class FileMgr{
 	// 加载import引用路径上的文件
 	loadNeedImportPaths(needImportPaths,isTs)
 	{
-		// console.log(needImportPaths);
 		let isHasImport = false
 		let loadFunc = (tryPath,isCompareName,isFromSystemRead)=>
 		{
@@ -267,6 +267,11 @@ class FileMgr{
 
 		for (const importPath in needImportPaths) 
 		{
+			if(this.importPathBuffer[importPath]){
+				continue ;// 已经尝试加载过
+			}
+
+			this.importPathBuffer[importPath] = true;
 			let tryPaths = needImportPaths[importPath];
 			let isImport = false;
 			for (let i = 0; i < tryPaths.length; i++) 
@@ -281,14 +286,26 @@ class FileMgr{
 					break;
 				}
 			}
-			// 2.正常路径方式找不到文件时切换为只对比文件名的方式加载
-			if( tryPaths.length && !isImport ){
-				loadFunc(tryPaths[0],true)
+
+			if(isImport){
+				continue; // 已经加载成功
 			}
+
+			// 2.正常路径方式找不到文件时切换为只对比文件名的方式加载
+			if( tryPaths.length ){
+				let retState = loadFunc(tryPaths[0],true)
+				if(retState == 1){
+					continue;
+				}else if(retState == 0){
+					isImport = true;
+					break;
+				}
+			}
+
 			// 3.从系统加载
 			for (let i = 1; i < tryPaths.length; i++) 
 			{
-				// 1.从缓存找出路径文件是否存在
+				// 1.从硬盘上找出路径文件是否存在
 				let tryPath = tryPaths[i];
 				let retState = loadFunc(tryPath,false,true);
 				if(retState == 1){
@@ -302,9 +319,13 @@ class FileMgr{
 			// isTs ? this.tsWr.removeNeedImportPath(importPath) : this.jsWr.removeNeedImportPath(importPath) 
 			this.parent.tsWr.removeNeedImportPath(importPath)
 		}
+
 		if(isHasImport){
 			// 刷新编译
-			this.parent.setTimeoutById(()=>this.parent.upCompCodeFile(),3000,'loadNeedImportPaths')
+			this.parent.setTimeoutById(()=>{
+				this.importPathBuffer = {};
+				this.parent.upCompCodeFile()
+			},3000,'loadNeedImportPaths')
 		}
 	}
 

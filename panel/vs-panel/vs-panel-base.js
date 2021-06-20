@@ -76,6 +76,7 @@ let layer =
 			config.vsEditorConfig.value = ``
 			var editor = monaco.editor.create(this.$editorB,config.vsEditorConfig);
 
+			this.defind_model = monaco.editor.createModel('',"plaintext",monaco.Uri.parse('defind_model'));
 			Editor.monaco.vs_editor = this.vs_editor = editor;
 			eventMgr.merge(this.monaco); // 添加事件分发函数
 
@@ -1055,6 +1056,8 @@ let layer =
 	newPageInfo(id, uuid, path, name, file_type, data, is_not_draw = false, is_need_save = false, is_lock = false) {
 		let file_info = this.edit_list[id] = this.edit_list[id] || {};
 		
+		this.defind_model.setValueNotUndo(data);
+		data = this.defind_model.getValue(); // model内部会转换掉特特殊换行符号，导致与原先本文不匹配
 		path = path.replace(/\\/g,'/');
 		file_info.uuid = uuid;
 		file_info.path = path;

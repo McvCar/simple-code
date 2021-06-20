@@ -181,7 +181,6 @@ module.exports = {
 		    	let t_url = Editor.remote.assetdb.uuidToUrl(activeInfo.id);
 		    	let t_path = Editor.remote.assetdb.urlToFspath(t_url);
 
-		    	console.log(fe.isDirectory(t_path),t_path)
 		    	if(!fe.isDirectory(t_path))
 		    	{
 		    		t_url = t_url.substr(0,t_url.lastIndexOf('/'));

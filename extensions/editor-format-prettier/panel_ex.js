@@ -4,8 +4,6 @@
 */
 'use strict';
 
-const prettier = require('prettier');
-const diff 	= require('diff');
 const tools = require('../../tools/tools');
 const path 	= require("path");
 const prsPath = Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
@@ -26,6 +24,7 @@ module.exports = {
 		
 		// 读取配置
 		this.cfg = require(PRETTIER_CONFIG_FILE);
+		this.cfg.endOfLine = this.cfg.endOfLine || 'lf';
 
 		// monaco 菜单
 		this.parent.vs_editor.addAction({
@@ -56,8 +55,15 @@ module.exports = {
 		}
 	},
 
-	initEvent(){
+	initEvent()
+	{
+		if(!Symbol.asyncIterator){
+			// 旧版js解析器不支持该库
+			return;
+		}
 		
+		const prettier = require('prettier');
+		const diff 	= require('diff');
 		// 代码格式化
 		let _this = this;
 		// Editor.monaco.languages.registerDocumentRangeFormattingEditProvider("typescript", {
@@ -89,25 +95,36 @@ module.exports = {
 		Editor.monaco.languages.registerDocumentFormattingEditProvider("typescript", {
 			provideDocumentFormattingEdits(model , options , token){
 				
-				_this.cfg.filepath = model.dbUrl;
+				_this.cfg.filepath = model.fsPath;
 				let select = _this.parent.vs_editor.getSelection()
 				let cursorOffset = !select || !select.isEmpty() ? -1 : model.getOffsetAt(select.getPosition());
 				_this.cfg.cursorOffset = cursorOffset
 				delete _this.cfg.rangeStart;
 				delete _this.cfg.rangeStart;
+				
+				// 设置换行格式
+				let currEOL = model.getEOL() == '\n' ? 'lf' : 'crlf';
+				if(currEOL != _this.cfg.endOfLine && _this.cfg.endOfLine != 'auto' && _this.cfg.endOfLine != 'cr'){
+					model.pushEOL(_this.cfg.endOfLine == 'lf' ? 0 : 1)
+				}
 
 				// 格式化
-				let code = model.getValue();
+				let code = model.getValue() ; // endOfLine 换行格式 即\n（或LF换行）和\r\n（或回车+CRLF换行）
 				
 				try {
 					let formatInfo = prettier.formatWithCursor(code,_this.cfg);
-					if(formatInfo.cursorOffset != -1){
+					if(formatInfo.formatted == code){
+						return [];
+					}if(formatInfo.cursorOffset != -1){
 						model.setValue(formatInfo.formatted);
 						_this.parent.vs_editor.setPosition(model.getPositionAt(formatInfo.cursorOffset));
 						return [];
-					}else{
+					}else if(code < 50000){ // 保证性能情况下才使用这种格式化, 解决格式化后光标错位问题
 						let edits = _this.getDiffTexts(diff.diffChars(code,formatInfo.formatted),model);
 						return edits;
+					}else{
+						model.setValue(formatInfo.formatted);
+						return [];
 					}
 				} catch (error) {
 					console.warn(error);
@@ -149,7 +166,7 @@ module.exports = {
 				offset += item.count;
 			}
 		}
-		console.log(edits)
+		
 		return edits;
 	},
 

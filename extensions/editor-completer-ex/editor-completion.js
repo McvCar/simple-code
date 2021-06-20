@@ -119,7 +119,6 @@ class ImportCompletion
                 let wordInfo = model.getWordAtPosition(position);
 
                 // 文本头部
-                console.log(!wordInfo || text.substr(wordInfo.startColumn-2,1) != '.')
                 if(!wordInfo && text.substr(position.column-2,1) != '.'  || wordInfo && text.substr(wordInfo.startColumn-2,1) != '.')
                 {
                     // 4.使用 Auto import 提示
@@ -283,7 +282,6 @@ class ImportCompletion
 
         this.parent.monaco.tsWr.getCodeFixesAtPosition(model.uri.toString(),start,end,errorCodes,formatOptions)
         .then((list)=>{
-            console.log(list)
             for (let i = 0; i < list.length; i++) {
                 const fixInfo = list[i];
                 if(fixInfo.fixName == 'import'){
