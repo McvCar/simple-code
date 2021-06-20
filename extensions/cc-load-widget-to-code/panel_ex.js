@@ -150,7 +150,7 @@ module.exports = {
 
 	// 加载单个或数组组件到代码
 	loadWidgetToCode(widgetType,symbolName,codeInfo,insertUuids=null,isAssets=false){
-		if(symbolName.match(/[a-zA-Z_$][\w$]*/) == null){
+		if(symbolName.match(/[a-zA-Z_$][\w$]*/) == null || symbolName.match(/[ \[\]\`\!\#\%\^\&\*\(\)\+\=\{\}\?\<\>\-]+/)){
 			Editor.info('生成拖拽组件:变量命名不符合规范:',symbolName);
 			return;
 		}
@@ -298,7 +298,7 @@ module.exports = {
 		{
 			let parseTs = (code_text, start_ind = 0)=>
 			{
-				let findObj = code_text.substr(start_ind).match(/@property\(.+\)[ \f\n\r\t\v]{0,35}([\w$]+)[ \f\n\r\t\v]{0,10}:[ \f\n\r\t\v]{0,10}([\w$.]+)[ ]{0,5}[=]{0,1}.+/)
+				let findObj = code_text.substr(start_ind).match(/@property\(.+\)[\s]{0,35}([\w$]+)[\s]{0,10}:[\s]{0,10}([\w$.]+)[\s]{0,5}[=]{0,1}.+/)
 				if (findObj) 
 				{
 					let startPos = findObj.index + start_ind;
@@ -352,7 +352,14 @@ module.exports = {
 				let code = text.substr(start_ind, end_ind - start_ind)
 				let parseJs = (code_text, start_ind = 0) => 
 				{
-					let findObj = code_text.substr(start_ind).match(/([\w$_][\w$._0-9]*)[ 	]{0,5}:[ 	]{0,15}[\n]{0,15}{[ 	]{0,15}[\n]{0,15}[ 	]{0,15}default.*[\n]{0,15}.*(cc\.[a-zA-Z_]*).*[\n]{0,15}[ 	]{0,15}.{0,50}[\n]{0,15}[ 	]{0,15}[ 	]{0,15}}[ 	]{0,15}[,]{0,15}/);
+					let findObjDefind = code_text.substr(start_ind).match(/([\w$_][\w$._0-9]*)[\s]{0,}:[\s]{0,}\{[\s\S]{0,}?type[\s\:]{0,}([\w$_][\w$._0-9]*)[\s\S]{0,}?,[\s]{0,}?\}[\s]{0,}?,/)
+					let findOjbMini   = code_text.substr(start_ind).match(/(?<!\{[\s\S]+?)([\w$_][\w$._0-9]*)[\s]{0,}:[\s]{0,}[\s\[]{0,}([\w$_][\w$._0-9]+).*[\s]{0,},/); // 简写  value : [ cc.Node ],
+					let findObj = findObjDefind || findOjbMini
+					if(findObjDefind && findOjbMini){
+						if(findOjbMini.index < findObjDefind.index){
+							findObj = findOjbMini;
+						}
+					}
 					if (findObj) 
 					{
 						let startPos = findObj.index + start_ind;
@@ -364,7 +371,8 @@ module.exports = {
 						parseJs(code_text, endPos)
 					}
 				}
-				parseJs(code)
+				parseJs(code,0);
+
 				for (let i = 0; i < symbols.length; i++) {
 					const symbolInfo = symbols[i];
 					symbolInfo.startPos +=start_ind;
@@ -378,7 +386,7 @@ module.exports = {
 	loadSymbolName(callback,defineName='',result=[])
 	{
 		// 打开场景转跳
-		let ps = {value:'请输入变量名字',meta:'',score:0};
+		let ps = {value:fe.translateZhAndEn('请输入变量名字','Please enter a variable name'),meta:'',score:0};
 		result.unshift(ps)
 		// 下拉框选中后操作事件
 		let onSearchAccept = (data,cmdLine)=>
@@ -417,7 +425,7 @@ module.exports = {
 		'insertWidgetByName'(e,args)
 		{
 			if(this.parent == null) return;
-			this.insertWidgetAction(args.paths[0] == '快速生成拖拽组件',args.label);
+			this.insertWidgetAction(args.paths[0] == fe.translate('quickly-drop-component'),args.label);
 		},
 
 		// 添加资源
@@ -459,13 +467,13 @@ module.exports = {
 					let menuCfg = {
 						layerMenu : [
 							{ type: 'separator' },
-							{ label : "快速生成拖拽组件", enabled:true, submenu:submenu, },
-							{ label : "生成拖拽组件", enabled:true, submenu:submenu, },
+							{ label : fe.translate('quickly-drop-component'), enabled:true, submenu:submenu, }, // 快速生成拖拽组件
+							{ label : fe.translate('drop-component'), enabled:true, submenu:submenu, }, // 生成拖拽组件
 						],
 						assetMenu : [
 							{ type: 'separator' },
-							{ label : "快速生成拖拽资源", enabled:true, cmd: "quickInsertAssets"},
-							{ label : "生成拖拽资源", enabled:true, cmd: "insertAssets"},
+							{ label : fe.translate('quickly-drop-asset'), enabled:true, cmd: "quickInsertAssets"}, // 快速生成拖拽资源
+							{ label : fe.translate('drop-asset'), enabled:true, cmd: "insertAssets"},// 生成拖拽资源
 						],
 					}
 					this.menuCfg = menuCfg;

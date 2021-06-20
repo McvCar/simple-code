@@ -129,4 +129,9 @@ module.exports = {
 
     'gettrs-setters-language': 'Only TS script generation is supported getter And setter',
     'gettrs-settrs': 'Generate Getters And Setters',
+
+    'quickly-drop-component':'Quickly Drop Component',
+    'drop-component':'Drop Components',
+    'quickly-drop-asset':'Quickly Drop Asset',
+    'drop-asset':'Drop Asset',
 };

@@ -693,7 +693,8 @@ let layer = {
 		const newVersionDesc = await updater.check();
 		// 打印到控制台
 		if (newVersionDesc) {
-			Editor.info(`[${packageCfg.description}]`, '发现有更新,更新内容如下:\n',newVersionDesc);
+			let hitnText = tools.translateZhAndEn('发现新版本,请过”扩展商店”下载更新,更新内容如下:\n','If you find the new version, please go to the "Extension Store" to download the update as follows :\n')
+			Editor.info(`[${packageCfg.description}]`, hitnText ,newVersionDesc);
 		}
 	},
 

@@ -98,14 +98,14 @@ module.exports = {
     'detectIndentation': '自动适配缩进格式',
     'formatOnPaste': '粘贴自动格式化',
     'formatOnSaveFile': '保存自动格式化',
-    'autoLayoutMin': '自动窗口最小高度占比%',
+    'autoLayoutMin': '自动窗口最小高度占比%',
 
-    'autoLayoutMax': '自动窗口最大高度占比%',
+    'autoLayoutMax': '自动窗口最大高度占比%',
     'userHabit': '使用用户调整窗口后的值',
     'fix': '固定',
 
-    'autoLayoutDt': '自动窗口过渡动画时间',
-    'autoLayoutDelay': '自动窗口过渡动作延迟',
+    'autoLayoutDt': '自动窗口过渡动画时间',
+    'autoLayoutDelay': '自动窗口过渡动作延迟',
     'titleBarFontSize': '工具栏大小',
     'tabBarPos': '工具栏位置',
     'hideToolsBar': '隐藏工具栏',
@@ -129,4 +129,9 @@ module.exports = {
 
     'gettrs-setters-language': '仅支持TS脚本生成 getter 和 setter',
     'gettrs-settrs': '生成 getter 和 setter',
+
+    'quickly-drop-component':'快速生成拖拽组件',
+    'drop-component':'生成拖拽组件',
+    'quickly-drop-asset':'快速生成拖拽资源',
+    'drop-asset':'生成拖拽资源',
 };
