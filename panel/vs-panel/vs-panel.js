@@ -3,6 +3,7 @@
 
 Editor.require('packages://simple-code/panel/vs-panel/ace/ace.js');
 
+const statistical 	= Editor.require('packages://simple-code/tools/statistical.js');
 const vsEditorPanel = Editor.require('packages://simple-code/panel/vs-panel/vs-panel-base.js');
 const acePanel 		= Editor.require('packages://simple-code/panel/vs-panel/ace-panel.js');
 const tools 		= Editor.require('packages://simple-code/tools/tools.js');
@@ -205,7 +206,7 @@ let layer = {
 			this.refreshSaveFild(true)
 		},false);
 
-		// 保存
+		// 设置
 		this.$settingBtn.addEventListener('confirm', () => {
 			// if (this.file_info) this.saveFile(true);
 			this.ace.openMenu()
@@ -429,6 +430,14 @@ let layer = {
 
 		this.addKeybodyEvent([["Ctrl", "s"], ["Meta", "s"]], (e) => 
 		{
+			if(this._isWaitSaveInterval){
+				return
+			}
+			this._isWaitSaveInterval = true
+			this.setTimeoutById(()=>{
+				this._isWaitSaveInterval = false
+			},254,'isWaitSaveCodeInterval');
+
 			// 保存后格式化文档
 			if(this.cfg.formatOnSaveFile){
 				this.vs_editor.trigger('anything','editor.action.formatDocument')
@@ -696,6 +705,8 @@ let layer = {
 			let hitnText = tools.translateZhAndEn('发现新版本,请过”扩展商店”下载更新,更新内容如下:\n','If you find the new version, please go to the "Extension Store" to download the update as follows :\n')
 			Editor.info(`[${packageCfg.description}]`, hitnText ,newVersionDesc);
 		}
+
+		statistical.countStartupTimes();
 	},
 
 

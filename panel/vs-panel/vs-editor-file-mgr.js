@@ -161,7 +161,7 @@ class FileMgr{
 				return;
 			}
 
-			if (text != editInfo.data) {
+			if (text != '' && text != editInfo.data) {
 				if (editInfo.data != editInfo.new_data) 
 				{
 					if (confirm(editInfo.name + " 文件在外边被修改是否刷新?")) 

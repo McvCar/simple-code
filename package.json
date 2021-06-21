@@ -9,15 +9,15 @@
 	"main-menu": {
 		"i18n:simple-code.name/i18n:simple-code.open": {
 			"message": "simple-code:open",
-			"accelerator": "F1"
+			"accelerator": ""
 		},
 		"i18n:simple-code.name/i18n:simple-code.preview": {
 			"message": "simple-code:openPreview",
-			"accelerator": "F11"
+			"accelerator": ""
 		},
 		"i18n:simple-code.name/i18n:simple-code.setting/i18n:simple-code.set-panel": {
 			"message": "simple-code:setting",
-			"accelerator": "F10"
+			"accelerator": ""
 		},
 		"i18n:simple-code.name/i18n:simple-code.setting/i18n:simple-code.set-ex": {
 			"message": "simple-code:openConfigExtendDir",

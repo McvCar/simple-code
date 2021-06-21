@@ -69,7 +69,7 @@ let layer =
 		// vs代码路径
 		vsLoader.require.config({ 'vs/nls': { availableLanguages: { '*': fe.getLanguage() == 'zh' ? 'zh-cn' : '' } }, paths: { 'vs': Editor.url('packages://simple-code/panel/vs-panel/monaco-editor/dev/vs', 'utf8') } });
 		// 创建vs编辑器，api参考 monaco.d.ts文件
-		vsLoader.require(['vs/editor/editor.main'], () => 
+		vsLoader.require(['vs/editor/editor.main'], (monaco) => 
 		{
 			this.monaco = Editor.monaco = Editor.monaco || monaco;
 			config.vsEditorConfig.language = 'javascript';  // 预热 typescript模块。json、javascript脚本统一交给typescript解析器一起解析，方便混合编码

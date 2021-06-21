@@ -5,8 +5,6 @@ module.exports = {
 	'moveUp' : { win32:[["Ctrl",'i']] , mac:[["Meta",'i']] },  
 	// 光标快速下移 
 	'moveDown' : { win32:[["Ctrl",'j']] , mac:[["Meta",'j']] },  
-	// 设置
-	'openSetting' : { win32:[["F12"]] , mac:[["F12"]] },  
 	// 关闭tab标签
 	'closeTab' : { win32:[["Ctrl",'w']] , mac:[["Meta",'w']] },  
 	// 跳到上一个tab窗口 

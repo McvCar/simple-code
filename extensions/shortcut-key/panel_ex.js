@@ -58,13 +58,6 @@ module.exports = {
 		},1)
 
 		// 绑定页面全局快捷键事件
-		this.parent.addKeybodyEventByName('openSetting',(e)=>
-		{
-			this.parent.ace.openMenu()
-		},KEY_MODE)
-
-
-		// 绑定页面全局快捷键事件
 		this.parent.addKeybodyEventByName('execCode',(e)=>
 		{
 			// 运行命令

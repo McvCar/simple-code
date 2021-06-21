@@ -27,9 +27,9 @@ module.exports = {
 				var alpha256 = Math.round(color.alpha * 255);
 				var label;
 				if (color.alpha === 1) {
-					label = "Color(" + red256 + ", " + green256 + ", " + blue256 + ")";
+					label = "color(" + red256 + ", " + green256 + ", " + blue256 + ")";
 				} else {
-					label = "Color(" + red256 + ", " + green256 + ", " + blue256 + ", " + alpha256 + ")";
+					label = "color(" + red256 + ", " + green256 + ", " + blue256 + ", " + alpha256 + ")";
 				}
 
 				return [
