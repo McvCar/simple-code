@@ -238,6 +238,7 @@ class FileMgr{
 			}
 
 			if(!fileItem){
+				// console.log("尝试import失败:",tryPath)
 				if(isFromSystemRead && fe.isFileExit(tryPath))
 				{
 					// 3.最后尝试从系统api读取
@@ -267,6 +268,8 @@ class FileMgr{
 
 		for (const importPath in needImportPaths) 
 		{
+			// 告诉解析器这边已经处理此路径了
+			this.parent.tsWr.removeNeedImportPath(importPath)
 			if(this.importPathBuffer[importPath]){
 				continue ;// 已经尝试加载过
 			}
@@ -315,9 +318,6 @@ class FileMgr{
 					break;
 				}
 			}
-			// 告诉解析器这边已经处理此路径了
-			// isTs ? this.tsWr.removeNeedImportPath(importPath) : this.jsWr.removeNeedImportPath(importPath) 
-			this.parent.tsWr.removeNeedImportPath(importPath)
 		}
 
 		if(isHasImport){

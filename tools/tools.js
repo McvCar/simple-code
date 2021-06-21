@@ -20,7 +20,23 @@ module.exports = {
 	},
 
 	getLanguage(){
-		return window.navigator && window.navigator.language && window.navigator.language.split('-')[0];
+		return Editor.lang || window.navigator && window.navigator.language && window.navigator.language.split('-')[0];
+	},
+
+	// 更新i18翻译文本，解决creator不重启不会刷新修改问题
+	initI18t(){
+		let locale = this.getLanguage() || 'zh';
+		let filePath = Editor.url('packages://simple-code/i18n/'+locale+'.js');
+		if(!this.isFileExit(filePath)){
+			return
+		}
+		let mapList = require(filePath);
+		let converList = {}
+		for (const key in mapList) {
+			const converText = mapList[key];
+			converList[packageCfg.name+'.'+key] = converText
+		}
+		Editor.i18n.extend(converList)
 	},
 
 	translate(key){

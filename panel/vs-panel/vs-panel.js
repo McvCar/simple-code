@@ -21,6 +21,8 @@ const prsPath = Editor.Project && Editor.Project.path ? Editor.Project.path : Ed
 
 let _scripts = [];
 let is_hint = false;
+
+tools.initI18t()
 let layer = {
 	
 	style:'',
