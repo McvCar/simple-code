@@ -57,19 +57,19 @@ module.exports = {
 			return false;
 		},1)
 
-		// 绑定页面全局快捷键事件
-		this.parent.addKeybodyEventByName('execCode',(e)=>
-		{
-			// 运行命令
-	  		Editor.Ipc.sendToPanel('simple-code','run-command-code',"cmd");
-		},1)
+		// // 绑定页面全局快捷键事件
+		// this.parent.addKeybodyEventByName('execCode',(e)=>
+		// {
+		// 	// 运行命令
+	  	// 	Editor.Ipc.sendToPanel('simple-code','run-command-code',"cmd");
+		// },1)
 
-		// 绑定页面全局快捷键事件
-		this.parent.addKeybodyEventByName('execCodeByScene',(e)=>
-		{
-			// 运行 Scene 命令
-	  		Editor.Ipc.sendToPanel('simple-code','run-command-code',"scene");
-		},2)
+		// // 绑定页面全局快捷键事件
+		// this.parent.addKeybodyEventByName('execCodeByScene',(e)=>
+		// {
+		// 	// 运行 Scene 命令
+	  	// 	Editor.Ipc.sendToPanel('simple-code','run-command-code',"scene");
+		// },2)
 		
 		// 锁定/解锁编程
 		this.parent.addKeybodyEventByName('lockView',(e)=>

@@ -13,6 +13,7 @@ module.exports = {
     'set-key-map': '配置-快捷键',
     'set-other': '配置-其它功能',
     'set-edit-suggest': '配置-代码输入提示',
+    'set-drag-var-rule': '设置-拖拽生成规则',
     'set-format-prettier': '配置-Prettier格式化规则',
  
     'search': '搜索',
@@ -39,6 +40,7 @@ module.exports = {
     'shear-files': '剪切文件 (X)',
     'paste-files': '粘贴文件 (C)',
     'delete-node-and-script': '删除选中节点与绑定的脚本',
+    'load-custom-widgets-to-code' : '生成自定义拖拽组件',
 
     'project-manage': '项目管理',
     'open-project-directory': '打开项目目录',
@@ -134,4 +136,8 @@ module.exports = {
     'drop-component':'生成拖拽组件',
     'quickly-drop-asset':'快速生成拖拽资源',
     'drop-asset':'生成拖拽资源',
+
+    'new-script-bind':'创建脚本绑定',
+    'new-script-templet':'创建脚本',
+
 };

@@ -13,6 +13,7 @@ module.exports = {
     'set-key-map': 'Set Shortcuts',
     'set-other': 'Set Other',
     'set-edit-suggest': 'Set Edit Suggest',
+    'set-drag-var-rule': 'Set Drag Var Rule',
     'set-format-prettier': 'Set Prettier Format Rule',
 
     'search': 'Search',
@@ -39,6 +40,7 @@ module.exports = {
     'shear-files': 'Shear Files (X)',
     'paste-files': 'Paste Files (C)',
     'delete-node-and-script': 'Delete Node And Script',
+    'load-custom-widgets-to-code' : 'Load Custom Widgets To Code',
 
     'project-manage': 'Project Manage',
     'open-project-directory': 'Open Project Directory',
@@ -134,4 +136,8 @@ module.exports = {
     'drop-component':'Drop Components',
     'quickly-drop-asset':'Quickly Drop Asset',
     'drop-asset':'Drop Asset',
+
+    'new-script-bind':'New Script And Bind',
+    'new-script-templet':'New Script',
+
 };

@@ -10,6 +10,11 @@ module.exports =
 {
 
   load () {
+	// 上次加载事件未释放
+	if(global._simpleCodeMain){
+		this.unload.bind(global._simpleCodeMain)()
+	}
+
 	// 执行扩展逻辑
 	this.initExtend();
 	this.runExtendFunc("onLoad",this);
@@ -19,14 +24,26 @@ module.exports =
 	} catch (exception) {
 		Editor.error("配置插件config.js出错:,",exception);
 	} 
+	global._simpleCodeMain = this;
   },
 
+  // 2.4.4 发现保存后不会刷新
   unload () {
+	delete global._simpleCodeMain
+	fs.writeFileSync('/Users/mac/.CocosCreator/packages/test.txt','test ok')
 	this.scripts.forEach((obj)=>
-	{
+	{ 
 		for(let name in obj.messages)
 		{
 			let state = electron.ipcMain.removeListener( name.indexOf(':') == -1 ? "simple-code:"+name : name,obj.messages[name] ) ; 
+		}
+
+		try {
+			if(obj.onDestroy){
+				obj.onDestroy()
+			}
+		} catch (error) {
+			Editor.error(error);
 		}
 	})
   }, 
@@ -34,27 +51,27 @@ module.exports =
 
   changeConfig(){
 
-  	let packageJson = JSON.parse( fs.readFileSync(Editor.url("packages://simple-code/package.json")) );
-  	let cfg 		= eval( fs.readFileSync(Editor.url("packages://simple-code/config.js")).toString() );
-  	let menuCfg 	= cfg["main-menu"]
-  	let menuCfgOld 	= packageJson["main-menu"];
-  	let isNeedSave  = false;
+  	// let packageJson = JSON.parse( fs.readFileSync(Editor.url("packages://simple-code/package.json")) );
+  	// let cfg 		= eval( fs.readFileSync(Editor.url("packages://simple-code/config.js")).toString() );
+  	// let menuCfg 	= cfg["main-menu"]
+  	// let menuCfgOld 	= packageJson["main-menu"];
+  	// let isNeedSave  = false;
 
-  	for (let key in menuCfg) 
-  	{
-  		let v = menuCfg[key];
-  		if (menuCfgOld[key] == null || v.accelerator != menuCfgOld[key].accelerator || v.message != menuCfgOld[key].message)
-  		{
-  			isNeedSave = true;
-  			break;
-  		}
-  	}
+  	// for (let key in menuCfg) 
+  	// {
+  	// 	let v = menuCfg[key];
+  	// 	if (menuCfgOld[key] == null || v.accelerator != menuCfgOld[key].accelerator || v.message != menuCfgOld[key].message)
+  	// 	{
+  	// 		isNeedSave = true;
+  	// 		break;
+  	// 	}
+  	// }
 
-  	if (isNeedSave){
-  		packageJson["main-menu"] = menuCfg;
-  		Editor.log("替换编辑器插件快捷方式",Editor.url("packages://simple-code/package.json"),JSON.stringify( packageJson , null, "\t"))
-  		fs.writeFile(Editor.url("packages://simple-code/package.json"),JSON.stringify( packageJson , null, "\t"), 'utf-8');
-  	}
+  	// if (isNeedSave){
+  	// 	packageJson["main-menu"] = menuCfg;
+  	// 	Editor.log("替换编辑器插件快捷方式",Editor.url("packages://simple-code/package.json"),JSON.stringify( packageJson , null, "\t"))
+  	// 	fs.writeFile(Editor.url("packages://simple-code/package.json"),JSON.stringify( packageJson , null, "\t"), 'utf-8');
+  	// }
   },
 
   // 读取扩展逻辑文件
@@ -118,14 +135,6 @@ module.exports =
 	  Editor.Ipc.sendToPanel('simple-code', 'custom-cmd',{cmd:"openFile"});
 	},
 
-
-	'newFile' () {
-	   Editor.Panel.open('simple-code');
-	  Editor.Scene.callSceneScript('simple-code', 'new-js-file' ,_lastUuid,function (err, event) {
-	  	Editor.Ipc.sendToPanel('simple-code', 'custom-cmd',{cmd:"openFile"});
-  	  });
-	},
-
 	'findFileAndOpen' () {
 		Editor.Panel.open('simple-code');
 		Editor.Ipc.sendToPanel('simple-code', 'custom-cmd',{cmd:"findFileAndOpen"});
@@ -184,11 +193,6 @@ module.exports =
 	'openConfigExtendDir'(){
 		// 打开目录
 		exec( (Editor.isWin32 ? "start " : "open ")+Editor.url("packages://simple-code/extensions") )
-	},
-
-	'newFileDir'(){
-		// 打开目录
-		exec( (Editor.isWin32 ? "start " : "open ")+Editor.url("packages://simple-code/template") )
 	},
 
 	'runCommandLine'(){

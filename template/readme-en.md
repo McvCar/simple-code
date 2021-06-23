@@ -18,15 +18,11 @@
 
 -3. Vscode code editor function
 
--4. Command mode (directly run the code in debugging and editing, shortcut key [**Alt+e**] or [**COM+e**])
+-4. Game running preview window (shortcut key [**F11**])
 
--5. Simulate running debugging (similar to U3D preview effect, shortcut key [**Shift+Alt+e**])
+-5. Search for unused resources (for cleaning up unused files, shortcut [**Alt+L**])
 
--6. Game running preview window (shortcut key [**F11**])
-
--7. Search for unused resources (for cleaning up unused files, shortcut [**Alt+L**])
-
--8. Modifying the TS / JS file path in the resource manager of creator can automatically synchronize the code import / require reference path
+-6. Modifying the TS / JS file path in the resource manager of creator can automatically synchronize the code import / require reference path
 
 # Auxiliary editing function:
 

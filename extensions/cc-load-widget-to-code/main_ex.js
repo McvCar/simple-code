@@ -1,13 +1,9 @@
 /* 
 *主线程扩展
-*绑定快捷键事件
+*
 */
 
 'use strict';
-var path 	= require('path');
-var fs 		= require('fs');
-var md5     = require('md5');
-
 
 module.exports = {
 
@@ -25,6 +21,12 @@ module.exports = {
 
 	messages:
 	{
+		'loadCustomWidgetsToCode'(){
+			Editor.Ipc.sendToPanel('simple-code','loadCustomWidgetsToCode');
+		},
 
+		'openDragVarRuleFile'(){
+			Editor.Ipc.sendToPanel('simple-code','openDragVarRuleFile');
+		}
 	}
 };

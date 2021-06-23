@@ -6,7 +6,8 @@
 const path 			= require('path');
 const fs 			= require('fs');
 const md5			= require('md5');
-const fe 			= Editor.require('packages://simple-code/tools/tools.js');
+const config 		= require('../../config');
+const tools 		= require('../../tools/tools');
 const prsPath 		= Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
 
 let is_lock			= false;
@@ -14,15 +15,24 @@ let ASSETS_TYPE_MAP = {'sprite-atlas':"cc.SpriteAtlas",'sprite-frame':"cc.Sprite
 let IS_URL_TYPE 	= ['cc.AudioClip','cc.RawAsset']
 let QUICK_LOAD_TYPE_ORDER 	= ['cc.Sprite','cc.Label','cc.EditBox','cc.RichText']
 
+let NEW_VAR_RULE 	 	=  path.join(path.resolve(__dirname,"./"),"new_drag_var_rule.js");
+let USER_NEW_VAR_RULE 	=  path.join(config.cacheDir,"new_drag_var_rule.js");
+
 module.exports = {
 
 	// 面板初始化
 	onLoad(parent){
 		// index.js 对象
 		this.parent = parent;
+
+		// 首次使用拷贝模板到可写路径
+		if(!tools.isFileExit(USER_NEW_VAR_RULE)){
+			tools.createDir(USER_NEW_VAR_RULE)
+			tools.copyFile(NEW_VAR_RULE,USER_NEW_VAR_RULE)
+		}
 	},
 
-	// 入口
+	// 插入组件入口
 	insertWidgetAction(isQuick,symbolName)
 	{
 		let nodes = Editor.Selection.curSelection('node');
@@ -37,10 +47,12 @@ module.exports = {
 				// 加载多个变量
 				let names = [];
 				let symbolNames = [];
-				for (let i = 0; i < nodeInfos.length; i++) {
+				for (let i = 0; i < nodeInfos.length; i++) 
+				{
 					const nodeInfo = nodeInfos[i];
 					let symbolName = 'cc.Node';
-					for (let i = 0; i < QUICK_LOAD_TYPE_ORDER.length; i++) {
+					for (let i = 0; i < QUICK_LOAD_TYPE_ORDER.length; i++) 
+					{
 						if( nodeInfo.compNames.indexOf(QUICK_LOAD_TYPE_ORDER[i]) != -1){
 							symbolName = QUICK_LOAD_TYPE_ORDER[i];
 							break;
@@ -60,7 +72,7 @@ module.exports = {
 		})
 	},
 
-	// 入口
+	// 插入资源入口
 	insertAssets(isQuick)
 	{
 		let insertUuids = Editor.Selection.curSelection('asset');
@@ -75,7 +87,7 @@ module.exports = {
 		Editor.assetdb.queryInfoByUuid(insertUuids[0],(_,fileInfo)=>
 		{
 			if(fileInfo==null){
-				return
+				return;
 			}
 
 			let widgetType = ASSETS_TYPE_MAP[fileInfo.type];
@@ -100,10 +112,57 @@ module.exports = {
 
 				this.loadSymbolName((symbolName)=>
 				{
-					let list = Editor.Selection.curSelection('asset');
+					// let list = Editor.Selection.curSelection('asset');
 					this.loadWidgetToCode(widgetType,symbolName,codeInfo,insertUuids,true);
 				},symbolName,codeInfo.symbols);
 			}
+		});
+	},
+
+	// 加载自定义的组件
+	loadCustomWidgetsToCode(codeInfo){
+		if(this.parent.file_info == null || this.parent.file_info.uuid != codeInfo.editInfo.uuid ){
+			return;
+		}
+
+		//1.获得生成组件规则
+		Editor.Scene.callSceneScript('simple-code', 'getCustomWidgetRule',{fileUuid: codeInfo.editInfo.uuid,url: codeInfo.editInfo.url}, (err, args) => { 
+			
+			// rules = [{symbolName:'',widgetType:'',componentUuid:''}]
+			let rules = args.rules;
+			if(rules.length == 0){
+				console.info("生成拖拽组件失败,当前场景Nodes没有可解析的 node.name")
+				return;
+			}
+			if(this.parent.file_info.uuid != codeInfo.editInfo.uuid) {
+				return;
+			}
+
+			// 提供撤销
+			codeInfo.editInfo.vs_model.pushStackElement();
+
+			for (let i = 0; i < rules.length; i++) 
+			{
+				const rule = rules[i];
+				const widgetType = rule.widgetType;
+				const symbolName = rule.symbolName;
+				const nodeUuids  = [ rule.nodeUuid ];
+				if(symbolName.match(/[a-zA-Z_$][\w$]*/) == null){
+					Editor.info('生成拖拽组件:变量命名不符合规范:',symbolName);
+					continue;
+				}
+
+				// 2.插入成员变量文本
+				this.insertTextToModel(widgetType,symbolName,codeInfo,false,rule);
+				setTimeout(()=>{
+					// 4.给成员变量赋值引用对象
+					this.insertWidgetInfo(args.bindNodeList,widgetType,symbolName,false,nodeUuids,false);
+				},100);
+			}
+
+			// 3.保存刷新creator生成变量拖拽组件
+			this.saveFile(codeInfo.editInfo.vs_model,rules);
+
 		});
 	},
 
@@ -117,15 +176,18 @@ module.exports = {
 		//2.获得与当前脚本绑定的Nodes
 		//3.往脚本添加组件类型字段
 		//4.往脚本的类型字段写入当前选中的组件或资源
-		this.getCurrEditorFileBindNodes(codeInfo.editInfo.uuid, (bindInfos)=>
+		this.getCurrEditorFileBindNodes(codeInfo.editInfo.uuid, (bindNodeList)=>
 		{
-			if(!bindInfos || bindInfos.length == 0){
+			if(!bindNodeList || bindNodeList.length == 0){
 				console.info("生成拖拽组件失败,当前场景Nodes没有绑定当前编辑中的脚本")
 				return;
 			}
 			if(this.parent.file_info.uuid != codeInfo.editInfo.uuid) {
 				return;
 			}
+
+			// 提供撤销
+			codeInfo.editInfo.vs_model.pushStackElement();
 
 			for (let i = 0; i < symbolNames.length; i++) 
 			{
@@ -136,14 +198,16 @@ module.exports = {
 					continue;
 				}
 
+				// 插入成员变量文本
 				this.insertTextToModel(widgetType,symbolName,codeInfo,false);
 				setTimeout(()=>{
 					// 2.添加引用
-					this.insertWidgetInfo(bindInfos,widgetType,symbolName,false,insertUuids,isAssets);
+					this.insertWidgetInfo(bindNodeList,widgetType,symbolName,false,insertUuids,isAssets);
 				},100);
 			}
+			
 			// 1.保存刷新creator生成变量拖拽组件
-			this.parent.saveFile(true,true);
+			this.saveFile(codeInfo.editInfo.vs_model);
 
 		});
 	},
@@ -162,9 +226,9 @@ module.exports = {
 		//2.获得与当前脚本绑定的Nodes
 		//3.往脚本添加组件类型字段
 		//4.往脚本的类型字段写入当前选中的组件或资源
-		this.getCurrEditorFileBindNodes(codeInfo.editInfo.uuid, (bindInfos)=>
+		this.getCurrEditorFileBindNodes(codeInfo.editInfo.uuid, (bindNodeList)=>
 		{
-			if(!bindInfos || bindInfos.length == 0){
+			if(!bindNodeList || bindNodeList.length == 0){
 				console.info("生成拖拽组件失败,当前场景Nodes没有绑定当前编辑中的脚本")
 				return;
 			}
@@ -173,16 +237,22 @@ module.exports = {
 			}
 			let isArray = Editor.Selection.curSelection(isAssets ? 'asset':'node').length>1 ;
 
+			// 提供撤销
+			codeInfo.editInfo.vs_model.pushStackElement();
+			// 插入成员变量文本
 			this.insertTextToModel(widgetType,symbolName,codeInfo,isArray);
-			this.parent.saveFile(true,true);
+
+			// save
+			this.saveFile(codeInfo.editInfo.vs_model);
+
 			setTimeout(()=>{
-				this.insertWidgetInfo(bindInfos,widgetType,symbolName,isArray,insertUuids,isAssets);
+				this.insertWidgetInfo(bindNodeList,widgetType,symbolName,isArray,insertUuids,isAssets);
 			},100);
 		});
 	},
 
-	insertWidgetInfo(bindInfos,widgetType,symbolName,isArray,insertUuids,isAssets){
-		let args = {bindInfos,widgetType,symbolName,isArray,insertUuids,isAssets}
+	insertWidgetInfo(bindNodeList,widgetType,symbolName,isArray,insertUuids,isAssets){
+		let args = {bindNodeList,widgetType,symbolName,isArray,insertUuids,isAssets}
 		Editor.Scene.callSceneScript('simple-code', 'insertWidgetInfo',args, (err, isEnd) => { 
 			// console.log('生成完成.',isEnd)
 		});
@@ -190,9 +260,23 @@ module.exports = {
 
 	getCurrEditorFileBindNodes(uuid,calback){
 		let args = {code_uuid:uuid}
-		Editor.Scene.callSceneScript('simple-code', 'getCurrEditorFileBindNodes',args, (err, bindInfos) => { 
-			calback(bindInfos);
+		Editor.Scene.callSceneScript('simple-code', 'getCurrEditorFileBindNodes',args, (err, bindNodeList) => { 
+			calback(bindNodeList);
 		});
+	},
+
+	saveFile(model,rules){
+		// 加工代码块
+		let codeText = model.getValue();
+		try {
+			codeText = require(USER_NEW_VAR_RULE).processCode(codeText, model.dbUrl, rules || [], model)
+		} catch (error) {
+			Editor.error('生成自定义绑定规则配置出错: ',error)
+		}
+		model.setValue(codeText);
+
+		// 1.保存刷新creator生成变量拖拽组件
+		this.parent.saveFile(true,true);
 	},
 
 	// 面板销毁
@@ -201,7 +285,7 @@ module.exports = {
 	},
 	
 	//3.往脚本添加组件类型字段
-	insertTextToModel(widgetType,symbolName,codeInfo,isArray)
+	insertTextToModel(widgetType,symbolName,codeInfo,isArray,rule)
 	{
 		// 1.获得脚本变量插入text位置
 		// 2.获得插入组件文本内容
@@ -216,18 +300,35 @@ module.exports = {
 		{
 			// 1.获得插入文本内容
 			let startPos = findObj.index + findObj[0].length;
-			let symbolInfo = this.getSymbolInfoByName(codeInfo.symbols,symbolName);
-			let insertText = this.getInsertText(widgetType,symbolName,isArray,symbolInfo,codeInfo.isTs);
-			// 2.检测变量是否已经存在，若存在则需要替换旧的变量字符串
-			if(symbolInfo){
-				text = text.substr(0,symbolInfo.startPos)+insertText+text.substr(symbolInfo.endPos)
-			}else{
-				text = text.substr(0,startPos)+insertText+text.substr(startPos)
+			let symbols  = this.upSymbolInfoByName(text,codeInfo);
+			let symbolInfo = this.getSymbolInfoByName(symbols,symbolName);
+			let isUrl = IS_URL_TYPE.indexOf(widgetType) != -1;
+
+			if(symbolInfo && symbolInfo.symbolName == symbolName && symbolInfo.widgetType == widgetType){
+				// 代码内已存在同名同类型变量，不再覆盖
+				return;
 			}
-			vs_model.pushStackElement();
-			vs_model.setValue(text);
-			// this.parent.saveFile(true,true);
+			
+			try {
+				let oldText = symbolInfo && symbolInfo.text;
+				let insertText = require(USER_NEW_VAR_RULE).getInsertText(widgetType,symbolName,oldText,rule,isArray,codeInfo.isTs,isUrl);
+				// 2.检测变量是否已经存在，若存在则需要替换旧的变量字符串
+				if(symbolInfo){
+					text = text.substr(0,symbolInfo.startPos)+insertText+text.substr(symbolInfo.endPos)
+				}else{
+					text = text.substr(0,startPos)+insertText+text.substr(startPos)
+				}
+				
+				vs_model.setValue(text);
+			} catch (error) {
+				Editor.error('生成自定义绑定规则配置出错: ',error)
+			}
 		}
+	},
+
+	upSymbolInfoByName(text,codeInfo){
+		// 重新解析过成员变量文本的范围,
+		return codeInfo.symbols = this.parseSctSymbolInfo(text,codeInfo.isTs);
 	},
 
 	getSymbolInfoByName(symbols,symbolName){
@@ -240,31 +341,31 @@ module.exports = {
 	},
 
 	// 获得插入的代码文字
-	getInsertText(widgetType,symbolName,isArray,isReplaceMode,isTs){
-		let text = ''
-		let isUrl = IS_URL_TYPE.indexOf(widgetType) != -1;
-		if(isTs){
-			let intext = isReplaceMode ? '' : '\n\n	';
-			if(isArray){
-				text = intext+
-					`@property(${ isUrl ? '{ type: ['+widgetType+'] }': '['+widgetType+']' } )`+'\n'+
-				`	${symbolName}: ${widgetType} [] = [];`
-			}else{
-				text = intext+
-					`@property(${ isUrl ? '{ type: '+widgetType+' }': widgetType })`+'\n'+
-				`	${symbolName}: ${widgetType} = null;`
-			}
-		}else{
-			let key = isUrl ? "url: " : 'type: ' 
-			let intext = isReplaceMode ? '' : '\n		';
-			text = intext + 
-				symbolName+':{\n'+
-			'			default: '+(isArray? "[]":"null")+',\n'+
-			'			'+key+widgetType+',\n'+
-			'		},';
-		}
-		return text;
-	},
+	// getInsertText(widgetType,symbolName,isArray,isReplaceMode,isTs,isUrl){
+	// 	let text = ''
+	// 	if(isTs){
+	// 		let intext = isReplaceMode ? '' : '\n\n	';
+	// 		if(isArray){
+	// 			text = intext+
+	// 				`@property({ type: ['${widgetType}'] }' )`+'\n'+
+	// 			`	${symbolName}: ${widgetType} [] = [];`
+	// 		}else{
+	// 			text = intext+
+	// 				`@property({ type: ${widgetType} })`+'\n'+
+	// 			`	${symbolName}: ${widgetType} = null;`
+	// 		}
+	// 	}else
+	// 	{
+	// 		let key = isUrl ? "url: " : 'type: ' 
+	// 		let intext = isReplaceMode ? '' : '\n		';
+	// 		text = intext + 
+	// 			symbolName+':{\n'+
+	// 		'			default: '+(isArray? "[]":"null")+',\n'+
+	// 		'			'+key+widgetType+',\n'+
+	// 		'		},';
+	// 	}
+	// 	return text;
+	// },
 
 
 	// 获得当前编辑文件的信息
@@ -305,7 +406,7 @@ module.exports = {
 					let endPos = startPos + findObj[0].length;
 					let symbolName = findObj[1]
 					let widgetType = findObj[2]
-					let symbolInfo = { startPos, endPos, symbolName, widgetType, value: symbolName, meta: widgetType }
+					let symbolInfo = { startPos, endPos, symbolName, widgetType, value: symbolName, meta: widgetType,text:findObj[0] }
 					symbols.push(symbolInfo);
 					parseTs(code_text, endPos)
 				}
@@ -352,21 +453,26 @@ module.exports = {
 				let code = text.substr(start_ind, end_ind - start_ind)
 				let parseJs = (code_text, start_ind = 0) => 
 				{
-					let findObjDefind = code_text.substr(start_ind).match(/([\w$_][\w$._0-9]*)[\s]{0,}:[\s]{0,}\{[\s\S]{0,}?type[\s\:]{0,}([\w$_][\w$._0-9]*)[\s\S]{0,}?,[\s]{0,}?\}[\s]{0,}?,/)
-					let findOjbMini   = code_text.substr(start_ind).match(/(?<!\{[\s\S]+?)([\w$_][\w$._0-9]*)[\s]{0,}:[\s]{0,}[\s\[]{0,}([\w$_][\w$._0-9]+).*[\s]{0,},/); // 简写  value : [ cc.Node ],
-					let findObj = findObjDefind || findOjbMini
-					if(findObjDefind && findOjbMini){
-						if(findOjbMini.index < findObjDefind.index){
-							findObj = findOjbMini;
+					let findObjDefind = code_text.substr(start_ind).match(/([\w$_][\w$._0-9]*)[\s]{0,}:[\s]{0,}\{[\s\S]{0,}?type[\s\:]{0,}([\w$_][\w$._0-9]*)[\s\S]{0,}?,{0,1}[\s]{0,}?\}[\s]{0,}?,{0,1}/)
+					let findOjbMini   = code_text.substr(start_ind).match(/([\w$_][\w$._0-9]*)[\s]{0,}:[\s]{0,}[\s\[]{0,}([\w$_][\w$._0-9]+).*[\s]{0,},/); // 简写  value : [ cc.Node ],
+					let findObj = findObjDefind
+					if(findObjDefind){
+						if(findOjbMini && !findOjbMini.input.substr(0,findOjbMini.index).match(/[\{\}]/)){
+							if(findOjbMini.index < findObjDefind.index){
+								findObj = findOjbMini;
+							}
 						}
+					}else if(findOjbMini && !findOjbMini.input.substr(0,findOjbMini.index).match(/[\{\}]/)){
+						findObj = findOjbMini
 					}
+
 					if (findObj) 
 					{
 						let startPos = findObj.index + start_ind;
 						let endPos = startPos + findObj[0].length;
 						let symbolName = findObj[1]
 						let widgetType = findObj[2]
-						let symbolInfo = { startPos, endPos, symbolName, widgetType, value: symbolName, meta: widgetType }
+						let symbolInfo = { startPos, endPos, symbolName, widgetType, value: symbolName, meta: widgetType, text:findObj[0] }
 						symbols.push(symbolInfo);
 						parseJs(code_text, endPos)
 					}
@@ -386,7 +492,7 @@ module.exports = {
 	loadSymbolName(callback,defineName='',result=[])
 	{
 		// 打开场景转跳
-		let ps = {value:fe.translateZhAndEn('请输入变量名字','Please enter a variable name'),meta:'',score:0};
+		let ps = {value:tools.translateZhAndEn('请输入变量名字','Please enter a variable name'),meta:'',score:0};
 		result.unshift(ps)
 		// 下拉框选中后操作事件
 		let onSearchAccept = (data,cmdLine)=>
@@ -421,12 +527,36 @@ module.exports = {
 	},
 	
 	messages:{
+
+		// 加载自定义组件绑定规则
+		'loadCustomWidgetsToCode'(){
+			let codeInfo = this.getCurrEditorFileInfo();
+			if(codeInfo == null){
+				return;
+			}
+			this.loadCustomWidgetsToCode(codeInfo)
+		},
+
+		// 打开生成规则配置
+		'openDragVarRuleFile'()
+		{
+			this.parent.openOutSideFile(USER_NEW_VAR_RULE,true);
+		},
+		
 		// 添加组件
 		'insertWidgetByName'(e,args)
 		{
 			if(this.parent == null) return;
-			this.insertWidgetAction(args.paths[0] == fe.translate('quickly-drop-component'),args.label);
+			this.insertWidgetAction(false,args.label);
 		},
+
+		// 快速添加组件
+		'quickInsertWidget'(e,args)
+		{
+			if(this.parent == null) return;
+			this.insertWidgetAction(true);
+		},
+
 
 		// 添加资源
 		'insertAssets'(e,args){
@@ -445,9 +575,14 @@ module.exports = {
 			if(this.parent == null) return;
 			let nodes = Editor.Selection.curSelection('node');
 			let uuid = nodes && nodes[0];
-			this.getCurrEditorFileBindNodes(this.parent.file_info && this.parent.file_info.uuid, (bindInfos)=>
+			if(uuid == null){
+				// 清除菜单
+				Editor.Ipc.sendToMain('simple-code:setMenuConfig',{id:"cc-widget-to-code",menuCfg:undefined})
+				return;
+			}
+			this.getCurrEditorFileBindNodes(this.parent.file_info && this.parent.file_info.uuid, (bindNodeList)=>
 			{
-				if(bindInfos == null){
+				if(bindNodeList == null){
 					// 清除菜单
 					Editor.Ipc.sendToMain('simple-code:setMenuConfig',{id:"cc-widget-to-code",menuCfg:undefined})
 					return;
@@ -467,13 +602,13 @@ module.exports = {
 					let menuCfg = {
 						layerMenu : [
 							{ type: 'separator' },
-							{ label : fe.translate('quickly-drop-component'), enabled:true, submenu:submenu, }, // 快速生成拖拽组件
-							{ label : fe.translate('drop-component'), enabled:true, submenu:submenu, }, // 生成拖拽组件
+							{ label : tools.translate('quickly-drop-component'), enabled:true, cmd: "quickInsertWidget", }, // 快速生成拖拽组件
+							{ label : tools.translate('drop-component'), enabled:true, submenu:submenu, }, // 生成拖拽组件
 						],
 						assetMenu : [
 							{ type: 'separator' },
-							{ label : fe.translate('quickly-drop-asset'), enabled:true, cmd: "quickInsertAssets"}, // 快速生成拖拽资源
-							{ label : fe.translate('drop-asset'), enabled:true, cmd: "insertAssets"},// 生成拖拽资源
+							{ label : tools.translate('quickly-drop-asset'), enabled:true, cmd: "quickInsertAssets"}, // 快速生成拖拽资源
+							{ label : tools.translate('drop-asset'), enabled:true, cmd: "insertAssets"},// 生成拖拽资源
 						],
 					}
 					this.menuCfg = menuCfg;

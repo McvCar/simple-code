@@ -31,7 +31,7 @@ module.exports = {
 		 	arrNode.forEach((parentNode)=>
 		 	{
 		 		// 插入个预制节点
-		 		Editor.Ipc.sendToPanel("scene","scene:create-nodes-by-uuids",[info.uuid],parentNode.uuid,{unlinkPrefab:null});
+		 		Editor.Ipc.sendToPanel("scene","scene:create-nodes-by-uuids",[info.uuid],parentNode.uuid,{unlinkPrefab:undefined});
 		 	});
 		},
 

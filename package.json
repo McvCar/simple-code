@@ -39,6 +39,10 @@
 			"message": "simple-code:openConfigHitn",
 			"accelerator": ""
 		},
+		"i18n:simple-code.name/i18n:simple-code.setting/i18n:simple-code.set-drag-var-rule": {
+			"message": "simple-code:openDragVarRuleFile",
+			"accelerator": ""
+		},
 		"i18n:simple-code.name/i18n:simple-code.setting/i18n:simple-code.set-format-prettier": {
 			"message": "simple-code:openPrettierConfig",
 			"accelerator": ""
@@ -93,7 +97,7 @@
 		},
 		"i18n:simple-code.name/i18n:simple-code.edit/i18n:simple-code.open-code": {
 			"message": "simple-code:openNodeFile",
-			"accelerator": "f1"
+			"accelerator": ""
 		},
 		"i18n:simple-code.name/i18n:simple-code.edit/i18n:simple-code.folder-bind-shortcuts": {
 			"message": "",
@@ -114,6 +118,10 @@
 		"i18n:simple-code.name/i18n:simple-code.edit/i18n:simple-code.paste-files": {
 			"message": "simple-code:selectNode",
 			"accelerator": ""
+		},
+		"i18n:simple-code.name/i18n:simple-code.edit/i18n:simple-code.load-custom-widgets-to-code": {
+			"message": "simple-code:loadCustomWidgetsToCode",
+			"accelerator": "CmdOrCtrl+Shift+E"
 		},
 		"i18n:simple-code.name/i18n:simple-code.edit/i18n:simple-code.delete-node-and-script": {
 			"message": "simple-code:removeNodeAndScript",

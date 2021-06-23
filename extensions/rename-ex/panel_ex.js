@@ -38,7 +38,7 @@ module.exports = {
 		let changeListName = (name)=>{
 
 			if(reType == 'sort'){
-				let findObj = name.match(/@([0-9]*)/)
+				let findObj = name.match(/@([0-9]+)/)
 				let start_num = findObj ? Number( findObj[1] ) : 0;
 	
 				for (let i = 0; i < list.length ; i++) {

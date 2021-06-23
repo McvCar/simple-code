@@ -226,7 +226,7 @@ module.exports = {
 			n++;
 		}
 
-		if (paths[max - 1].indexOf(".")) {
+		if (paths[max - 1].indexOf(".") != -1) {
 			max--;
 		}
 

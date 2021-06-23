@@ -12,9 +12,9 @@ module.exports = {
 	// 跳到下一个tab窗口 
 	'nextView' : { win32:[["Ctrl", "Alt", "l"], ["Ctrl", "Alt", "ArrowRight"], ["Ctrl", "PageDown"]] , mac:[["Meta", "Alt", "l"], ["Meta", "Alt", "ArrowRight"], ["Alt", "Tab"]] },  
 	// 执行命令行代码 Execute command line code
-	'execCode' : { win32:[["Alt","e"],["Ctrl","e"]] , mac:[["Meta",'e']] }, 
+	// 'execCode' : { win32:[["Alt","e"],["Ctrl","e"]] , mac:[["Meta",'e']] }, 
 	// 执行整个场景代码(不推荐使用,已不维护) Execute the entire scenario code (not recommended, no longer maintained)
-	'execCodeByScene' : { win32:[["Alt","Shift","e"]] , mac:[["Meta","Shift","e"]] },   
+	// 'execCodeByScene' : { win32:[["Alt","Shift","e"]] , mac:[["Meta","Shift","e"]] },   
 	// 锁定tab
 	'lockView' : { win32:[["F1"]] , mac:[["F1"]] },  
 	// 进入、退出命令模式

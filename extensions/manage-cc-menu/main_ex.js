@@ -20,8 +20,9 @@ module.exports = {
 		this.menuCfgs = {}
 		// hook 菜单
         if (!Editor.Menu["__simple-code-hooked__"]) {
-            Editor.Menu["__simple-code-hooked__"] = true;
+			this.old_menu = Editor.Menu;
         	Editor.Menu = this.hookMenu(Editor.Menu, this.hookMenuFunc.bind(this));
+            Editor.Menu["__simple-code-hooked__"] = true;
         }
 	},
 
@@ -98,7 +99,10 @@ module.exports = {
 	// 窗口销毁
 	onDestroy()
 	{
-
+		if(this.old_menu){
+			Editor.Menu = this.old_menu;
+			delete this.old_menu;
+		}
 	},
 	/*************  事件 *************/  
 

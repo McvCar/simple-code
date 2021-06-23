@@ -1,7 +1,17 @@
+
+const path 	= require("path");
+const fs 	= require("fs");
 const tools = require("./tools/tools");
+const cacheDir = path.join(path.resolve(__dirname,"../"),"simple-code-cache","cache");
 
 // 配置信息请写在这里,修改完重启creator生效,注意语法不要写错!!
 module.exports = {
+	
+	cacheDir : cacheDir,
+	
+	// 项目目录
+	prsPath : Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath,
+	
 	// 外部编辑器路径配置，win路径分隔符注意使用 ‘\\’
 	editorPath: {
 		win: "C:\\Program Files\\Sublime Text 3\\sublime_text.exe",
@@ -1035,12 +1045,20 @@ module.exports = {
 		"48": '0', "49": '1', "50": '2', "51": '3', "52": '4', "53": '5', "54": '6', "55": '7', "56": '8', "57": '9', "65": 'a', "66": 'b', "67": 'c', "68": 'd', "69": 'e', "70": 'f', "71": 'g', "72": 'h', "73": 'i', "74": 'j', "75": 'k', "76": 'l', "77": 'm', "78": 'n', "79": 'o', "80": 'p', "81": 'q', "82": 'r', "83": 's', "84": 't', "85": 'u', "86": 'v', "87": 'w', "88": 'x', "89": 'y', "90": 'z',
 	},
 
+	cfgPath : path.join(cacheDir,'userConfig.json'),
+
 	getLocalStorage(){
 		if(this.cfg){
 			return this.cfg;
 		}
-		this.cfg = localStorage.getItem("simple-code-config");
-		this.cfg = this.cfg ? JSON.parse(this.cfg) : {}; 
+
+		this.cfg = tools.isFileExit(this.cfgPath) && fs.readFileSync(this.cfgPath).toString() || localStorage.getItem("simple-code-config");
+		try {
+			this.cfg = this.cfg ? JSON.parse(this.cfg) : {}; 
+		} catch (error) {
+			this.cfg = {};
+			console.warn(error);
+		}
 		return this.cfg;
 	},
 
@@ -1051,21 +1069,24 @@ module.exports = {
 		}
 		const fe 	= Editor.require('packages://simple-code/tools/tools.js');
 		const path 	= require("path");
-		const prsPath = Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
 
-		const savePath = path.join(prsPath,'local','simple-code-config.json')
-		this.pro_cfg = fe.isFileExit(savePath) ? require(savePath) : {};
+		const savePath = path.join(this.prsPath,'local','simple-code-config.json')
+		
+		try {
+			this.pro_cfg = fe.isFileExit(savePath) ? require(savePath) : {};
+		} catch (error) {
+			this.pro_cfg = {}
+		}
 		return this.pro_cfg;
 	},
 	
+	// 保存配置
 	saveStorage(){
-		const fe 	= Editor.require('packages://simple-code/tools/tools.js');
-		const path 	= require("path");
-		const fs 	= require("fs");
-		const prsPath = Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
 
-		const savePath = path.join(prsPath,'local','simple-code-config.json')
-		fs.writeFileSync(savePath,JSON.stringify(this.pro_cfg || {}))
-		localStorage.setItem("simple-code-config", JSON.stringify(this.cfg || {}));
+		const savePath = path.join(this.prsPath,'local','simple-code-config.json')
+		fs.writeFileSync(savePath,JSON.stringify(this.pro_cfg || {})) // 跟着项目走的配置
+		tools.createDir(this.cfgPath)
+		fs.writeFileSync(this.cfgPath,JSON.stringify(this.cfg || {})) // 全局配置
+		// localStorage.setItem("simple-code-config", JSON.stringify(this.cfg || {}));
 	},
 }

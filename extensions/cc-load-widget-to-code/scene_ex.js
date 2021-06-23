@@ -6,7 +6,11 @@
 var path = require('path');
 var fs = require('fs');
 var md5 = require('md5');
+const tools = require('../../tools/tools');
+const config = require('../../config');
 const fe = Editor.require('packages://simple-code/tools/tools.js');
+
+let USER_NEW_VAR_RULE 	=  path.join(config.cacheDir,"new_drag_var_rule.js");
 
 // 资源对象读取方法
 let LoadAssetObj = 
@@ -80,6 +84,23 @@ let getSelectedComps = (args,callback) =>
 	}
 }
 
+let getCurrEditorFileBindNodes = (fileUuid,parent)=>{
+	var canvas = cc.director.getScene();
+	var bindNodeList = [];
+	if (canvas && fileUuid) {
+		parent.getNodeChildren(canvas, (node) => {
+			// 检测该node是否绑定了该脚本
+			let code_comp_list = parent.getJsFileList(node);
+			code_comp_list.forEach((code_comp, i) => {
+				if (code_comp.__scriptUuid == fileUuid) {
+					bindNodeList.push({ node_uuid: node.uuid, comp_name: code_comp.__classname__ });
+				}
+			});
+		})
+	}
+	return bindNodeList;
+}
+
 module.exports = {
 
 
@@ -111,6 +132,7 @@ module.exports = {
 			}
 			event.reply(null,nodeInfos);
 		},
+
 		'getNodeCompNames'(event, uuid, parent) 
 		{
 			let node = cc.engine.getInstanceById(uuid || '');
@@ -130,23 +152,31 @@ module.exports = {
 		},
 		
 		'getCurrEditorFileBindNodes'(event, args, parent) {
-			let code_uuid = args.code_uuid
-			var canvas = cc.director.getScene();
-			var bindInfos = []
-			if (canvas && code_uuid) {
-				parent.getNodeChildren(canvas, (node) => {
-					// 检测该node是否绑定了该脚本
-					let code_comp_list = parent.getJsFileList(node);
-					code_comp_list.forEach((code_comp, i) => {
-						if (code_comp.__scriptUuid == code_uuid) {
-							bindInfos.push({ node_uuid: node.uuid, comp_name: code_comp.__classname__ });
-						}
-					});
-				})
-			}
-			event.reply(null, bindInfos);
+			let bindNodeList = getCurrEditorFileBindNodes(args.code_uuid, parent);
+			event.reply(null, bindNodeList);
 		},
 
+		// 获得自定义加载组件列表
+		'getCustomWidgetRule'(event,args,parent){
+			/**
+			 * 1. 获得当前脚本所绑定的Node
+			 * 2. 解析 node.name 生成规则
+			 */
+			let bindNodeList = getCurrEditorFileBindNodes(args.fileUuid, parent);
+			if(!bindNodeList.length) {
+				event.reply(null,{rules:[],bindNodeList});
+				return;
+			}
+
+			let rules = []
+			try {
+				rules = require(USER_NEW_VAR_RULE).getCustomWidgetRule(args.url,bindNodeList,cc.director.getScene());
+			}catch (error) {
+				Editor.error('生成自定义绑定规则配置出错: ',error)
+			}
+
+			event.reply(null,{rules,bindNodeList});
+		},
 
 		'insertWidgetInfo'(event, args, parent) {
 			//1.获取绑定当前脚本的Node
@@ -154,8 +184,8 @@ module.exports = {
 			//3.获取选取的组件信息
 			//4.将选取的组件插入到脚本中
 
-			let node = cc.engine.getInstanceById(args.bindInfos[0].node_uuid)
-			let old_comp_uuid = node && node.getComponent(args.bindInfos[0].comp_name) && node.getComponent(args.bindInfos[0].comp_name).uuid;
+			let node = cc.engine.getInstanceById(args.bindNodeList[0].node_uuid)
+			let old_comp_uuid = node && node.getComponent(args.bindNodeList[0].comp_name) && node.getComponent(args.bindNodeList[0].comp_name).uuid;
 
 			// 定时检测creator加载新建文件缓存没
 			let stop_func;
@@ -163,37 +193,40 @@ module.exports = {
 			stop_func = parent.setTimeoutToJS(() => 
 			{
 				//等场景加载完脚本
-				let node = cc.engine.getInstanceById(args.bindInfos[0].node_uuid)
-				if (node && !node._objFlags) 
+				let scriptNode = cc.engine.getInstanceById(args.bindNodeList[0].node_uuid)
+				if (scriptNode && !scriptNode._objFlags) 
 				{
-					let comp = node.getComponent(args.bindInfos[0].comp_name)
-					if(!comp) return;
+					let scriptComp = scriptNode.getComponent(args.bindNodeList[0].comp_name)
+					if(!scriptComp) return;
 
-					let is_up_scene = comp.uuid != old_comp_uuid;
-					// *：组件uuid改变了说明场景已经刷新了一遍, comp.uuid != old_comp_uuid 
+					let isUpScene = scriptComp.uuid != old_comp_uuid;
+					// *：组件uuid改变了说明场景已经刷新了一遍, scriptComp.uuid != old_comp_uuid 
 					// 创建脚本瞬间添加的node组件会丢失,所以需要检测1次组件确定加载了
 					chk_count++;// 兼容2.4与1.9版本
-					if (is_up_scene || chk_count == 1)
+					if (isUpScene || chk_count == 1)
 					{
-						if(is_up_scene){
+						if(isUpScene){
 							stop_func();
 						}
 
+						// sls_comps 获得选择的组件或资源
 						getSelectedComps(args,(sls_comps)=>
 						{
-							for (let i = 0; i < args.bindInfos.length; i++) {
-								const info = args.bindInfos[i];
-								let node = cc.engine.getInstanceById(info.node_uuid)
-								if (!node) {
+							for (let i = 0; i < args.bindNodeList.length; i++) {
+								const info = args.bindNodeList[i];
+								let scriptNode = cc.engine.getInstanceById(info.node_uuid)
+								if (!scriptNode) {
 									continue
 								}
-								let comp = node.getComponent(info.comp_name);
-								if (!comp) {
+								// 获得当前打开的脚本对象
+								let scriptComp = scriptNode.getComponent(info.comp_name);
+								if (!scriptComp) {
 									chk_count = 0;
 									continue;
 								}
-								if (comp.hasOwnProperty(args.symbolName)) {
-									comp[args.symbolName] = args.isArray ? sls_comps : sls_comps[0];
+								// 给脚本的成员变量赋值
+								if (scriptComp.hasOwnProperty(args.symbolName)) {
+									scriptComp[args.symbolName] = args.isArray ? sls_comps : sls_comps[0];
 								}
 							}
 							event.reply(null,true);
@@ -201,8 +234,7 @@ module.exports = {
 					}
 				}
 			}, 1, { count: 15 })
-
-
 		},
+
 	}
 };

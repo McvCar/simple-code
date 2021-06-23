@@ -150,6 +150,23 @@ let layer = {
 		}
 		
 		this.runExtendFunc("setOptions", cfg,isInit);
+		if(!isInit) this.saveOptionsByDelayTime()
+	},
+
+	
+	saveOptionsByDelayTime(){
+		this.setTimeoutById(()=>{
+			this.saveOptions()
+		},1000,'saveOptionsByDelayTime')
+	},
+	
+	saveOptions(){
+		//  写入配置
+		this.cfg.fontSize = this.vs_editor.getRawOptions().fontSize;
+		this.cfg.search_history = this.search_history;
+		this.cfg.self_flex_per = this.self_flex_per;
+		delete this.cfg.language;
+		config.saveStorage();
 	},
 
 	setCssByName(name,infoText){
@@ -170,7 +187,7 @@ let layer = {
 			const groups = config.optionGroups[key];
 			for (const k in groups) {
 				const option = groups[k];
-				if(cfg[option.path] == null && option.defaultValue != null){
+				if(cfg[option.path] === undefined && option.defaultValue !== undefined){
 					cfg[option.path] = option.defaultValue; // 补充缺失的配置，升级版本导致的
 				}
 			}
@@ -249,12 +266,14 @@ let layer = {
 		// 锁定窗口
 		this.$lockWindowChk.addEventListener('change', () => {
 			this.setLockWindow(this.$lockWindowChk.checked ? true : false);
+			this.saveOptionsByDelayTime()
 		});
 		
 		// 命令模式
 		this.$cmdMode.addEventListener('change', () => {
 			this.cfg.is_cmd_mode = this.$cmdMode.checked ? true : false;
 			this.setCmdMode(this.cfg.is_cmd_mode);
+			this.saveOptionsByDelayTime();
 		});
 
 		// 读取拖入的文件
@@ -646,12 +665,7 @@ let layer = {
 			if(model) model.dispose();
 		}
 
-		//  写入配置
-		this.cfg.fontSize = this.vs_editor.getRawOptions().fontSize;
-		this.cfg.search_history = this.search_history;
-		this.cfg.self_flex_per = this.self_flex_per;
-		delete this.cfg.language;
-		config.saveStorage();
+		this.saveOptions();
 	},
 
 
