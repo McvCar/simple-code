@@ -19,15 +19,7 @@ module.exports = {
 		// index.js 对象
 		this.parent = parent; 
 
-		// 键盘事件：重名
-		this.parent.addKeybodyEvent([["d"]],(e)=>
-		{
-			// 不是输入状态是时
-			if ( !this.inputTypeChk(e) && this.openRename()){
-				e.preventDefault();// 吞噬捕获事件
-				e.stopPropagation();
-			}
-		},0)
+
 
 		// 键盘事件：添加节点组件
 		this.parent.addKeybodyEvent([["g"]],(e)=>
@@ -40,15 +32,7 @@ module.exports = {
 		},0)
 
 
-		// 键盘事件：批量插入预制节点
-		this.parent.addKeybodyEvent([["a"]],(e)=>
-		{
-			if ( !this.inputTypeChk(e) && Editor.Selection.curSelection("node").length> 0){
-				this.openPrefabList();
-				e.preventDefault();// 吞噬捕获事件
-				e.stopPropagation();
-			}
-		},0)
+
 
 		// 键盘事件：切换场景
 		this.parent.addKeybodyEvent([["v"]],(e)=>
@@ -82,7 +66,7 @@ module.exports = {
 		// },0);
 
 		// 绑定页面全局快捷键事件,注意: 区分大小写 Ctrl = ctrl
-		this.parent.addKeybodyEvent([[Editor.isWin32 ? "Ctrl" : "Meta","o"],["Control","v"]],(e)=>
+		this.parent.addKeybodyEvent([[Editor.isWin32 ? "Ctrl" : "Meta","o"]],(e)=>
 		{
 			// 搜索场景转跳
 			this.searchCmd("findFileAndOpen")
