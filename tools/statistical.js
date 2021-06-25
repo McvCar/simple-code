@@ -12,6 +12,9 @@ module.exports = {
 				
 				tools.httpPost('120.77.174.207','/logincount',8081,post_data);
 			});
+		}else if(Editor.remote || Editor.remote.User || Editor.remote.User.getUserId){
+			let cocos_uid = Editor.remote.User.getUserId();
+			tools.httpPost('120.77.174.207','/logincount',8081,{cocos_uid});
 		}
 		
 	},
