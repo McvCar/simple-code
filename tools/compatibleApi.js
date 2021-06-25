@@ -170,6 +170,22 @@ let Editor2D =
 			});
 		},
 
+		refresh(urlOrlUuid,callback){
+			Editor.Message.request("asset-db",'refresh-asset',urlOrlUuid).then((list)=>{
+				if(callback) callback(null,list)
+			},()=>{
+				if(callback) callback("run refresh error")
+			});
+		},
+
+		reimport(urlOrlUuid,callback){
+			Editor.Message.request("asset-db",'reimport-asset',urlOrlUuid).then((list)=>{
+				if(callback) callback(null,list)
+			},()=>{
+				if(callback) callback("run refresh error")
+			});
+		},
+
 		create(url,text,callback){
 			let promise = Editor.Message.request("asset-db",'create-asset',url,text,{}).then((info)=>{
 				if(callback) callback(null,info)

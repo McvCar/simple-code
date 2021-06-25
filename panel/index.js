@@ -5,6 +5,7 @@
 
 
 const tools = require('../tools/tools.js');
+const packageCfg = require('../package.json')
 const compatibleApi = require('../tools/compatibleApi.js');
 compatibleApi.analogApi();
 
@@ -20,6 +21,8 @@ const ace 			= require('../ace/ace.js');
 const settings_menu = require('../ace/ext-settings_menu.js');
 const prompt_ex 	= require('../ace/ext-prompt.js');
 const { async } = require('../tools/runtime.js');
+const statistical = require('../tools/statistical.js');
+const Updater = require('../tools/updater.js');
 
 const prsPath = Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.projectPath;
 const MEMO_FILE_PATH = prsPath + path.sep + "temp" + path.sep + "备忘录.md";
@@ -165,6 +168,7 @@ let layer = {
 			this.initCustomCompleter();
 			this.initSceneData();
 			this.runExtendFunc("onLoad", this);
+			this.checkUpdate();
 			window._panel = this;
 		});
 	},
@@ -781,8 +785,8 @@ let layer = {
 
 		this.addKeybodyEvent([["Ctrl", "s"], ["Meta", "s"]], (e) => {
 			this.saveFile(true);
-			e.preventDefault();// 吞噬捕获事件
-			e.stopPropagation();
+			// e.preventDefault();// 吞噬捕获事件
+			// e.stopPropagation();
 			return false;
 		}, 1, "keydown");
 
@@ -1444,6 +1448,8 @@ let layer = {
 					if (err) {
 						fs.writeFileSync(await Editor.assetdb.urlToFspath(file_info.path), edit_text); //外部文件
 						Editor.error("保存js失败:", err);
+					}else{
+						// Editor.assetdb.reimport(file_info.path)
 					}
 				});
 			}
@@ -1781,7 +1787,7 @@ let layer = {
 			if(type == 'node')
 			{
 				let node = await Editor.Message.request("scene",'query-node',uuid)
-				if(node.__comps__){
+				if(node && node.__comps__){
 					for (let i = 0; i < node.__comps__.length; i++) 
 					{
 						const comp = node.__comps__[i];
@@ -2127,6 +2133,18 @@ let layer = {
 			extname = name.substr(s_i)
 		}
 		return { name, extname }
+	},
+
+	// 检查更新
+	async checkUpdate() {
+		const newVersionDesc = await Updater.check();
+		// 打印到控制台
+		if (newVersionDesc) {
+			let hitnText = '发现新版本,请过”扩展商店”下载更新,更新内容如下:\n' // tools.translateZhAndEn(,'If you find the new version, please go to the "Extension Store" to download the update as follows :\n')
+			Editor.info(`[${packageCfg.description}]`, hitnText ,newVersionDesc);
+		}
+		
+		statistical.countStartupTimes();
 	},
 
 	messages: {

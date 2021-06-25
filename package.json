@@ -1,6 +1,6 @@
 {
 	"name": "simple-code",
-	"version": "3.0.8",
+	"version": "3.0.9",
 	"description": "内置代码编辑器",
 	"author": "MCV",
 	"main": "./main.js",

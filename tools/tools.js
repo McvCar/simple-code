@@ -1,6 +1,8 @@
 let fs = require("fs");
 let path = require("path");
 let esprima = require("./esprima/esprima");
+var http 		= require('http');
+var querystring = require('querystring');
 
 let espJsMap = {CallExpression:'{},',FunctionExpression:'()=>{},',ArrayExpression:'[],',Literal:'"0",',ArrowFunctionExpression:'()=>{}',}
 let patt = new RegExp('([0-9a-zA-Z_]+)[ =]*[ ]*[(].*[)][ \n=>]*{','g'); 
@@ -171,4 +173,36 @@ module.exports = {
 		// console.log("->\n",js_text);
 		return js_text
 	},
+
+
+	httpPost(ip,path,port,args,callback){
+		var options = {
+			hostname: ip,
+			port: port,
+			path: path,
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+			}
+		};
+	
+		var req = http.request(options, function (res) {
+			// console.log('STATUS: ' + res.statusCode);
+			// console.log('HEADERS: ' + JSON.stringify(res.headers));
+			res.setEncoding('utf8');
+			res.on('data', function (chunk) {
+				if(callback) callback(chunk);
+			});
+		});
+	
+		req.on('error', function (e) {
+			if(callback) callback();
+		});
+	
+		// write data to request body
+		var content = querystring.stringify(args);
+		req.write(content);
+		req.end();
+	},
+
 }
