@@ -99,7 +99,7 @@ let layer = {
 	{
 		let text = 
 			// ace.editorCss +
-			fs.readFileSync(Editor.url("packages://simple-code/panel/vs-panel/index.css"), "utf-8") + '\n'+
+			fs.readFileSync(Editor.url("packages://simple-code/panel/vs-panel/vs-panel.css"), "utf-8") + '\n'+
 			fs.readFileSync(Editor.url("packages://simple-code/panel/vs-panel/monaco-editor/dev/vs/editor/editor.main.css"), "utf-8");
 			
 

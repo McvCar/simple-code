@@ -141,6 +141,7 @@
 		}
 	},
 	"panel": {
+		"icon": "./panel/images/icon.png",
 		"main": "panel/vs-panel/vs-panel.js",
 		"type": "dockable",
 		"title": "i18n:simple-code.name",
