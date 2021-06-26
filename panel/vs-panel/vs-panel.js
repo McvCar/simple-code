@@ -11,8 +11,9 @@ const config 		= Editor.require('packages://simple-code/config.js');
 const keyMap 		= Editor.require('packages://simple-code/keyMap.js');
 const packageCfg 	= Editor.require('packages://simple-code/package.json');
 const updater 		= Editor.require('packages://simple-code/tools/updater.js');
-const fs 	= require('fs');
-const path 	= require("path");
+const fs 			= require('fs');
+const path 			= require("path");
+const electron 		= require('electron');
 
 const eventMerge 	= Editor.require('packages://simple-code/tools/eventMerge');
 
@@ -112,6 +113,8 @@ let layer = {
 		// 游戏资源路径缓存
 		this.file_list_buffer = [];
 		this.file_list_map 	  = {};
+		// ipc event
+		this.listenIpcList	  = []
 		// 读取配置文件
 		this.$title0.style.display = 'none';
 		this.timer_map 			= {};
@@ -201,6 +204,7 @@ let layer = {
 		this.mouse_move_event_closeFunc;
 		this.mouse_start_event_closeFunc;
 		this.is_init_finish = false;
+		this.waitSaveIntervals = {}
 		// 当前场景所有子节点信息缓存
 		this.currSceneChildrenInfo = [];
 		// 搜索历史
@@ -276,6 +280,20 @@ let layer = {
 			this.saveOptionsByDelayTime();
 		});
 
+		// node或assets 启动拖拽事件
+		let dragsArgs = {}
+		this.addListenerIpc("editor:dragstart", (e, t)=>{
+			dragsArgs = {
+				type : t.type,
+				items : t.items,
+				options : t.options
+			}
+        });
+
+		this.addListenerIpc("editor:dragend", ()=>{
+            dragsArgs = null;
+        });
+
 		// 读取拖入的文件
 		this.$editorB.addEventListener('dragover',(e)=>{
 			// if(e.dataTransfer.files[0]){
@@ -288,7 +306,7 @@ let layer = {
 		// 读取拖入的文件
 		this.$editorB.addEventListener('drop',(e)=>{
 			this.$dropBg.style.display = "none";
-			this.onDrag(e);
+			this.onDrag(e,dragsArgs || {});
 		},false);
 
 		
@@ -343,6 +361,11 @@ let layer = {
 			this.upNeedImportListWorker()
 			this.onCheckLayout(is_up_layout)
 		}, 0.5);
+	},
+
+	addListenerIpc(name,callback){
+		this.listenIpcList.push({name,callback});
+		electron.ipcRenderer.on(name,callback);
 	},
 
 	upLayout(){
@@ -451,25 +474,8 @@ let layer = {
 
 		this.addKeybodyEvent([["Ctrl", "s"], ["Meta", "s"]], (e) => 
 		{
-			if(this._isWaitSaveInterval){
-				return
-			}
-			this._isWaitSaveInterval = true
-			this.setTimeoutById(()=>{
-				this._isWaitSaveInterval = false
-			},254,'isWaitSaveCodeInterval');
-
-			// 保存后格式化文档
-			if(this.cfg.formatOnSaveFile){
-				this.vs_editor.trigger('anything','editor.action.formatDocument')
-				setTimeout(()=>{
-					this.saveFile(true);
-				},100)
-			}else{
-				this.saveFile(true);
-			}
-
-			
+			let id = this.file_info.id;
+			this.saveFileFromDelayTime(true,false,id);
 			e.preventDefault();// 吞噬捕获事件
 			return false;
 		}, 1, "keydown");
@@ -616,11 +622,18 @@ let layer = {
 		this.runExtendFunc("onDestroy");
 		this.refreshSaveFild();
 
+		// 停止事件
 		if (this.schFunc) this.schFunc();
 		if(this.mouse_move_event_closeFunc) this.mouse_move_event_closeFunc()
 		if(this.mouse_start_event_closeFunc) this.mouse_start_event_closeFunc()
-		if(this.menu) this.menu.destroy()
+		if(this.menu && this.menu.destroy) this.menu.destroy()
 		this.menu = null;
+
+		// 移除ipc事件
+		for (let i = 0; i < this.listenIpcList.length; i++) {
+			const event = this.listenIpcList[i];
+			electron.ipcRenderer.removeListener(event.name,event.callback);
+		}
 
 		// 保存编辑信息
 		let temp_path_map = {}
@@ -685,8 +698,12 @@ let layer = {
 		})
 	},
 
-	// 拖入事件
-	onDrag(e){
+	/**
+	 * 拖入事件
+	 * @param {evnt} e 
+	 * @param {object} dragsArgs - {type:'node',items:[{id:'uuidxx',name:''}]} || {}
+	 */
+	onDrag(e,dragsArgs){
 		e.preventDefault();
 		var fileObj = e.dataTransfer.files[0];
 		if(fileObj){
@@ -696,7 +713,7 @@ let layer = {
 			}
 		}
 		
-		this.runExtendFunc('onDrag',e)
+		this.runExtendFunc('onDrag',e,dragsArgs)
 	},
 
 	// 扩展使用的事件
@@ -731,7 +748,7 @@ let layer = {
 		// 场景保存
 		'scene:saved'(event) {
 			if(!this.is_init_finish) return;
-			this.saveFile();
+			this.saveFileFromDelayTime();
 			this.upCurrSceneChildrenInfo();
 		},
 

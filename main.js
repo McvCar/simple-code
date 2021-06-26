@@ -30,7 +30,6 @@ module.exports =
   // 2.4.4 发现保存后不会刷新
   unload () {
 	delete global._simpleCodeMain
-	fs.writeFileSync('/Users/mac/.CocosCreator/packages/test.txt','test ok')
 	this.scripts.forEach((obj)=>
 	{ 
 		for(let name in obj.messages)

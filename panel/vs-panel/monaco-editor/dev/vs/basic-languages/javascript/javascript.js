@@ -253,10 +253,10 @@ define('vs/basic-languages/typescript/typescript',["require", "exports", "../fil
                 // identifiers and keywords                
                 [new RegExp(keywords_str_green), 'js.keywords.green'], // 函数定义
                 [new RegExp(keywords_str_violet), 'js.keywords.violet'], // 函数定义
-                [/[a-z_$][\w$]*( ){0,5}(?=\()/, 'func'], // 函数定义
+                [/[a-z_$\u4e00-\u9fa5][\w$\u4e00-\u9fa5]*( ){0,5}(?=\()/, 'func'], // 函数定义
                 
                 [
-                    /[a-z_$][\w$]*/,
+                    /[a-z_$\u4e00-\u9fa5][\w$\u4e00-\u9fa5]*/,
                     {
                         cases: {
                             '@keywords': 'keyword',

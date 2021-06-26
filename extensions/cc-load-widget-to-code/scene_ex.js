@@ -10,7 +10,7 @@ const tools = require('../../tools/tools');
 const config = require('../../config');
 const fe = Editor.require('packages://simple-code/tools/tools.js');
 
-let USER_NEW_VAR_RULE 	=  path.join(config.cacheDir,"new_drag_var_rule.js");
+let USER_NEW_VAR_RULE 	=  path.join(config.cacheDir,"drag_var_rule.js");
 
 // 资源对象读取方法
 let LoadAssetObj = 

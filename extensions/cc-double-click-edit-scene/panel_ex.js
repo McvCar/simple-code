@@ -86,7 +86,10 @@ module.exports = {
 			return result;
 		}
 		this.parent.ace.openSearchBox(defineName,[],(data,cmdLine)=>onSearchAccept(data,cmdLine),(cmdLine)=>onCompletionsFunc(cmdLine))
-		reSize(this.parent.mouse_pos)
+		reSize(this.parent.mouse_pos);
+
+		// 记录撤销
+		Editor.Ipc.sendToAll('scene:undo-commit')
 	},
 
 

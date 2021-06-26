@@ -863,6 +863,33 @@ let layer =
 	},
 	
 	// 保存修改
+	saveFileFromDelayTime(isMandatorySaving = false, isMustCompile = false, id = -1) {
+		id = id == -1 ? this.edit_id : id;
+		if(this.waitSaveIntervals[id]){
+			// 重复保存忽略
+			return false;
+		}
+
+		// 同个文件0.6s只能保存一次
+		this.waitSaveIntervals[id] = true
+		this.setTimeoutById(()=>{
+			this.waitSaveIntervals[id] = false
+		},500,'isWaitSaveCodeInterval'+id);
+
+		// 保存后格式化文档
+		if(this.cfg.formatOnSaveFile){
+			this.vs_editor.trigger('anything','editor.action.formatDocument')
+			setTimeout(()=>{
+				this.saveFile(isMandatorySaving,isMustCompile,id);
+			},100)
+		}else{
+			this.saveFile(isMandatorySaving,isMustCompile,id);
+		}
+
+		return true;
+	},
+
+	// 保存修改
 	saveFile(isMandatorySaving = false, isMustCompile = false, id = -1) {
 		id = id == -1 ? this.edit_id : id;
 		let file_info = this.edit_list[id];

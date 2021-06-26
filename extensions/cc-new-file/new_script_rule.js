@@ -15,10 +15,7 @@ module.exports = {
  	getSavePath(templePath,sceneUrl,currNodeName){
 		// 在scene.fire文件同级目录下保存脚本
 		let saveUrl = path.dirname(sceneUrl) + '/' + 'scripts/' + currNodeName + path.extname(templePath)
-		// saveUrl = '/db:/assets/scene/scripts/node-name.js'
-		if(saveUrl[0] == '/'){
-			saveUrl = 'db:/'+saveUrl.substr(4);
-		}
+		// saveUrl = 'db://assets/scene/scripts/node-name.js'
 		// db://assets/ 为项目根目录
 		return saveUrl;
 	},

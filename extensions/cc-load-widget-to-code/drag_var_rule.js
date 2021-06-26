@@ -41,8 +41,8 @@ module.exports = {
 			let intext = replaceText != null  ? '' : '\n\n	';
 			if(isArray){
 				text = intext+
-					`@property({ type: ['${widgetType}'], displayName:''})\n` +
-				`	${symbolName}: ${widgetType} [] = [];`
+					`@property({ type: [${widgetType}], displayName:''})\n` +
+				`	${symbolName}: ${widgetType}[] = [];`
 			}else{
 				text = intext+
 					`@property({ type: ${widgetType}, displayName:'' })\n` +

@@ -11,8 +11,8 @@ const exec 			= require('child_process').exec;
 
 let TEMPLE_PATH  	 = path.join(path.resolve(__dirname,"./"),"new_file_temple");
 let USER_TEMPLE_PATH = path.join(config.cacheDir,'new_file_temple');
-let NEW_FILE_RULE 	 	=  path.join(path.resolve(__dirname,"./"),"new_file_rule.js");
-let USER_NEW_FILE_RULE 	 =  path.join(config.cacheDir,"new_file_rule.js");
+let NEW_FILE_RULE 	 	=  path.join(path.resolve(__dirname,"./"),"new_script_rule.js");
+let USER_NEW_FILE_RULE 	 =  path.join(config.cacheDir,"new_script_rule.js");
 
 module.exports = {
 

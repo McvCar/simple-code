@@ -113,7 +113,6 @@ module.exports = {
 
 		var regEx = /(require\(|import |reference path=)(.{0,}['"])(.+)['"]/g;
 		var match = regEx.exec(codeText);
-		var bracketStack = []
 		var imports = []
 		while (match) {
 			let start = match.index + match[1].length + match[2].length;
