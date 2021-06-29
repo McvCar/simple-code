@@ -36,6 +36,7 @@ module.exports = {
 		// if(comp){
 		// 	scriptComp[symbolName] = comp;
 		// }
+		// console.log('组件赋值',symbolName)
 	},
 
 	/**
@@ -141,6 +142,8 @@ module.exports = {
 			nodeUuid:node.uuid,
 			// 记录解析配置信息, 在生成代码阶段可以做更多操作，比如生成按钮绑定文本块之类的
 			args:splitSymbol,
+			// 禁止生成拖拽变量, 在按钮只绑定函数不生成组件时使用;
+			disableGenerated:false,
 		}
 	},
 

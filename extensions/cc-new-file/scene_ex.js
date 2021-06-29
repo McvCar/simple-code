@@ -12,6 +12,20 @@ let getJsTemplatePath = (node_uuid, file_type) => {
 	return path.join(config.cacheDir, 'define.' + file_type)
 }
 
+let cc_require = (fileName)=>{
+	// 阻止报错提示
+	let func = Editor.failed;
+	let comp;
+	Editor.failed = () => { }
+	try {
+		comp = cc.require(fileName)
+	} catch (t) { }
+
+	Editor.failed = func;
+
+	return comp;
+}
+
 module.exports = {
 
 
@@ -46,6 +60,21 @@ module.exports = {
 
 			let uuid = node.uuid;
 			let jsFileName = path.basename(args.saveUrl,path.extname(args.saveUrl));
+
+			// 判断文件是否存在
+			let comp = node.getComponent(jsFileName);
+			if (comp) {
+				event.reply(null, {});// 回调通知结果
+				return;
+			}else{
+				comp = cc_require(jsFileName);
+				if (comp) {
+					node.addComponent(jsFileName);
+					event.reply(null, {});// 回调通知结果
+					return;
+				}
+			}
+
 			let data = fs.readFileSync(args.templePath);
 			// 创建文件
 			Editor.assetdb.create(args.saveUrl, data, (err, results) => {
@@ -54,6 +83,7 @@ module.exports = {
 				// 定时检测creator加载新建文件缓存没
 				let stop_func;
 				let chk_count = 0
+				let old_uuid ;
 				stop_func = parent.setTimeoutToJS(() => {
 					//等场景加载完脚本
 					node = parent.findNode(uuid)
@@ -61,7 +91,8 @@ module.exports = {
 						let comp = node.getComponent(jsFileName)
 						if (comp) {
 							// 创建脚本瞬间添加的node组件会丢失,所以需要检测3次组件确定加载了
-							if (chk_count++ == 3) {
+							// *：组件uuid改变了说明场景已经刷新了一遍, comp.uuid != old_uuid 
+							if (chk_count++ == 3 || (old_uuid && old_uuid != comp.uuid) ) {
 								stop_func();
 								event.reply(null, { data: "", node_uuid: uuid, scipt_uuid: comp.__scriptUuid });
 								Editor.Ipc.sendToPanel('simple-code', 'custom-cmd', { cmd: "openFile" });
@@ -79,7 +110,8 @@ module.exports = {
 							// 添加组件
 							if (comp) {
 								// Editor.Ipc.sendToPanel('scene', 'scene:add-component', uuid, jsFileName); //添加不了脚本
-								node.addComponent(jsFileName);
+								comp = node.addComponent(jsFileName);
+								if(!old_uuid) old_uuid = comp.uuid;
 							}
 						}
 					}

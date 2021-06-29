@@ -68,56 +68,58 @@ module.exports = {
         }
     },
 
-    newFileAndBindNode(templePath) {
+    newFileAndBindNode(templePath,type,uuid) {
         if (templePath == null || !tools.isFileExit(templePath)) {
             console.log('新建脚本文件不存在');
             return;
         }
 
-        Editor.Scene.callSceneScript(
-            'simple-code',
-            'get-curr-scene-url-and-node',
-            this.parent.currCreatorEditorSelectInfo,
-            (err, args)=> {
-                if (args == null) {
+        Editor.Scene.callSceneScript('simple-code','get-curr-scene-url-and-node',{type,uuid},(err, args)=> {
+            if (args == null) {
+                return;
+            }
+
+            try {
+                let saveUrl = require(USER_NEW_FILE_RULE).getSavePath(
+                    templePath,
+                    args.url,
+                    args.currNodeName
+                );
+                if(!saveUrl || saveUrl == ''){
+                    // 返回空的保存路径不执行后续步骤
                     return;
                 }
 
-                try {
-                    let saveUrl = require(USER_NEW_FILE_RULE).getSavePath(
-                        templePath,
-                        args.url,
-                        args.currNodeName
-                    );
-                    let saveFspath = Editor.remote.assetdb.urlToFspath(saveUrl);
-                    tools.createDir(saveFspath);
-                    let info = this.parent.currCreatorEditorSelectInfo;
-                    args = { templePath, saveUrl, saveFspath };
-                    args.type = info.type;
-                    args.uuid = info.uuid;
-                    Editor.Scene.callSceneScript(
+                let saveFspath = Editor.remote.assetdb.urlToFspath(saveUrl);
+                tools.createDir(saveFspath);
+                args = { templePath, saveUrl, saveFspath };
+                args.type = type;
+                args.uuid = uuid;
+
+                Editor.Scene.callSceneScript('simple-code','new-js-file',args,(err, event) => {
+                    Editor.Ipc.sendToPanel(
                         'simple-code',
-                        'new-js-file',
-                        args,
-                        (err, event) => {
-                            Editor.Ipc.sendToPanel(
-                                'simple-code',
-                                'custom-cmd',
-                                { cmd: 'openFile' }
-                            );
-                        }
+                        'custom-cmd',
+                        { cmd: 'openFile' }
                     );
-                } catch (error) {
-                    Editor.error(
-                        tools.translateZhAndEn(
-                            '检测新建脚本规则是否填错:',
-                            'Check if new script rule is filled incorrectly:'
-                        ),
-                        error
-                    );
-                }
+                    
+                    if(require(USER_NEW_FILE_RULE).onComplete){
+                        setTimeout(()=>{
+                            require(USER_NEW_FILE_RULE).onComplete(saveUrl);
+                        },100)
+                    }
+                });
+
+            } catch (error) {
+                Editor.error(
+                    tools.translateZhAndEn(
+                        '检测新建脚本规则是否填错:',
+                        'Check if new script rule is filled incorrectly:'
+                    ),
+                    error
+                );
             }
-        );
+        });
     },
 
 
@@ -196,9 +198,9 @@ module.exports = {
 
     messages: {
         'new-js-file'() {
-            let filePath =
-                this.temples['define.' + this.parent.cfg.newFileType];
-            this.newFileAndBindNode(filePath);
+            let filePath = this.temples['define.' + this.parent.cfg.newFileType];
+            let info = Editor.Selection.curGlobalActivate()
+            this.newFileAndBindNode(filePath,info.type,info.id);
         },
 
         // 刷新模板
@@ -260,7 +262,7 @@ module.exports = {
             } else {
                 // 节点上创建
                 let templePath = this.temples[args.label];
-                this.newFileAndBindNode(templePath);
+                this.newFileAndBindNode(templePath,this.parent.currCreatorEditorSelectInfo.type,this.parent.currCreatorEditorSelectInfo.uuid);
             }
         },
 

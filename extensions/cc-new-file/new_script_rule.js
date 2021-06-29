@@ -19,4 +19,12 @@ module.exports = {
 		// db://assets/ 为项目根目录
 		return saveUrl;
 	},
+
+
+	/**
+	 * 创建完成回调
+	 */
+ 	onComplete(saveUrl){
+		//  console.log("创建脚本完成",saveUrl)
+	},
 };

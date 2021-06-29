@@ -130,24 +130,26 @@ module.exports = {
 		if(this.parent.file_info == null || this.parent.file_info.uuid != codeInfo.editInfo.uuid ){
 			return;
 		}
+		let info = Editor.Selection.curGlobalActivate();
 
-		let rootNodeUuid = this.currSelectInfo.type == 'node' && this.currSelectInfo.uuid ? this.currSelectInfo.uuid : null;
+		let rootNodeUuid = info.type == 'node' && info.id ? info.id : null;
 
 		//1.获得生成组件规则
 		Editor.Scene.callSceneScript('simple-code', 'getCustomWidgetRule',{rootNodeUuid,fileUuid: codeInfo.editInfo.uuid,url: codeInfo.editInfo.url}, (err, args) => { 
 			
 			// rules = [{symbolName:'',widgetType:'',componentUuid:''}]
 			let rules = args.rules;
-			if(rules.length == 0){
-				alert("生成拖拽组件失败,当前场景Nodes没有可解析的 node.name")
-				return;
-			}
+			// if(rules.length == 0){
+			// 	alert("生成拖拽组件失败,当前场景Nodes没有可解析的 node.name")
+			// 	return;
+			// }
 			if(this.parent.file_info.uuid != codeInfo.editInfo.uuid) {
 				return;
 			}
 
 			// 提供撤销
 			codeInfo.editInfo.vs_model.pushStackElement();
+			let oldCodeText = codeInfo.editInfo.vs_model.getValue();
 
 			for (let i = 0; i < rules.length; i++) 
 			{
@@ -155,13 +157,16 @@ module.exports = {
 				let widgetType = rule.widgetType;
 				let symbolName = rule.symbolName;
 				let nodeUuids  = [ rule.nodeUuid ];
-				if(symbolName.match(/[a-zA-Z_$][\w$]*/) == null){
-					Editor.info('生成拖拽组件:变量命名不符合规范:',symbolName);
-					continue;
+				if(!rule || !rule.disableGenerated)
+				{
+					if(symbolName.match(/[a-zA-Z_$][\w$]*/) == null){
+						Editor.info('生成拖拽组件:变量命名不符合规范:',symbolName);
+						continue;
+					}
+					// 2.插入成员变量文本
+					symbolName = this.insertTextToModel(widgetType,symbolName,codeInfo,false,rule);
 				}
 
-				// 2.插入成员变量文本
-				symbolName = this.insertTextToModel(widgetType,symbolName,codeInfo,false,rule);
 				setTimeout(()=>{
 					// 4.给成员变量赋值引用对象
 					this.insertWidgetInfo(args.bindNodeList,widgetType,symbolName,false,nodeUuids,false,rule);
@@ -169,7 +174,7 @@ module.exports = {
 			}
 
 			// 3.保存刷新creator生成变量拖拽组件
-			this.saveFile(codeInfo.editInfo.vs_model,rules);
+			this.saveFile(codeInfo.editInfo.vs_model,oldCodeText,rules);
 
 		});
 	},
@@ -196,6 +201,7 @@ module.exports = {
 
 			// 提供撤销
 			codeInfo.editInfo.vs_model.pushStackElement();
+			let oldCodeText = codeInfo.editInfo.vs_model.getValue();
 
 			for (let i = 0; i < symbolNames.length; i++) 
 			{
@@ -216,7 +222,7 @@ module.exports = {
 			}
 			
 			// 1.保存刷新creator生成变量拖拽组件
-			this.saveFile(codeInfo.editInfo.vs_model);
+			this.saveFile(codeInfo.editInfo.vs_model,oldCodeText);
 
 		});
 	},
@@ -248,11 +254,12 @@ module.exports = {
 
 			// 提供撤销
 			codeInfo.editInfo.vs_model.pushStackElement();
+			let oldCodeText = codeInfo.editInfo.vs_model.getValue();
 			// 插入成员变量文本 
 			symbolName = this.insertTextToModel(widgetType,symbolName,codeInfo,isArray);
 
 			// save
-			this.saveFile(codeInfo.editInfo.vs_model);
+			this.saveFile(codeInfo.editInfo.vs_model,oldCodeText);
 
 			setTimeout(()=>{
 				this.insertWidgetInfo(bindNodeList,widgetType,symbolName,isArray,insertUuids,isAssets);
@@ -282,7 +289,7 @@ module.exports = {
 		});
 	},
 
-	saveFile(model,rules){
+	saveFile(model,oldCodeText,rules){
 		// 加工代码块
 		let codeText = model.getValue();
 		try {
@@ -293,7 +300,9 @@ module.exports = {
 		model.setValue(codeText);
 
 		// 1.保存刷新creator生成变量拖拽组件
-		this.parent.saveFile(true,true);
+		if(oldCodeText === null || oldCodeText != codeText){
+			this.parent.saveFile(true,true);
+		}
 	},
 
 	// 面板销毁

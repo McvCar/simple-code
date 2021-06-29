@@ -56,6 +56,12 @@ let LoadAssetObj =
 let getSelectedComps = (args,callback) => 
 {
 	let rets = []
+	// 禁止生成拖拽变量
+	if(args.rule && args.rule.disableGenerated){
+		callback(rets);
+		return ;
+	}
+
 	let slsAssets = args.insertUuids && args.insertUuids.length ? args.insertUuids : Editor.Selection.curSelection(args.isAssets ? 'asset' : 'node');
 	if (args.isAssets) 
 	{
@@ -170,7 +176,7 @@ module.exports = {
 
 			let rules = []
 			try {
-				let rootNode = cc.find(args.rootNodeUuid) || cc.director.getScene()
+				let rootNode = args.rootNodeUuid != null && cc.engine.getInstanceById(args.rootNodeUuid) || cc.director.getScene()
 				rules = require(USER_NEW_VAR_RULE).getCustomWidgetRule(args.url,bindNodeList,rootNode);
 			}catch (error) {
 				Editor.error('生成自定义绑定规则配置出错: ',error)
@@ -228,11 +234,11 @@ module.exports = {
 									continue;
 								}
 								// 给脚本的成员变量赋值
-								if (scriptComp.hasOwnProperty(args.symbolName)) {
+								if (scriptComp.hasOwnProperty(args.symbolName) && sls_comps && sls_comps[0] != null) {
 									scriptComp[args.symbolName] = args.isArray ? sls_comps : sls_comps[0];
 								}
-								if(ruleCode.getCustomWidgetRule){
-									ruleCode.getCustomWidgetRule(scriptComp,args.widgetType,args.symbolName,args.isArray,args.insertUuids,args.isAssets,args.rule);
+								if(ruleCode.setComponentVar){
+									ruleCode.setComponentVar(scriptComp,args.widgetType,args.symbolName,args.isArray,args.insertUuids,args.isAssets,args.rule);
 								}
 							}
 							event.reply(null,true);

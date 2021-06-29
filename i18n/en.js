@@ -140,4 +140,5 @@ module.exports = {
     'new-script-bind':'New Script And Bind',
     'new-script-templet':'New Script',
 
+    'cc-goto-widget-event' : 'Goto Component Event'
 };

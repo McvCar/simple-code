@@ -1347,6 +1347,11 @@ define('vs/language/typescript/languageFeatures',["require", "exports", "./lib/l
                             edits = [];
                             for (_i = 0, renameLocations_1 = renameLocations; _i < renameLocations_1.length; _i++) {
                                 renameLocation = renameLocations_1[_i];
+                                // 修改: 修复重命名变量出错
+                                let model = monaco_editor_core_1.editor.getModel(monaco_editor_core_1.Uri.parse(renameLocation.fileName))
+                                if(!model || model.isDisposed()){
+                                    continue;
+                                }
                                 edits.push({
                                     resource: monaco_editor_core_1.Uri.parse(renameLocation.fileName),
                                     edit: {
