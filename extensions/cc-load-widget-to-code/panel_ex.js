@@ -28,6 +28,7 @@ module.exports = {
 	onLoad(parent){
 		// index.js 对象
 		this.parent = parent;
+		this.currSelectInfo = {}
 
 		// 首次使用拷贝模板到可写路径
 		if(!tools.isFileExit(USER_NEW_VAR_RULE)){
@@ -71,7 +72,7 @@ module.exports = {
 				let defineName = widgetType.indexOf('.') != -1 ? nodeInfos[0].name  : widgetType
 				this.loadSymbolName((name)=>
 				{
-					this.loadWidgetToCode(widgetType,name,codeInfo);
+					this.loadWidgetToCode(widgetType,name,codeInfo,insertUuids);
 				},defineName || '',codeInfo.symbols)
 			}
 		})
@@ -130,8 +131,10 @@ module.exports = {
 			return;
 		}
 
+		let rootNodeUuid = this.currSelectInfo.type == 'node' && this.currSelectInfo.uuid ? this.currSelectInfo.uuid : null;
+
 		//1.获得生成组件规则
-		Editor.Scene.callSceneScript('simple-code', 'getCustomWidgetRule',{fileUuid: codeInfo.editInfo.uuid,url: codeInfo.editInfo.url}, (err, args) => { 
+		Editor.Scene.callSceneScript('simple-code', 'getCustomWidgetRule',{rootNodeUuid,fileUuid: codeInfo.editInfo.uuid,url: codeInfo.editInfo.url}, (err, args) => { 
 			
 			// rules = [{symbolName:'',widgetType:'',componentUuid:''}]
 			let rules = args.rules;
@@ -161,7 +164,7 @@ module.exports = {
 				symbolName = this.insertTextToModel(widgetType,symbolName,codeInfo,false,rule);
 				setTimeout(()=>{
 					// 4.给成员变量赋值引用对象
-					this.insertWidgetInfo(args.bindNodeList,widgetType,symbolName,false,nodeUuids,false);
+					this.insertWidgetInfo(args.bindNodeList,widgetType,symbolName,false,nodeUuids,false,rule);
 				},100);
 			}
 
@@ -198,6 +201,7 @@ module.exports = {
 			{
 				let widgetType = widgetTypes[i];
 				let symbolName = symbolNames[i];
+				let uuids 	   = [insertUuids[i]];
 				if(!this.isNormalSymbolName(symbolName)){
 					alert('生成拖拽组件:变量命名不符合规范:'+symbolName);
 					continue;
@@ -207,7 +211,7 @@ module.exports = {
 				symbolName = this.insertTextToModel(widgetType,symbolName,codeInfo,false);
 				setTimeout(()=>{
 					// 2.添加引用
-					this.insertWidgetInfo(bindNodeList,widgetType,symbolName,false,insertUuids,isAssets);
+					this.insertWidgetInfo(bindNodeList,widgetType,symbolName,false,uuids,isAssets);
 				},100);
 			}
 			
@@ -264,8 +268,8 @@ module.exports = {
 		return true;
 	},
 
-	insertWidgetInfo(bindNodeList,widgetType,symbolName,isArray,insertUuids,isAssets){
-		let args = {bindNodeList,widgetType,symbolName,isArray,insertUuids,isAssets}
+	insertWidgetInfo(bindNodeList,widgetType,symbolName,isArray,insertUuids,isAssets,rule){
+		let args = {bindNodeList,widgetType,symbolName,isArray,insertUuids,isAssets,rule}
 		Editor.Scene.callSceneScript('simple-code', 'insertWidgetInfo',args, (err, isEnd) => { 
 			// console.log('生成完成.',isEnd)
 		});
@@ -566,7 +570,7 @@ module.exports = {
 
 	loadSymbolName(callback,defineName='',result=[])
 	{
-		// 打开场景转跳
+		// 要求输入变量名
 		let ps = {value:tools.translateZhAndEn('请输入变量名字','Please enter a variable name'),meta:'',score:0};
 		result.unshift(ps)
 		// 下拉框选中后操作事件
@@ -611,6 +615,69 @@ module.exports = {
 			this.insertWidgetAction(this.parent.cfg.isQuickDrag,'cc.Node',uuids);
 		}
 	},
+
+	/** 需要刷新creator右键菜单
+	 * @param type = node | asset 
+	 * */ 
+     onRefreshCreatorMenu(type,uuid){
+		this.updateMenu(type,uuid)
+	},
+
+	updateMenu(type,uuid){
+
+		// 当前选中的对象
+		this.currSelectInfo.type = type;
+		this.currSelectInfo.uuid = uuid;
+		 
+		this.getCurrEditorFileBindNodes(this.parent.file_info && this.parent.file_info.uuid, (bindNodeList)=>
+		{
+			if(type == 'asset'){
+
+				// 资源菜单
+				if(!uuid || !bindNodeList){
+					Editor.Ipc.sendToMain('simple-code:setMenuConfig',{id:"cc-widget-assets-to-code",menuCfg:undefined})
+				}else{
+					
+					let menuCfg = {
+						assetMenu : [
+							{ type: 'separator' },
+							{ label : tools.translate('quickly-drop-asset'), enabled:true, cmd: "quickInsertAssets"}, // 快速生成拖拽资源
+							{ label : tools.translate('drop-asset'), enabled:true, cmd: "insertAssets"},// 生成拖拽资源
+						],
+					}
+					Editor.Ipc.sendToMain('simple-code:setMenuConfig',{id:"cc-widget-assets-to-code",menuCfg:menuCfg})
+				}
+			}else if(type == 'node'){
+
+				// nodeTree菜单
+				if(!uuid || !bindNodeList){
+					// 清除菜单
+					Editor.Ipc.sendToMain('simple-code:setMenuConfig',{id:"cc-widget-comp-to-code",menuCfg:undefined})
+				}else
+				{
+					Editor.Scene.callSceneScript('simple-code', 'getNodeCompNames',uuid, (err, compNames) => { 
+
+						let submenu = [{ label: 'cc.Node', enabled: true, cmd:'insertWidgetByName'},];
+		
+						for (let i = 0; i < compNames.length; i++) {
+							const name = compNames[i];
+							let item = { label: name, enabled: true, cmd: "insertWidgetByName"};
+							submenu.push(item);
+						}
+		
+						let menuCfg = {
+							layerMenu : [
+								{ type: 'separator' },
+								{ label : tools.translate('quickly-drop-component'), enabled:true, cmd: "quickInsertWidget", }, // 快速生成拖拽组件
+								{ label : tools.translate('drop-component'), enabled:true, submenu:submenu, }, // 生成拖拽组件
+							],
+						}
+						Editor.Ipc.sendToMain('simple-code:setMenuConfig',{id:"cc-widget-comp-to-code",menuCfg:menuCfg})
+					});
+				}
+			}
+		})
+	},
 	
 	messages:{
 
@@ -633,14 +700,17 @@ module.exports = {
 		'insertWidgetByName'(e,args)
 		{
 			if(this.parent == null) return;
-			this.insertWidgetAction(false,args.label);
+			
+			let uuids = this.currSelectInfo.type == 'node' && this.currSelectInfo.uuid ? [this.currSelectInfo.uuid] : null;
+			this.insertWidgetAction(false,args.label,uuids);
 		},
 
 		// 快速添加组件
 		'quickInsertWidget'(e,args)
 		{
 			if(this.parent == null) return;
-			this.insertWidgetAction(true);
+			let uuids = this.currSelectInfo.type == 'node' && this.currSelectInfo.uuid ? [this.currSelectInfo.uuid] : null;
+			this.insertWidgetAction(true,null,uuids);
 		},
 
 
@@ -648,69 +718,20 @@ module.exports = {
 		'insertAssets'(e,args){
 			if(this.parent == null) return;
 
-			this.insertAssets(false)
+			let uuids = this.currSelectInfo.type == 'asset' && this.currSelectInfo.uuid ? [this.currSelectInfo.uuid] : null;
+			this.insertAssets(false,uuids)
 		},
 
 		// 快速添加资源
 		'quickInsertAssets'(e,args){
 			if(this.parent == null) return;
-			this.insertAssets(true)
+			let uuids = this.currSelectInfo.type == 'asset' && this.currSelectInfo.uuid ? [this.currSelectInfo.uuid] : null;
+			this.insertAssets(true,uuids)
 		},
 		 
 		'selection:activated'(){
 			if(this.parent == null) return;
 
-			this.getCurrEditorFileBindNodes(this.parent.file_info && this.parent.file_info.uuid, (bindNodeList)=>
-			{
-				let nodes = Editor.Selection.curSelection('node') || [];
-				let assets = Editor.Selection.curSelection('asset') || [];
-				let uuid = nodes[0];
-
-				// 资源菜单
-				if(assets.length == 0 || !bindNodeList){
-					Editor.Ipc.sendToMain('simple-code:setMenuConfig',{id:"cc-widget-assets-to-code",menuCfg:undefined})
-				}else{
-					
-					let menuCfg = {
-						assetMenu : [
-							{ type: 'separator' },
-							{ label : tools.translate('quickly-drop-asset'), enabled:true, cmd: "quickInsertAssets"}, // 快速生成拖拽资源
-							{ label : tools.translate('drop-asset'), enabled:true, cmd: "insertAssets"},// 生成拖拽资源
-						],
-					}
-					Editor.Ipc.sendToMain('simple-code:setMenuConfig',{id:"cc-widget-assets-to-code",menuCfg:menuCfg})
-				}
-
-				// nodeTree菜单
-				if(uuid == null || !bindNodeList){
-					// 清除菜单
-					Editor.Ipc.sendToMain('simple-code:setMenuConfig',{id:"cc-widget-comp-to-code",menuCfg:undefined})
-				}else
-				{
-					Editor.Scene.callSceneScript('simple-code', 'getNodeCompNames',uuid, (err, compNames) => { 
-
-						let submenu = [{ label: 'cc.Node', enabled: true, cmd:'insertWidgetByName'},];
-		
-						for (let i = 0; i < compNames.length; i++) {
-							const name = compNames[i];
-							let item = { label: name, enabled: true, cmd: "insertWidgetByName"};
-							submenu.push(item);
-						}
-		
-						let menuCfg = {
-							layerMenu : [
-								{ type: 'separator' },
-								{ label : tools.translate('quickly-drop-component'), enabled:true, cmd: "quickInsertWidget", }, // 快速生成拖拽组件
-								{ label : tools.translate('drop-component'), enabled:true, submenu:submenu, }, // 生成拖拽组件
-							],
-						}
-						this.menuCfg = menuCfg;
-						Editor.Ipc.sendToMain('simple-code:setMenuConfig',{id:"cc-widget-comp-to-code",menuCfg:menuCfg})
-					});
-				}
-			})
-
-			
 			
 		},
 	},

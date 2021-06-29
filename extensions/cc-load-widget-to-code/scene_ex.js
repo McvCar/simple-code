@@ -170,7 +170,8 @@ module.exports = {
 
 			let rules = []
 			try {
-				rules = require(USER_NEW_VAR_RULE).getCustomWidgetRule(args.url,bindNodeList,cc.director.getScene());
+				let rootNode = cc.find(args.rootNodeUuid) || cc.director.getScene()
+				rules = require(USER_NEW_VAR_RULE).getCustomWidgetRule(args.url,bindNodeList,rootNode);
 			}catch (error) {
 				Editor.error('生成自定义绑定规则配置出错: ',error)
 			}
@@ -212,6 +213,8 @@ module.exports = {
 						// sls_comps 获得选择的组件或资源
 						getSelectedComps(args,(sls_comps)=>
 						{
+							let ruleCode = require(USER_NEW_VAR_RULE)
+
 							for (let i = 0; i < args.bindNodeList.length; i++) {
 								const info = args.bindNodeList[i];
 								let scriptNode = cc.engine.getInstanceById(info.node_uuid)
@@ -227,6 +230,9 @@ module.exports = {
 								// 给脚本的成员变量赋值
 								if (scriptComp.hasOwnProperty(args.symbolName)) {
 									scriptComp[args.symbolName] = args.isArray ? sls_comps : sls_comps[0];
+								}
+								if(ruleCode.getCustomWidgetRule){
+									ruleCode.getCustomWidgetRule(scriptComp,args.widgetType,args.symbolName,args.isArray,args.insertUuids,args.isAssets,args.rule);
 								}
 							}
 							event.reply(null,true);

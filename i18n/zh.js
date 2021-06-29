@@ -113,7 +113,6 @@ module.exports = {
     'hideToolsBar': '隐藏工具栏',
     'isCheckUpdater': '自动检测更新',
     'isQuickDrag': '拖拽变量快速生成(使用文件名)',
-    'isQuickDrag': '拖拽变量快速生成(使用文件名)',
     'enabledFormatFromPrettier':'使用Prettier格式化',
 
     /**
@@ -132,10 +131,10 @@ module.exports = {
     'gettrs-setters-language': '仅支持TS脚本生成 getter 和 setter',
     'gettrs-settrs': '生成 getter 和 setter',
 
-    'quickly-drop-component':'快速生成拖拽组件',
-    'drop-component':'生成拖拽组件',
-    'quickly-drop-asset':'快速生成拖拽资源',
-    'drop-asset':'生成拖拽资源',
+    'quickly-drop-component':'快速绑定组件到脚本',
+    'drop-component':'绑定组件到脚本',
+    'quickly-drop-asset':'快速绑定资源到脚本',
+    'drop-asset':'绑定资源到脚本',
 
     'new-script-bind':'创建脚本绑定',
     'new-script-templet':'创建脚本',

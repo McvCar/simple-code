@@ -22,6 +22,7 @@ module.exports = {
     ready(parent) {
         // index.js 对象
         this.parent = parent;
+		this.currSelectInfo = {}
     },
 
     // monaco 编辑器初始化
@@ -76,8 +77,8 @@ module.exports = {
         Editor.Scene.callSceneScript(
             'simple-code',
             'get-curr-scene-url-and-node',
-            {},
-            function (err, args) {
+            this.parent.currCreatorEditorSelectInfo,
+            (err, args)=> {
                 if (args == null) {
                     return;
                 }
@@ -90,7 +91,10 @@ module.exports = {
                     );
                     let saveFspath = Editor.remote.assetdb.urlToFspath(saveUrl);
                     tools.createDir(saveFspath);
+                    let info = this.parent.currCreatorEditorSelectInfo;
                     args = { templePath, saveUrl, saveFspath };
+                    args.type = info.type;
+                    args.uuid = info.uuid;
                     Editor.Scene.callSceneScript(
                         'simple-code',
                         'new-js-file',
@@ -116,9 +120,17 @@ module.exports = {
         );
     },
 
-    updateMenu() {
-        let selectInfo = Editor.Selection.curGlobalActivate();
-        if (selectInfo == null || selectInfo.id == null) {
+
+	/** 需要刷新creator右键菜单
+	 * @param type = node | asset 
+	 * */ 
+     onRefreshCreatorMenu(type,uuid){
+		this.updateMenu(type,uuid)
+	},
+
+	updateMenu(type,uuid){
+
+        if (uuid == null) {
             // 清除菜单
             Editor.Ipc.sendToMain('simple-code:setMenuConfig', {
                 id: 'cc-new-file',
@@ -192,7 +204,8 @@ module.exports = {
         // 刷新模板
         'refresh-template'(e, args) {
             this.upTempletList();
-            this.updateMenu();
+            let selectInfo = this.parent.currCreatorEditorSelectInfo;
+            this.updateMenu(selectInfo.type,selectInfo.uuid);
         },
 
         // 自定模板
@@ -206,8 +219,8 @@ module.exports = {
         },
 
         'new-script-templet'(e, args) {
-            let selectInfo = Editor.Selection.curGlobalActivate();
-            if (selectInfo == null || selectInfo.id == null) {
+            let selectInfo = this.parent.currCreatorEditorSelectInfo;
+            if (selectInfo.uuid == null) {
                 return;
             }
 
@@ -215,7 +228,7 @@ module.exports = {
             if (selectInfo.type == 'asset') {
                 let templePath = this.temples[args.label];
                 let filePath = Editor.remote.assetdb.uuidToFspath(
-                    selectInfo.id
+                    selectInfo.uuid
                 );
 
                 let fspath = tools.isDirectory(filePath)
@@ -251,9 +264,5 @@ module.exports = {
             }
         },
 
-        'selection:activated'() {
-            if (this.parent == null) return;
-            this.updateMenu();
-        },
     },
 };

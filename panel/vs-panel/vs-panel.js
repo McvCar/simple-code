@@ -115,6 +115,8 @@ let layer = {
 		this.file_list_map 	  = {};
 		// ipc event
 		this.listenIpcList	  = []
+		// creator编辑资源选择信息
+		this.currCreatorEditorSelectInfo = {}
 		// 读取配置文件
 		this.$title0.style.display = 'none';
 		this.timer_map 			= {};
@@ -180,7 +182,6 @@ let layer = {
 				this.styleSheet.insertRule(name +' '+ infoText,0)
 				break;
 			}
-			
 		}
 	},
 
@@ -313,6 +314,28 @@ let layer = {
 		this.$editorB.addEventListener('dragleave',(e)=>{
 			this.$dropBg.style.display = "none";
 		},false);
+		
+		this.addListenerIpc('selection:hoverin',(e,type,uuid)=>{
+			this.onEditorSelectionHoverin(type,uuid);
+		})
+
+		// 鼠标右键nodeTree|asset
+		this.addListenerIpc('selection:context',(e,type,uuid)=>{
+			if(uuid == null){
+				let curSls = Editor.Selection.curGlobalActivate()
+				if(curSls && curSls.id != null){
+					return; // 下面函数 selection:activated 继续调用
+				}
+			}
+			this.onEditorSelection(type,uuid);
+		})
+
+		// 鼠标左键选中、取消
+		this.addListenerIpc('selection:activated',(e,type,uuid)=>{
+			this.onEditorSelection(type,uuid);
+		})
+
+		
 		
 		
 		// 记录鼠标位置，用于菜单位置
@@ -696,6 +719,32 @@ let layer = {
 				obj[funcName](...args);
 			}
 		})
+	},
+
+	/**鼠标左或右点击节点树或资源目录时触发
+	 * @param type = node | asset 
+	 * */ 
+	onEditorSelection(type,uuid){
+		this.onRefreshCreatorMenu(type,uuid);
+		this.runExtendFunc('onEditorSelection',type,uuid);
+	},
+
+	
+	/**鼠标移动经过节点树或资源目录时触发
+	 * @param type = node | asset 
+	 * */ 
+	 onEditorSelectionHoverin(type,uuid){
+		this.onRefreshCreatorMenu(type,uuid);
+		this.runExtendFunc('onEditorSelectionHoverin',type,uuid)
+	},
+
+	/** 需要刷新creator右键菜单
+	 * @param type = node | asset 
+	 * */ 
+	 onRefreshCreatorMenu(type,uuid){
+		this.currCreatorEditorSelectInfo.type = type;
+		this.currCreatorEditorSelectInfo.uuid = uuid;
+		this.runExtendFunc('onRefreshCreatorMenu',type,uuid)
 	},
 
 	/**

@@ -8,8 +8,39 @@
 module.exports = {
 	
 	/**
+	 * 第4阶段
+	 * @description 最后给脚本组件成员变量赋值
+	 * @param {cc.Component} scriptComp - 当前编辑中的脚本组件对象, scriptComp.onLoad 
+	 * @param {string} widgetType - 要修改的成员变量类型,widgetType = cc.Node
+	 * @param {string} symbolName - 要修改的成员变量,symbolName = 'name'
+	 * @param {boolean} isArray - 数据是否数组类型
+	 * @param {Array} insertUuids - 插入的uuid, isAssets是节点情况下该值为节点的uuids,否则为资源文件的uuids; insertUuids = ['xxxx-xxx-xx']
+	 * @param {boolean} isAssets - 是资源费否则是节点
+	 * @param {object} rule - 第1阶段解析的参数, rule = {symbolName:'',widgetType:'',nodeUuid:'',args:['@','Sprite','name']} || null
+	 * @returns 
+	 */
+	 setComponentVar(scriptComp,widgetType,symbolName,isArray,insertUuids,isAssets,rule){
+		// 使用例子 :
+
+		// if(isAssets || isArray || !insertUuids || !scriptComp.hasOwnProperty(symbolName)){
+		// 	return
+		// }
+		// // 获得需要解析的node对象
+		// let nodeUuid = insertUuids[0];
+		// let node 	 = cc.engine.getInstanceById(nodeUuid);
+		// if(!node){
+		// 	return;
+		// }
+		// // 给脚本的成员赋值完成绑定组件
+		// let comp = widgetType == 'cc.Node' ? node : node.getComponent(widgetType);
+		// if(comp){
+		// 	scriptComp[symbolName] = comp;
+		// }
+	},
+
+	/**
 	 * 第3阶段
-	 * @description 做最后的代码加工处理, 比如添加按钮回调函数之类的, 这里靠你想象了
+	 * @description 代码文本加工处理, 比如添加按钮回调函数之类的, 这里靠你想象了
 	 * @param {string} codeText - 代码的内容
 	 * @param {string} fileUrl - 当前脚本路径, fileUrl = 'db://assets/scene/file.js'
 	 * @param {Array} compRuleList - 生成代码规则列表,compRuleList = [ {symbolName:'',widgetType:'',nodeUuid:'',args:['@','Sprite','name']} ]
@@ -64,7 +95,7 @@ module.exports = {
 
 	/**
 	 * 第1阶段
-	 * @description 生成自定义绑定规则，根据 node.name 解析组件的绑定规则 ( Alt+Shift+C 时才调用这里 )
+	 * @description 生成自定义绑定规则，根据 node.name 解析组件的绑定规则 ( Clrl+Shift+E 时才调用这里 )
 	 * @param {cc.Node} node - 场景上的 node
 	 * @returns {Array} 返回生成 成员变量规则 = {symbolName:'',widgetType:'',nodeUuid:'',args:['@','Sprite','name']}
 	 */
@@ -119,14 +150,14 @@ module.exports = {
 	 * @description 获取绑定组件与代码的规则 (一般这里不需要修改)
 	 * @param {string} fileUrl - 当前脚本的文件路径 db://assets/scene/file.js
 	 * @param {array} bindNodeList - 与当前脚本绑定的Node们
-	 * @param {cc.Node} scene - 当前场景 Root Node
+	 * @param {cc.Node} rootNode - 当前选中的Node或场景 Root Node
 	 * @returns {Array} - 返回生成变量规则 compRuleList = [{symbolName:'',widgetType:'',nodeUuid:'',args:['@','Sprite','name']}]
 	 */
-	getCustomWidgetRule(fileUrl,bindNodeList,scene){
+	getCustomWidgetRule(fileUrl,bindNodeList,rootNode){
 
 		// 遍历整个场景的 node
 		let compRuleList = []
-		getNodeChildren(scene,(node)=>
+		getNodeChildren(rootNode,(node)=>
 		{
 			let compRule = this.getNodeWidgetRule(node);
 			if(compRule){

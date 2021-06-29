@@ -19,11 +19,10 @@ module.exports = {
 	/*************  事件 *************/
 	messages:
 	{
-		'get-curr-scene-url-and-node': function (event,args,parent) {
-			let head_node = Editor.Selection.curSelection('node')[0];
-			let activeInfo = Editor.Selection.curGlobalActivate();
-			let node = parent.findNode(head_node);
-			if (!node || activeInfo.type != "node") {
+		'get-curr-scene-url-and-node': function (event,args,parent) 
+		{
+			let node = args.uuid && parent.findNode(args.uuid);
+			if (!node || args.type != "node") {
 				Editor.info("该功能需要您选中一个节点后再执行才能创建脚本与绑定节点")
 				event.reply(null);
 				return
@@ -36,11 +35,10 @@ module.exports = {
 
 
 		'new-js-file': function (event, args,parent) {
-			let head_node = Editor.Selection.curSelection('node')[0];
-			let node = parent.findNode(head_node);
-			let activeInfo = Editor.Selection.curGlobalActivate();
 
-			if (!node || activeInfo.type != "node") {
+			let node = args.uuid && parent.findNode(args.uuid);
+
+			if (!node || args.type != "node") {
 				Editor.info("该功能需要您选中一个节点后再执行才能创建脚本与绑定节点")
 				event.reply(null, {});
 				return
