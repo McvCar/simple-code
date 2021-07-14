@@ -96,8 +96,9 @@ module.exports = {
 		vsLoader.require(['vs/editor/editor.main'], () => 
 		{
 			let monaco = this.monaco = Editor.monaco || monaco;
-			config.vsEditorConfig.language = 'javascript';  // 预热 javascript模块
+			config.vsEditorConfig.language = 'typescript';  // 预热 javascript模块
 			config.vsEditorConfig.value = ``
+			// this.tsWr.setEnableUpdateScript(true);
 			var editor = monaco.editor.create(this.editorBox,config.vsEditorConfig);
 			window.cmd_editor = this.cmd_editor = editor;
 			editor.updateOptions({
@@ -173,7 +174,7 @@ module.exports = {
 		// 	return null;
 		// }
 		//Register the custom completion function into Monaco Editor    
-		this.monaco.languages.registerCompletionItemProvider('javascript',obj );
+		this.monaco.languages.registerCompletionItemProvider('typescript',obj );
 	},
 
 	newItem(findObj,suggestions)
@@ -199,7 +200,7 @@ module.exports = {
 		if(obj!=null) this.loadObjectProperty(obj,suggestions);
 	},
 
-	loadObjectProperty(obj,suggestions,isLoadmeta=true){
+	loadObjectProperty(obj,suggestions,isLoadmeta=false){
 
 		try {
 			// 取成员

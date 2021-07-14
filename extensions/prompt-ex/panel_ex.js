@@ -263,73 +263,54 @@ module.exports = {
 	// 全局搜索的数据	
 	findAllMatches (searchText) {
 		let result = []
-		if (searchText) {
-			//注意如果你一个model都没有注册的话，这里什么都拿不到
-			//举个例子啊，下面将一个路径为filePath，语言为lang，文件内容为fileContent的本地文件注册为model
-			//monaco.editor.createModel(fileContent, lang, monaco.Uri.file(filePath))
-			let model = this.parent.monaco.editor.getModel('inmemory://model/1')
-			if(!model) model = this.parent.monaco.editor.createModel('','markdown',this.parent.monaco.Uri.parse('inmemory://model/1'))
+		if (!searchText) {
+			return result;
+		}
+		//注意如果你一个model都没有注册的话，这里什么都拿不到
+		//举个例子啊，下面将一个路径为filePath，语言为lang，文件内容为fileContent的本地文件注册为model
+		//monaco.editor.createModel(fileContent, lang, monaco.Uri.file(filePath))
+		let find_model = this.parent.monaco.editor.getModel('inmemory://model/1')
+		if(!find_model) find_model = this.parent.monaco.editor.createModel('','markdown',this.parent.monaco.Uri.parse('inmemory://model/1'))
+		
+		for (const fsPath in this.parent.file_list_map) 
+		{
+			const item = this.parent.file_list_map[fsPath];
+			if(item.data == null){
+				continue;
+			}
+			let file_name  =  fsPath.substr(fsPath.lastIndexOf('/'))
+			if(file_name.indexOf('.d.ts') != -1) continue;
 			
-			for (const fsPath in this.parent.file_list_map) 
-			{
-				const item = this.parent.file_list_map[fsPath];
-				if(item.data){
-					let file_name  =  fsPath.substr(fsPath.lastIndexOf('/'))
-					if(file_name.indexOf('.d.ts') != -1) continue;
-					model.setValueNotUndo(item.data)
-
-					for (let match of model.findMatches(searchText)) 
-					{
-						let text = model.getLineContent(match.range.startLineNumber);
-
-						for (let i = 0; i < text.length; i++) 
-						{
-							const c = text[i];
-							if(c!=" " && c!="	"){
-								text = text.substr(i);		
-								break;
-							}
-						}
-						result.push({
-							meta : text,
-							uri : Editor.monaco.Uri.parse(fsPath),
-							fsPath:fsPath,
-							value: file_name,
-							range: match.range,
-							score:0,
-						})
-					}
-				}
+			let uri = Editor.monaco.Uri.parse(this.parent.fileMgr.fsPathToModelUrl(fsPath))
+			let model = Editor.monaco.editor.getModel(uri);
+			let codeText = item.data;
+			if(model){
+				codeText = model.getValue();
 			}
-			for (let i = 0; i < this.parent.file_list_buffer.length; i++) {
-				
-			}
-			this.parent.monaco.editor.getModels().forEach(model => 
-			{
-				let file_name  =  model.uri.path.substr(model.uri.path.lastIndexOf('/'))
+			
+			find_model.setValueNotUndo(codeText)
 
-				for (let match of model.findMatches(searchText)) 
+			for (let match of find_model.findMatches(searchText)) 
+			{
+				let text = find_model.getLineContent(match.range.startLineNumber);
+
+				for (let i = 0; i < text.length; i++) 
 				{
-					let text = model.getLineContent(match.range.startLineNumber);
-
-					for (let i = 0; i < text.length; i++) 
-					{
-						const c = text[i];
-						if(c!=" " && c!="	"){
-							text = text.substr(i);		
-							break;
-						}
+					const c = text[i];
+					if(c!=" " && c!="	"){
+						text = text.substr(i);		
+						break;
 					}
-					result.push({
-						meta : text,
-						uri : model.uri,
-						value: file_name,
-						range: match.range,
-						score:0,
-						model: model
-					})
 				}
-			})
+				result.push({
+					meta : text,
+					uri : uri,
+					fsPath:fsPath,
+					value: file_name,
+					range: match.range,
+					score:0,
+				})
+			}
 		}
 		return result
 	},

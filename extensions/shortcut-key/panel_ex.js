@@ -78,14 +78,21 @@ module.exports = {
 			this.parent.setLockEdit(!this.parent.file_info.is_lock)
 		},1)
 
-		// 命令行模式切换
-		this.parent.addKeybodyEventByName('cmdMode',(e)=>
+			
+		// 字体变大
+		this.parent.addKeybodyEventByName('fontBigger',(e)=>
 		{
 			e.preventDefault();// 吞噬捕获事件
-			this.parent.setCmdMode(!this.parent.cfg.is_cmd_mode)
+			this.parent.setOptions({fontSize : this.parent.vs_editor.getRawOptions().fontSize+0.5})
 		},1)
 
-			
+		// 字体变小
+		this.parent.addKeybodyEventByName('fontSmall',(e)=>
+		{
+			e.preventDefault();// 吞噬捕获事件
+			this.parent.setOptions({fontSize : this.parent.vs_editor.getRawOptions().fontSize-0.5})
+		},1)
+
 		for (let i = 0; i < 10; i++) {
 			// 绑定页面全局快捷键事件,注意: 区分大小写 Ctrl = ctrl
 			this.parent.addKeybodyEvent([[Editor.isWin32 ? "Alt" : "Meta",String(i)]],(e)=>

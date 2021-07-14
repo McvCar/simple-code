@@ -11,14 +11,16 @@ module.exports = {
 	'prevView' : { win32:[["Ctrl", "Alt", "j"], ["Ctrl", "Alt", "ArrowLeft"], ["Ctrl", "PageUp"]] , mac:[["Meta", "Alt", "j"], ["Meta", "Alt", "ArrowLeft"], ["Alt", "Shift", "Tab"]] },  
 	// 跳到下一个tab窗口 
 	'nextView' : { win32:[["Ctrl", "Alt", "l"], ["Ctrl", "Alt", "ArrowRight"], ["Ctrl", "PageDown"]] , mac:[["Meta", "Alt", "l"], ["Meta", "Alt", "ArrowRight"], ["Alt", "Tab"]] },  
+	// 缩小字体
+	'fontSmall' : { win32:[["Ctrl",'-']] , mac:[["Meta",'-']] },  
+	// 增大字体
+	'fontBigger' : { win32:[["Ctrl",'=']] , mac:[["Meta",'=']] },  
 	// 执行命令行代码 Execute command line code
 	// 'execCode' : { win32:[["Alt","e"],["Ctrl","e"]] , mac:[["Meta",'e']] }, 
 	// 执行整个场景代码(不推荐使用,已不维护) Execute the entire scenario code (not recommended, no longer maintained)
 	// 'execCodeByScene' : { win32:[["Alt","Shift","e"]] , mac:[["Meta","Shift","e"]] },   
 	// 锁定tab
 	'lockView' : { win32:[["F1"]] , mac:[["F1"]] },  
-	// 进入、退出命令模式
-	'cmdMode' : { win32:[["F2"]] , mac:[["F2"]] },  
 	// 记录当前场景 node tree 选中状态
 	'setNodeTreeTag' : { win32:[["Alt",'`']] , mac:[["Alt",'Dead']] },  
 	// node tree 选中状态恢复到标记的状态

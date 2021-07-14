@@ -14,6 +14,7 @@ class FileMgr{
 	constructor(parent){
 		this.parent = parent;
 		this.importPathBuffer = {};
+		this.waitReadModels = {};
     }
 
 	// 更新游戏项目文件列表缓存
@@ -198,7 +199,7 @@ class FileMgr{
 	// 加载import引用路径上的文件
 	loadNeedImportPaths(needImportPaths,isTs)
 	{
-		let isHasImport = false
+		let importCompletePath
 		let loadFunc = (tryPath,isCompareName,isFromSystemRead)=>
 		{
 			tryPath = tryPath.substr(0,7) == 'file://' ? tryPath.substr(7) : tryPath; // 去掉前缀
@@ -255,21 +256,27 @@ class FileMgr{
 			let isOutside = fileItem.uuid == "outside";
 			let filePath = fileItem.meta;
 			let vs_model = isOutside ? this.getModelByFsPath(filePath) : this.getModelByUrl(filePath);
-			if(vs_model && vs_model.getValue() != ''){
+			importCompletePath = filePath;
+			if(this.waitReadModels[filePath] || vs_model && vs_model.getValue() != ''){
 				return 0; // 已经存在缓存，不再继续读取
 			}
 
+			this.waitReadModels[filePath] = true;
+			// 性能优化: 关闭刷新代码缓存，等需要加载的文件都加载完后再刷新
+			this.parent.setEnableUpdateTs(false)
 			// 2.加载文件
-			this.parent.loadVsModel(filePath, this.getUriInfo(filePath).extname , !isOutside)
-			// console.log("加载import:",filePath);
-			isHasImport = true;
+			this.parent.loadVsModeAsyn(filePath, path.extname(filePath) , !isOutside,false,(model)=>{
+				delete this.waitReadModels[filePath]; // 读取完成
+			})
+			console.log("加载import:",filePath);
 			return 0;
 		}
 
 		for (const importPath in needImportPaths) 
 		{
-			// 告诉解析器这边已经处理此路径了
+			// 告诉解析器已经处理此路径
 			this.parent.tsWr.removeNeedImportPath(importPath)
+			console.log('尝试加载:',importPath)
 			if(this.importPathBuffer[importPath]){
 				continue ;// 已经尝试加载过
 			}
@@ -320,13 +327,8 @@ class FileMgr{
 			}
 		}
 
-		if(isHasImport){
-			// 刷新编译
-			this.parent.setTimeoutById(()=>{
-				this.importPathBuffer = {};
-				this.parent.upCompCodeFile()
-			},3000,'loadNeedImportPaths')
-		}
+		// 被加载的路径
+		return importCompletePath;
 	}
 
 	// 项目资源文件发生改变
@@ -367,7 +369,12 @@ class FileMgr{
 				this.parent.loadAssetAndCompleter(item.meta, item.extname,!isOutside);
 			}
 		})
-		this.parent.upCompCodeFile();
+		
+		// 刷新编译
+		this.parent.setTimeoutById(()=>{
+			this.importPathBuffer = {};
+			this.parent.upCompCodeFile()
+		},500,'loadNeedImportPaths');
 	}
 
 	// 项目文件被删除
@@ -431,7 +438,11 @@ class FileMgr{
 
 		})
 
-		this.parent.upCompCodeFile();
+		// 刷新编译
+		this.parent.setTimeoutById(()=>{
+			this.importPathBuffer = {};
+			this.parent.upCompCodeFile();
+		},500,'loadNeedImportPaths');
 	}
 
 	assetsMovedEvent(files)
@@ -462,6 +473,7 @@ class FileMgr{
 			}
 			this.onMoveFile(v);
 		});
+
 	}
 
 	// 移动 ts/js代码文件
@@ -470,6 +482,7 @@ class FileMgr{
 		// 刷新编辑信息
 		let urlI = this.getUriInfo(v.url)
 		let id = this.parent.getTabIdByPath(Editor.remote.assetdb.fspathToUrl(v.srcPath));
+		let hasMoveCodeFile = false;
 		// 正在编辑的tab
 		if (id != null)
 		{
@@ -495,6 +508,7 @@ class FileMgr{
 					}
 				}
 				this.parent.upTitle(editInfo.id)
+				hasMoveCodeFile = true;
 			}
 		}else{
 			// 修改缓存
@@ -504,7 +518,16 @@ class FileMgr{
 				vs_model.dispose()
 				let model = this.parent.loadVsModel(v.url,urlI.extname,true,false)
 				model.setValue(text);
+				hasMoveCodeFile = true;
 			}
+		}
+
+		if(hasMoveCodeFile){
+			// 刷新编译
+			this.parent.setTimeoutById(()=>{
+				this.importPathBuffer = {};
+				this.parent.upCompCodeFile();
+			},500,'loadNeedImportPaths');
 		}
 	}
 

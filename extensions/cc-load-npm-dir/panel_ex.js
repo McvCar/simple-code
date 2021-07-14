@@ -10,7 +10,7 @@ var watch = Editor.require('packages://simple-code/node_modules/watch');
 
 const prsPath 			= Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
 const node_modules_path = path.join(prsPath,'node_modules');
-
+const REG_EXP_MULTILAYER = /node_modules/g
 
 module.exports = {
 
@@ -20,7 +20,6 @@ module.exports = {
 		this.parent = parent; 
 
 	},
-
 	
 	// 设置选项
 	setOptions(cfg,isInit) 
@@ -57,7 +56,7 @@ module.exports = {
 				let c_files = []
 				for (let filePath in f) {
 					const state = f[filePath];
-					if(state.isFile()){
+					if(state.isFile() && !this.isMultilayerNodeModuleDir(filePath)){
 						
 						filePath = filePath.replace(/\\/g,'/');
 						c_files.push({
@@ -95,26 +94,31 @@ module.exports = {
 			
 		})
 	},
+	
+	// 多层 node_modules 目录
+	isMultilayerNodeModuleDir(filePath){
+		return filePath.match(REG_EXP_MULTILAYER).length>1;
+	},
 
 	isNodeModuleDir(path){
 		return path && path.indexOf(node_modules_path) != -1;
 	},
 
 	addNodeModuleDir(dirPath){
-		if(!fe.isDirectory(dirPath)){
+		if(!fe.isDirectory(dirPath) || this.isMultilayerNodeModuleDir(dirPath)){
 			return
 		}
 		let files = fe.getDirAllFiles(dirPath,[]);
 		let c_files = []
 		for (let i = 0; i < files.length; i++) 
 		{
-			let path = files[i];
-			if(path.indexOf('.DS_Store') != -1){
+			let filePath = files[i];
+			if(filePath.indexOf('.DS_Store') != -1){
 				continue;
 			}
-			path = path.replace(/\\/g,'/');
+			filePath = filePath.replace(/\\/g,'/');
 			c_files.push({
-				url : path,
+				url : filePath,
 				uuid: 'outside'
 			})
 		}
@@ -124,18 +128,21 @@ module.exports = {
 	},
 	
 	// 新增文件
-	addNodeModuleFile(path){
-		// if(!this.isNodeModuleDir(path)) return;
-		path = path.replace(/\\/g,'/');
+	addNodeModuleFile(filePath){
+		if(this.isMultilayerNodeModuleDir(filePath)){
+			return;
+		}
+		// if(!this.isNodeModuleDir(filePath)) return;
+		filePath = filePath.replace(/\\/g,'/');
 
 		let info = [{
-			url : path,
+			url : filePath,
 			uuid: 'outside'
 		}];
 
 		for (let i = 0; i < this.parent.file_list_buffer.length; i++) {
 			let item = this.parent.file_list_buffer[i];
-			if (path == item.meta ) {
+			if (filePath == item.meta ) {
 				return; // 已经存在文件
 			}
 		}
@@ -143,12 +150,15 @@ module.exports = {
 	},
 
 	// 改变文件
-	changeNodeModuleFile(path){
-		// if(!this.isNodeModuleDir(path)) return;
-		path = path.replace(/\\/g,'/');
+	changeNodeModuleFile(filePath){
+		if(this.isMultilayerNodeModuleDir(filePath)){
+			return;
+		}
+		// if(!this.isNodeModuleDir(filePath)) return;
+		filePath = filePath.replace(/\\/g,'/');
 
 		let info = {
-			url : path,
+			url : filePath,
 			uuid: 'outside'
 		};
 		this.parent.messages['asset-db:asset-changed'].bind(this.parent)(0,info)
@@ -156,6 +166,9 @@ module.exports = {
 
 	// 移除文件
 	unlinkNodeModuleDir(path){
+		if(this.isMultilayerNodeModuleDir(filePath)){
+			return;
+		}
 		// if(!this.isNodeModuleDir(path)) return;
 		path = path.replace(/\\/g,'/');
 		let removeFiles = []
@@ -176,7 +189,10 @@ module.exports = {
 	},
 
 	// 移除文件
-	unlinkNodeModuleFile(path){
+	unlinkNodeModuleFile(filePath){
+		if(this.isMultilayerNodeModuleDir(filePath)){
+			return;
+		}
 		// if(!this.isNodeModuleDir(path)) return;
 		path = path.replace(/\\/g,'/');
 

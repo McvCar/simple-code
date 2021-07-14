@@ -4,8 +4,11 @@ let packageCfg = require("../package.json")
 var http 		= require('http');
 var querystring = require('querystring');
 
-let checkFsPath = new RegExp("\\.\\./", "g");
 const inputType = { "text": 1, "password": 1, "number": 1, "date": 1, "color": 1, "range": 1, "month": 1, "week": 1, "time": 1, "email": 1, "search": 1, "url": 1, "textarea": 1 }
+let checkFsPath = new RegExp("\\.\\./", "g");
+let readFileQueue = []
+let readFileMaxCount = 50
+let readFileCount = 0
 
 module.exports = {
 
@@ -45,6 +48,20 @@ module.exports = {
 
 	translateZhAndEn(zeText,enText){
 		return this.getLanguage() == 'zh' ? zeText : enText;
+	},
+
+	// 翻译中英文
+	T(zeText,enText){
+		return this.translateZhAndEn(zeText,enText);
+	},
+
+	isEmptyObject(obj){
+		if(obj){
+			for (const key in obj) {
+				return false
+			}
+		}
+		return true;
 	},
 
 	// 拷贝本对象方法到目标对象
@@ -172,6 +189,41 @@ module.exports = {
 
 	normPath(filePath) {
 		return filePath.replace(/\\/g, '/');
+	},
+
+	// 异步读取文件
+	readFileAsyn(filePath,callback)
+	{
+		let args = {filePath,callback};
+		readFileQueue.push(args)
+		// 最多同时读取50个文件
+		readFileCount++;
+		if(readFileCount >= readFileMaxCount){
+			// console.log("readFileAsyn:读取超出最大文件数量",readFileCount);
+			return;
+		}
+		this._handleReadFileQueue()
+	},
+	
+	// 处理 readFileAsyn 队列
+	_handleReadFileQueue(){
+		// 1 == Math.min(50,1)
+		let len = Math.min( readFileMaxCount , readFileQueue.length );
+		for (let i = 0; i < len; i++) {
+			// 处理队列
+			let args = readFileQueue.splice(0,1)[0];
+			fs.readFile(args.filePath,(err,data)=>
+			{
+				readFileCount--
+				console.log("readFileAsyn已处理:",readFileCount,args.filePath);
+				this._handleReadFileQueue()
+				try {
+					args.callback(err,data);
+				} catch (error) {
+					console.log(error)
+				}
+			})
+		}
 	},
 
 	copyFile(sourcePath, toPath) {
@@ -435,6 +487,7 @@ module.exports = {
 		}
 		return { name, extname, url }
 	},
+
 
 	httpPost(ip,path,port,args,callback){
 		var options = {

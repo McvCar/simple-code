@@ -1784,6 +1784,7 @@ var AMDLoader;
     DefineFunc.amd = {
         jQuery: true
     };
+
     var _requireFunc_config = function (params, shouldOverwrite) {
         if (shouldOverwrite === void 0) { shouldOverwrite = false; }
         moduleManager.configure(params, shouldOverwrite);
@@ -7563,7 +7564,7 @@ define(__m[12/*vs/base/common/uri*/], __M([0/*require*/,1/*exports*/,3/*vs/base/
          *
          * @param skipEncoding Do not encode the result, default is `false`
          */
-        toString(skipEncoding = false) {
+        toString(skipEncoding = true) {
             return _asFormatted(this, skipEncoding);
         }
         toJSON() {
@@ -7599,17 +7600,18 @@ define(__m[12/*vs/base/common/uri*/], __M([0/*require*/,1/*exports*/,3/*vs/base/
             }
             return this._fsPath;
         }
-        toString(skipEncoding = false) {
-            if (!skipEncoding) {
+        toString(skipEncoding = true) {
+            // 修改:去掉@转换%40路径
+            // if (!skipEncoding) {
                 if (!this._formatted) {
-                    this._formatted = _asFormatted(this, false);
+                    this._formatted = _asFormatted(this, true);
                 }
                 return this._formatted;
-            }
-            else {
-                // we don't cache that
-                return _asFormatted(this, true);
-            }
+            // }
+            // else {
+            //     // we don't cache that
+            //     return _asFormatted(this, true);
+            // }
         }
         toJSON() {
             const res = {
@@ -11069,7 +11071,10 @@ define(__m[34/*vs/editor/common/services/editorSimpleWorker*/], __M([0/*require*
         _getModel(uri) {
             return this._models[uri];
         }
-        _getModels() {
+        _getModels(isClone = true) {
+            if(!isClone){
+                return this._models;
+            }
             let all = [];
             Object.keys(this._models).forEach((key) => all.push(this._models[key]));
             return all;
@@ -11293,8 +11298,8 @@ define(__m[34/*vs/editor/common/services/editorSimpleWorker*/], __M([0/*require*
             const foreignHost = types.createProxyObject(foreignHostMethods, proxyMethodRequest);
             let ctx = {
                 host: foreignHost,
-                getMirrorModels: () => {
-                    return this._getModels();
+                getMirrorModels: (isClone = true) => {
+                    return this._getModels(isClone);
                 }
             };
             if (this._foreignModuleFactory) {

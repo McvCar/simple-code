@@ -176,7 +176,8 @@ module.exports =
 	
 	'openConfig'(){
 		// 打开配置
-		Editor.Ipc.sendToPanel('simple-code', 'open-code-file',Editor.url("packages://simple-code/config.js"));
+		const config 	= Editor.require('packages://simple-code/config.js');
+		Editor.Ipc.sendToPanel('simple-code', 'open-code-file',config.getUserConfigPath(Editor.url('packages://simple-code/editor_config.js')));
 	},
 	
 	'openKeyMap'(){

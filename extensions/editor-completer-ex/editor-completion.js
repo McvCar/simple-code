@@ -293,6 +293,7 @@ class ImportCompletion
                             this.editor._commandService.executeCommand('editor.action.triggerSuggest')
                         },100)
                     }
+                    break;
                 }
             }
         })

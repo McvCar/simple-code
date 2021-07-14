@@ -31,6 +31,13 @@ module.exports = {
 		formatOnPaste: true,
 		detectIndentation: true,        // 自动检测缩进格式
 		colorDecorators:true, 			// 代码块 #00000 cc.Color 颜色显示
+		minimap:{						// 代码预览层
+			// size: 'fit',// | 'fill' | 'fit',
+			showSlider:'always',
+			// maxColumn:35,
+			// scale:3,
+			// side: 'left',
+		},
 		// glyphMargin: true,				// 断点显示区域
 		// cursorSmoothCaretAnimation:true,
 		/**
@@ -816,10 +823,26 @@ module.exports = {
 					{ caption: "VSCode", value: "ace/keyboard/vscode" }
 				]
 			},
-			"enabledMinimap": {
+			"minimapStyle": {
 				// 显示代码预览
-				path: "enabledMinimap",
-				defaultValue: true,
+				path: "minimapStyle",
+				type: "buttonBar",
+				defaultValue: "default",
+				items: [
+					{ caption: tools.T('隐藏','Hide'), value: "hide" },
+					{ caption: tools.T('默认','Default'), value: "default" },
+					{ caption: tools.T('细腻','Exquisite'), value: "exquisite" },
+				]
+			},
+			"minimapSide": {
+				// 显示代码预览
+				path: "minimapSide",
+				type: "buttonBar",
+				defaultValue: "right",
+				items: [
+					{ caption: tools.T('左边','Left'), value: "left" },
+					{ caption: tools.T('右边','Right'), value: "right" },
+				]
 			},
 			"enabledRainbow": {
 				// 彩虹缩进显示
@@ -1068,7 +1091,6 @@ module.exports = {
 			return this.pro_cfg;
 		}
 		const fe 	= Editor.require('packages://simple-code/tools/tools.js');
-		const path 	= require("path");
 
 		const savePath = path.join(this.prsPath,'local','simple-code-config.json')
 		
@@ -1079,14 +1101,42 @@ module.exports = {
 		}
 		return this.pro_cfg;
 	},
+
+	
+	// 编辑器用户配置
+	getUserEditorConfig(){
+		let cfg = this.importUserConfigFile(Editor.url('packages://simple-code/editor_config.js'));
+		Object.assign(this.vsEditorConfig,cfg);
+		return this.vsEditorConfig;
+	},
 	
 	// 保存配置
 	saveStorage(){
-
 		const savePath = path.join(this.prsPath,'local','simple-code-config.json')
 		fs.writeFileSync(savePath,JSON.stringify(this.pro_cfg || {})) // 跟着项目走的配置
 		tools.createDir(this.cfgPath)
 		fs.writeFileSync(this.cfgPath,JSON.stringify(this.cfg || {})) // 全局配置
 		// localStorage.setItem("simple-code-config", JSON.stringify(this.cfg || {}));
+	},
+
+	// 读取用户配置文件,没有则拷贝一份当用户配置文件
+	importUserConfigFile(filePath)
+	{
+		let userFilePath = this.getUserConfigPath(filePath);
+		// 首次使用拷贝模板到可写路径
+		if(!tools.isFileExit(userFilePath)){
+			tools.createDir(userFilePath)
+			tools.copyFile(filePath,userFilePath)
+		}
+		try {
+			return require(userFilePath);
+		} catch (error) {
+			Editor.warn('[simple-code] import config error:',error);
+			return {}
+		}
+	},
+
+	getUserConfigPath(filePath){
+		return path.join(cacheDir,'configs',path.basename(filePath));
 	},
 }
