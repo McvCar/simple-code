@@ -24,6 +24,7 @@ let _scripts = [];
 let is_hint = false;
 
 tools.initI18t()
+/** @extends vsEditorPanel */
 let layer = {
 	
 	style:'',
@@ -44,7 +45,6 @@ let layer = {
 					<div id="toolsPanel" class="layout horizontal">
 						<ui-checkbox id="lockChk">${tools.translate('lock-tab')}</ui-checkbox>
 						<ui-checkbox id="lockWindowChk">${tools.translate('lock-win')}</ui-checkbox>
-						<ui-checkbox id="cmdMode">${tools.translate('cmd-mode')}</ui-checkbox>
 						<ui-button id="manualCompile" class="">${tools.translate('manual-compile')}</ui-button>
 						<ui-button id="gotoFileBtn" class="blue">${tools.translate('goto-file-btn')}</ui-button>
 						<ui-button id="settingBtn" class="green">${tools.translate('set')}</ui-button>
@@ -60,7 +60,6 @@ let layer = {
 		lockChk: '#lockChk',
 		lockWindowChk: '#lockWindowChk',
 		layoutTab: '#layoutTab',
-		cmdMode: '#cmdMode',
 		manualCompile: '#manualCompile',
 		settingBtn: '#settingBtn',
 		resetBtn: '#resetBtn',
@@ -140,9 +139,6 @@ let layer = {
 		if(cfg.hideToolsBar != null){
 			this.$toolsPanel.hidden = cfg.hideToolsBar;
 		}
-		if(cfg.is_cmd_mode != null || isInit){
-			this.$cmdMode.checked = cfg.is_cmd_mode || false;
-		}
 		if(cfg.codeCompileMode != null || isInit){
 			this.$manualCompile.hidden = cfg.codeCompileMode != 'manual';
 			this.$gotoFileBtn.hidden = cfg.codeCompileMode == 'manual';
@@ -202,8 +198,6 @@ let layer = {
 	// 加载数据
 	initData() {
 		this.mouse_pos;
-		this.mouse_move_event_closeFunc;
-		this.mouse_start_event_closeFunc;
 		this.is_init_finish = false;
 		this.waitSaveIntervals = {}
 		// 当前场景所有子节点信息缓存
@@ -274,12 +268,6 @@ let layer = {
 			this.saveOptionsByDelayTime()
 		});
 		
-		// 命令模式
-		this.$cmdMode.addEventListener('change', () => {
-			this.cfg.is_cmd_mode = this.$cmdMode.checked ? true : false;
-			this.setCmdMode(this.cfg.is_cmd_mode);
-			this.saveOptionsByDelayTime();
-		});
 
 		// node或assets 启动拖拽事件
 		let dragsArgs = {}
@@ -342,10 +330,7 @@ let layer = {
 		let mousemove = (e)=>{
 			this.mouse_pos = {y:e.clientY,x:e.clientX}
 		}
-		document.addEventListener('mousemove',mousemove,true)
-		this.mouse_move_event_closeFunc = ()=>{
-			document.removeEventListener('mousemove',mousemove,true)
-		}
+		this.addWindowEventListener('mousemove',mousemove,true)
 
 		// 用于触发双击事件
 		let mousedown = (e)=>{
@@ -363,10 +348,7 @@ let layer = {
 				this.setTimeoutById(()=>this._isMoveDown = false,2000,'mousedow')
 			}
 		}
-		document.addEventListener('mousedown',mousedown,true)
-		this.mouse_start_event_closeFunc = ()=>{
-			document.removeEventListener('mousedown',mousedown,true)
-		}
+		this.addWindowEventListener('mousedown',mousedown,true)
 
 		// 关闭页面提示
 		this.onDestroy = this.onDestroy.bind(this)
@@ -444,8 +426,9 @@ let layer = {
 
 			return ret_type;
 		}
-
-		document.addEventListener("keydown", function (e) {
+		
+		
+		this.addWindowEventListener("keydown", function (e) {
 			pressedKeys = {
 				[config.keyMap[e.keyCode] ? config.keyMap[e.keyCode] : e.key] : 1,
 				['Alt'] : e.altKey,
@@ -458,7 +441,7 @@ let layer = {
 			return ret_type;
 		}, true);
 
-		document.addEventListener("keypress", function (e) {
+		this.addWindowEventListener("keypress", function (e) {
 			
 			pressedKeys = {
 				[config.keyMap[e.keyCode] ? config.keyMap[e.keyCode] : e.key] : 1,
@@ -473,7 +456,7 @@ let layer = {
 			return ret_type;
 		}, true);
 
-		document.addEventListener("keyup", function (e) {
+		this.addWindowEventListener("keyup", function (e) {
 			// pressedKeys = {};
 			pressedKeys = {
 				[config.keyMap[e.keyCode] ? config.keyMap[e.keyCode] : e.key] : 1,
@@ -487,7 +470,7 @@ let layer = {
 		}, true);
 
 		// 重置key
-		document.addEventListener("focus", () => pressedKeys = {});
+		this.addWindowEventListener("focus", () => pressedKeys = {},true)
 		
 		// 阻挡冒泡creator的快捷键
 		this.$box.addEventListener("keydown", (e)=> {
@@ -563,19 +546,6 @@ let layer = {
 		this.$lockWindowChk.checked = is_lock ? true : false;
 	},
 
-	// 命令模式
-	setCmdMode(isCmdMode) {
-		this.cfg.is_cmd_mode = isCmdMode ? true : false;
-		this.vs_editor.updateOptions({ lineNumbers: this.cfg.is_cmd_mode || this.edit_id != 0 ? "on" : 'off' });
-		if (this.edit_id == 0) {
-			this.setLockEdit(false);
-		}
-		this.oepnDefindFile();
-		// 获得选中的节点
-		this.$cmdMode.checked = this.cfg.is_cmd_mode;
-		Editor.Scene.callSceneScript('simple-code', 'cc-engine-animatin-mode', this.cfg.is_cmd_mode, (err, args) => { });
-	},
-
 	// 添加快捷键, 例子: this.addKeybodyEvent([ ["Ctrl","x"] ],()=>{})
 	addKeybodyEvent(arrKeys, callback, isOnEditorRun, touchType = "keydown") {
 		arrKeys.forEach((keys) => {
@@ -630,6 +600,19 @@ let layer = {
 	onMouseDoubleClick(mousePos){
 		this.runExtendFunc("onMouseDoubleClick",mousePos);
 	},
+	
+	// 窗口获得焦点
+	onFocus(){
+		this._super()
+		this.runExtendFunc("onFocus");
+	},
+
+	// 窗口失去焦点
+	onBlur(){
+		this._super()
+		this.runExtendFunc("onBlur");
+	},
+
 
 	// onclose(){
 	// 	this.onDestroy()
@@ -637,26 +620,31 @@ let layer = {
 
 	// 页面关闭
 	onDestroy() 
-	{
-		document.removeEventListener('beforeunload',this.onDestroy,false);
+	{ 
 		if(this._is_destroy || this.edit_list == null) return;
 		this._is_destroy = true;
 		this._super();
 		this.runExtendFunc("onDestroy");
-		this.refreshSaveFild();
 
-		// 停止事件
-		if (this.schFunc) this.schFunc();
-		if(this.mouse_move_event_closeFunc) this.mouse_move_event_closeFunc()
-		if(this.mouse_start_event_closeFunc) this.mouse_start_event_closeFunc()
-		if(this.menu && this.menu.destroy) this.menu.destroy()
-		this.menu = null;
-
+		// 移除 window 事件
+		window.removeEventListener('beforeunload',this.onDestroy,false);
+		for (let i = 0; i < this.window_event_listener.length; i++) {
+			const event = this.window_event_listener[i];
+			window.removeEventListener(event.eventName,event.callback,event.option)
+		}
 		// 移除ipc事件
 		for (let i = 0; i < this.listenIpcList.length; i++) {
 			const event = this.listenIpcList[i];
 			electron.ipcRenderer.removeListener(event.name,event.callback);
 		}
+
+		// 停止事件
+		if (this.schFunc) this.schFunc();
+		if(this.menu && this.menu.destroy) this.menu.destroy()
+		this.menu = null;
+
+		// 手动编译的文件
+		this.refreshSaveFild();
 
 		// 保存编辑信息
 		let temp_path_map = {}
@@ -695,11 +683,11 @@ let layer = {
 			this.closeTab(id);
 		});
 		
-		let models = this.monaco.editor.getModels();
-		for (const key in models) {
-			const model = models[key];
-			if(model) model.dispose();
-		}
+		// let models = this.monaco.editor.getModels();
+		// for (const key in models) {
+		// 	const model = models[key];
+		// 	if(model) model.dispose();
+		// }
 
 		this.saveOptions();
 	},
@@ -767,6 +755,7 @@ let layer = {
 
 	// 扩展使用的事件
 	onAssetsChangedEvent(file){
+		this._super(file);
 		this.runExtendFunc('onAssetsChangedEvent',file)
 	},
 	onAssetsCreatedEvent(files){
@@ -867,38 +856,6 @@ let layer = {
 		'open-code-file'(e,file){
 			this.openOutSideFile(file,true)
 		},
-		
-		'run-command-code'(event, type) {
-			if (this.file_info.uuid == null || !this.cfg.is_cmd_mode) return Editor.log("只能在命令模式执行代码预览");
-
-			let args;
-			if (type == "cmd") {
-				if (this.edit_id == 0 || this.file_info.uuid == "outside") {
-					args = { type, data: this.vs_editor.getValue() };
-				} else {
-					args = { type, uuid: this.file_info.uuid, data: fs.readFileSync(this.CMD_FILE_PATH).toString() };// 运行节点的脚本
-				}
-			} else {
-				args = { type: type, data: fs.readFileSync(this.CMD_FILE_PATH).toString() };
-			}
-
-			if (type != "cmd") {
-				if (is_hint || confirm("模拟运行环境模式:即将切换到测试场景进行模拟运行,请确定当前场景已经保存.该功能于测试中,运行过程中报错可能会导致编辑器崩溃！是否执行?")) {
-					is_hint = true;
-					Editor.Scene.callSceneScript('simple-code', 'run-command-code', args);
-				}
-			} else {
-				if (args.uuid) {
-					if (this.file_info.is_need_save) return Editor.info("请保存修改后再执行命令");
-					if (is_hint || confirm("1.该脚本将通过绑定的Node执行代码，执行后可能会删改场景内容，请注意保存场景！\n2.执行的入口函数为‘onLoad’、‘start’、’update‘。\n3.首次使用建议在命令行文件‘commandLine.js’里配置你的代码运行环境,每次执行代码文件前都会先执行命令文件里代码;\n4.请保存代码后再执行;\n是否执行?")) {
-						is_hint = true;
-						Editor.Scene.callSceneScript('simple-code', 'run-command-code', args);
-					}
-				} else {
-					Editor.Scene.callSceneScript('simple-code', 'run-command-code', args);
-				}
-			}
-		},
 
 		// 快捷键打开当前选中文件/节点进入编辑
 		'custom-cmd'(event, info) {
@@ -916,3 +873,4 @@ let layer = {
 layer.initExtend();
 tools.extendTo(layer,vsEditorPanel);
 Editor.Panel.extend(layer);
+module.exports = layer;

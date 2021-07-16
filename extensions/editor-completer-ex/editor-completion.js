@@ -36,8 +36,17 @@ class ImportCompletion
     onLoad(editor){
         // Register the resolveImport
         this.editor = editor;
-        this.editor._commandService.addCommand(exports.IMPORT_COMMAND,(_,args)=>{
-            this.parent.setTimeoutById(()=>this.handleFixImport(args[0]),50,'ImportCompletion')
+        this.callbackTimeouts = {}
+        this.editor._commandService.addCommand(exports.IMPORT_COMMAND,(_,filePath,type)=>{
+            this.parent.setTimeoutById(()=>{
+                delete this.callbackTimeouts[filePath];
+            },600,'ImportCompletion'+filePath);
+
+            // 临时解决会调用两次的bug
+            if(!this.callbackTimeouts[filePath]){
+                this.handleFixImport(filePath,type);
+            }
+            this.callbackTimeouts[filePath] = 1;
         });
     }
 
@@ -123,10 +132,10 @@ class ImportCompletion
                 {
                     // 4.使用 Auto import 提示
                     this.parent.tsWr.getAutoImportSuggests(m_path).then((list)=>{
-                        for (let i = 0; i < list.length; i++) {
-                            let item = list[i];
-                            item.command = this.command;
-                        }
+                        // for (let i = 0; i < list.length; i++) {
+                        //     let item = list[i];
+                        //     item.command = this.command;
+                        // }
                         suggestions.push.apply(suggestions,list)
                         // 使用全文件模糊代码提示
                         retSuggesFunc(true && enable);
@@ -238,7 +247,7 @@ class ImportCompletion
 
 
     // 使用自动修复功能完成import
-    handleFixImport(type) 
+    handleFixImport(fileName,type) 
     {
         let model = this.editor.getModel();  
         let position = this.editor.getPosition();  
@@ -282,19 +291,27 @@ class ImportCompletion
 
         this.parent.monaco.tsWr.getCodeFixesAtPosition(model.uri.toString(),start,end,errorCodes,formatOptions)
         .then((list)=>{
+            if(!list || !list.length){
+                return;
+            }
+
+            // 优先使用指定路径的修复项
+            let useItem;
             for (let i = 0; i < list.length; i++) {
                 const fixInfo = list[i];
-                if(fixInfo.fixName == 'import'){
-                    this.fixImport(model,fixInfo.changes)
-                    this.upAllSymSuggests();
-                    if(type == 'showPanel'){
-                        // 刷新提示面板
-                        setTimeout(()=>{
-                            this.editor._commandService.executeCommand('editor.action.triggerSuggest')
-                        },100)
-                    }
-                    break;
+                if(useItem == null && fixInfo.modulePath == fileName || fixInfo.isAddExisting){
+                    useItem = fixInfo;
                 }
+            }
+            if(!useItem) useItem = list[0];
+
+            this.fixImport(model,useItem.changes)
+            this.upAllSymSuggests();
+            if(type == 'showPanel'){
+                // 刷新提示面板
+                setTimeout(()=>{
+                    this.editor._commandService.executeCommand('editor.action.triggerSuggest')
+                },100)
             }
         })
     }

@@ -480,7 +480,6 @@ var eventFuncs =
 		cc.engine.animatingInEditMode = 1
 		if (args.type == "scene")
 		{
-			this.testEditorScene();
 		}else if(args.uuid){
 			this['run-js-file'](null,args);// 执行代码脚本
 		}
@@ -501,97 +500,6 @@ var eventFuncs =
 							if(js.isValid) js.update(0.02);
 						},0.02,{count:60})
 					}
-				}
-			})
-		})
-	},
-
-	testEditorScene(){
-
-		if (!cc.director._changeCocosFunc){
-			cc.director._changeCocosFunc = true
-
-			// 通过uuid加载场景
-			cc.director._loadSceneByUuid_temp = (uuid, onLaunched, onUnloaded)=>{
-		        cc.AssetLibrary.loadAsset(uuid, function (error, sceneAsset) {
-		            var self = cc.director;
-		            self._loadingScene = '';
-		            if (error) {
-		                error = 'Failed to load scene: ' + error;
-		                cc.error(error);
-		            }
-		            else {
-		                if (sceneAsset instanceof cc.SceneAsset) {
-		                    var scene = sceneAsset.scene;
-		                    scene._id = sceneAsset._uuid;
-		                    scene._name = sceneAsset._name;
-
-                            self.runSceneImmediate(scene, onUnloaded, onLaunched);
-		                    return;
-		                }
-		                else {
-		                    error = 'The asset ' + uuid + ' is not a scene';
-		                    cc.error(error);
-		                }
-		            }
-		            if (onLaunched) {
-		                onLaunched(error);
-		            }
-		        });
-			}
-
-			cc.director.loadScene = (sceneName,c1,c2,c3)=>{
-				Editor.assetdb.deepQuery( (err, results)=> {
-					for (let i = 0; i < results.length; i++) 
-					{
-						let result = results[i];
-						if (result.extname == ".fire" && result.name.indexOf(sceneName) != -1){
-							cc.director._loadSceneByUuid_temp(result.uuid,c1,c2,c3);
-							return
-						}
-					}
-					cc.warn("调试未发现场景:",sceneName)
-				})
-			}
-
-
-			// let old_func = cc.loader._getResUuid.bind(cc.loader);
-			// cc.loader._getResUuid =  (url, type, quiet) =>
-			// {
-			// 	let uuid = old_func(url,type,quiet)
-			//     if (uuid != "") {
-			//         return uuid;
-			//     }
-
-			//     // Ignore parameter
-			//     var index = url.indexOf('?');
-			//     if (index !== -1)
-			//         url = url.substr(0, index);
-			 	
-			//  	if(this._assetList){
-			//  		for (var i = 0; i < this._assetList.length; i++) {
-			//  			let info = this._assetList[i]
-			//  			let infoUrl = Editor.remote.assetdb.uuidToUrl(info.uuid);
-			//  			if (infoUrl.indexOf(url) != -1){
-			//  				uuid = info.uuid;
-			//  				break
-			//  			}
-			//  		}
-			//  	}
-			   	
-			//     return uuid;
-			// };
-		}
-		
-		// // 缓存资源列表
-		// Editor.assetdb.deepQuery( (err, results)=> {
-		// 	this._assetList = results;
-		// })	
-
-		this.getCurrSceneUrl((url,isScene,uuid)=>{
-			this.openDebugScene(uuid,isScene,(isSucceed)=>{
-				if (isSucceed){
-					setTimeout(()=>this['run-node-js'](),1)
 				}
 			})
 		})

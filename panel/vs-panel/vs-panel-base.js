@@ -1,3 +1,4 @@
+/// <reference path="./monaco-editor/monaco.d.ts"/>
 /**
  * 1.管理vscode编辑器对象
  * 2.管理文件资源
@@ -35,26 +36,38 @@ let layer =
 	// 须加载配置文件
 	REG_EXP_DTS : /(\.d\.ts)/,
 	REG_EXP_JSON_CONFIG : /(tsconfig.*\.json|jsconfig.*\.json|package\.json)/,
-	
+
+	// 导入代码提示
+	/** @type monaco */
+	monaco:null,
+	/** @type fileMgr */
+	fileMgr:null,
+
 	// 启动事件
 	initVsEditor(callback) 
 	{
 		this.timer_map 			= {};
 		this.file_list_buffer  	= this.file_list_buffer || [];
 		this.file_list_map 	  	= this.file_list_map || {};
+		this.window_event_listener = []
 		this.fileMgr 			= new fileMgr(this);
 		this.enableUpdateTs 	= false;
 		this.menu  = null;
-
 		this.initVsCode(() => {
 			this.initEditorData();
 			this.fileMgr.initFileListBuffer(()=>{
+				this.onLoadEvent()
 				this.initEditorEvent();
 				this.initCustomCompleter();
 				this.initSceneData(callback);
 				this.initContextMenu();
 			});
 		});
+	},
+
+	// 初始化事件
+	onLoadEvent(){
+		this.runExtendFunc('onLoadEvent',this);
 	},
 
 	initVsCode(callback) {
@@ -409,10 +422,19 @@ let layer =
 		},2);
 	},
 
-
 	// 綁定事件
 	initEditorEvent() {
 		let stopCamds = { "scene:undo": 1, "scene:redo": 1, };
+
+		// 窗口进入前台
+		this.addWindowEventListener("focus",()=>{
+			this.setTimeoutById(this.onFocus.bind(this),100,'windowfocus'); // 阻止短时间重复调用
+		},true);
+
+		// 窗口进入后台
+		this.addWindowEventListener("blur",()=>{
+			this.setTimeoutById(this.onBlur.bind(this),100,'windowfocus');
+		},true);
 
 		//获得焦点
 		this.vs_editor.onDidFocusEditorText((e) => {
@@ -466,27 +488,13 @@ let layer =
 			model.onDidChangeContent(()=>{
 				this.tsWr.setEnableUpdateScript(true);
 			});
-
-			// 加载 tsconfig 配置文件解析
-			let url = model.uri.toString();
-			if(url.match(/(tsconfig.*\.json|jsconfig.*\.json)/)){
-				this.tsWr.addProjectReference(url)
-				setTimeout(()=>this.tsWr.writeOtherFile(url,model.getValue()),1);
-			}else{
-				this.updatePackageMainModulePath(model)
-			}
 			this.tsWr.setEnableUpdateScript(true);
 			this.upNeedImportListWorker()
 		});
 
 		// 删除代码文件 view缓存model
 		this.monaco.editor.onWillDisposeModel((model)=>{
-			// 删除 tsconfig 配置文件解析
 			let url = model.uri.toString();
-			if(url.match(/(tsconfig.*\.json|jsconfig.*\.json)/)){
-				this.tsWr.removeProjectReference(url)
-				setTimeout(()=>this.tsWr.removeOtherFile(url),1);
-			}
 			this.tsWr.deleteFunctionDefindsBuffer(url);
 			this.tsWr.setEnableUpdateScript(true);
 			this.upNeedImportListWorker()
@@ -720,12 +728,6 @@ let layer =
 		this.setEnableUpdateTs(false);
 		this.loadAllScript()
 		
-		// 加载项目配置
-		let tsconfigPath = path.join(prsPath,'tsconfig.json');
-		if(fe.isFileExit(tsconfigPath)){
-			this.loadAssetAndCompleter(tsconfigPath,path.extname(tsconfigPath),false)
-		}
-
 		// 项目根目录的代码提示文件 x.d.ts
 		let load_file_map = {}
 		for (var n = 0; n < this.TS_API_LIB_PATHS.length; n++) 
@@ -770,6 +772,12 @@ let layer =
 		}
 	},
 
+	addWindowEventListener(eventName,callback,option){
+		this.window_event_listener.push({eventName,callback,option});
+		window.addEventListener(eventName,callback,option);
+	},
+
+
 	// 初始化时代码文件加载方式
 	isReadCode(){
 		return this.cfg.readCodeMode == 'all' || // 加载全部文件方式
@@ -810,19 +818,12 @@ let layer =
 	
 	// 系统文件保存修改内容
 	onAssetsChangedEvent(file){
-		let fspath = file.uuid == 'outside' ? file.url : Editor.remote.assetdb.uuidToFspath(file.uuid);
-		if(fspath.match(REG_EXP_JSON_CONFIG)){
-			let vs_model = this.fileMgr.getModelByFsPath(fspath);
-			if(vs_model){
-				this.tsWr.writeOtherFile(vs_model.uri.toString(),vs_model.getValue());
-			}
-		}
 	},
 
 	onLoadAssetAndCompleter(filePath, extname, isUrlType,isScript){
 		this.runExtendFunc('onLoadAssetAndCompleter',filePath, extname, isUrlType,isScript)
 	},
-
+	
 	// 读取资源文件,只在文件初始化时调用该函数
 	loadAssetAndCompleter(filePath, extname, isUrlType = false, isCover=true, isSasync = true, finishCallback)
 	{
@@ -1471,17 +1472,13 @@ let layer =
 	oepnDefindFile() {
 
 		// 没有备忘录就先复制一个
-		let filePath = this.cfg.is_cmd_mode ? this.CMD_FILE_PATH : this.MEMO_FILE_PATH;
+		let filePath = this.MEMO_FILE_PATH;
 		if (!fe.isFileExit(filePath)) {
 			let template = ''
-			if(this.cfg.is_cmd_mode){
-				template = "packages://simple-code/template/commandLine.md"
+			if(fe.getLanguage() == 'zh'){
+				template =  "packages://simple-code/template/readme-zh.md"
 			}else{
-				if(fe.getLanguage() == 'zh'){
-					template =  "packages://simple-code/template/readme-zh.md"
-				}else{
-					template =  "packages://simple-code/template/readme-en.md"
-				}
+				template =  "packages://simple-code/template/readme-en.md"
 			}
 			fe.copyFile(Editor.url(template), filePath);
 		}
@@ -1518,25 +1515,6 @@ let layer =
 		this.edit_list[0].vs_model._commandManager.clear();
 	},
 
-	// 刷新并导入并模块入口文件
-	updatePackageMainModulePath(model){
-		let url = model.uri.toString();
-		if(!url.endsWith('package.json')){
-			return;
-		}
-		
-		setTimeout(async ()=>{
-			this.tsWr.writeOtherFile(url,model.getValue()); // 保存package.json文件缓存到ts解析器参与进一步解析工作
-			let tryModulePaths = await this.tsWr.getPackageMainModulePath(url);
-			console.log("npm包路径:",url,tryModulePaths)
-			let filePath = this.fileMgr.loadNeedImportPaths({[url]:tryModulePaths});
-			if(filePath){
-				// 性能优化: 忽略模块文件import路径深度解析功能
-				this.tsWr.setIgnoreTryImportScriptFile(this.fileMgr.fsPathToModelUrl(filePath));
-			}
-		},1)
-	},
-
 	// 检测是否存在需要import的路径，以及检查js/ts解析器进程是否处于空闲状态
 	upNeedImportListWorker(callback,timeOut=500)
 	{
@@ -1557,7 +1535,7 @@ let layer =
 		},50);
 
 		let loadImportPath ;
-		loadImportPath = (needImportPaths)=>
+		loadImportPath = async (needImportPaths)=>
 		{
 			let isEmpty = fe.isEmptyObject(needImportPaths)
 			if(isEmpty)
@@ -1578,9 +1556,9 @@ let layer =
 				}
 			}else
 			{
-				this.fileMgr.loadNeedImportPaths(needImportPaths);
+				await this.fileMgr.loadNeedImportPathsAsync(needImportPaths);
 				if(!isTimeOut){
-					setTimeout(100,()=>{
+					setTimeout(50,()=>{
 						this.tsWr.getNeedImportPaths().then(loadImportPath);
 					})
 				}
@@ -1659,40 +1637,43 @@ let layer =
 
 	// 调用原生JS的定时器
 	setTimeoutToJS(func, time = 1, { count = -1, dt = time } = {}) {
-
 		// 执行多少次
 		if (count === 0) {
 			let headler = setTimeout(func, time * 1000);
 			return () => clearTimeout(headler);
 		} else {
-
 			// 小于0就永久执行
 			if (count < 0) { count = -1; };//cc.macro.REPEAT_FOREVER
-
 			let headler1, headler2;
 			headler1 = setTimeout(() => {
-
 				let i = 0;
 				let funcGo = function () {
 					i++;
 					if (i === count) { clearInterval(headler2); }
 					func();
 				}
-
 				// 小于0就永久执行
 				if (count < 0) { funcGo = function () { func() } }
-
 				headler2 = setInterval(funcGo, time * 1000);
 				funcGo();
-
 			}, dt * 1000);
-
-
 			return () => {
 				clearTimeout(headler1);
 				clearInterval(headler2);
 			}
 		}
+	},
+
+	
+	// 窗口获得焦点
+	onFocus(){
+		// 回调前台刷新需要监听的文件状态
+		this.fileMgr.checkWatch();
+	},
+
+	// 窗口失去焦点
+	onBlur(){
+
 	},
 
 	// 页面关闭

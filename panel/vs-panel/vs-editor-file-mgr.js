@@ -1,18 +1,20 @@
 /**
  * 1.管理文件资源逻辑部分
  */
-
 const fe 	= Editor.require('packages://simple-code/tools/tools.js');
 const fs 	= require('fs');
 const config = Editor.require('packages://simple-code/config.js');
 const path 	= require("path");
 const tools = require('../../tools/tools');
+const { WatchMgr, WatchFile } = require('../../tools/watchFile');
 
 const prsPath = Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
 
 class FileMgr{
 	constructor(parent){
+		/** @type import('./vs-panel-base') */
 		this.parent = parent;
+		this.watchMgr = new WatchMgr()
 		this.importPathBuffer = {};
 		this.waitReadModels = {};
     }
@@ -189,18 +191,31 @@ class FileMgr{
 
 	// 检查当前文件在外边是否被改变
 	checkAllCurrFileChange() {
-
 		// 编辑信息
 		this.parent.edit_list.forEach((editInfo) => {
 			this.checkCurrFileChange(editInfo)
 		})
 	}
+	
+	/**
+	 * 
+	 * @param {sting} pathName 
+	 * @param {import('../../tools/watchFile').WatchEventCallback} eventCallback 
+	 * @returns {WatchFile} 
+	 */
+	addWatchPath(pathName,eventCallback){
+		return this.watchMgr.addWatchPath(pathName,eventCallback);
+	}
+
+	checkWatch(){
+		this.watchMgr.checkAll();
+	}
 
 	// 加载import引用路径上的文件
-	loadNeedImportPaths(needImportPaths,isTs)
+	async loadNeedImportPathsAsync(needImportPaths,isTs)
 	{
 		let importCompletePath
-		let loadFunc = (tryPath,isCompareName,isFromSystemRead)=>
+		let loadFunc = async (tryPath,isCompareName,isFromSystemRead)=>
 		{
 			tryPath = tryPath.substr(0,7) == 'file://' ? tryPath.substr(7) : tryPath; // 去掉前缀
 
@@ -240,7 +255,7 @@ class FileMgr{
 
 			if(!fileItem){
 				// console.log("尝试import失败:",tryPath)
-				if(isFromSystemRead && fe.isFileExit(tryPath))
+				if(isFromSystemRead && await fe.isFileExitAsync(tryPath))
 				{
 					// 3.最后尝试从系统api读取
 					fileItem = {
@@ -288,7 +303,7 @@ class FileMgr{
 			{
 				// 1.从缓存找出路径文件是否存在
 				let tryPath = tryPaths[i];
-				let retState = loadFunc(tryPath);
+				let retState = await loadFunc(tryPath);
 				if(retState == 1){
 					continue;
 				}else if(retState == 0){
@@ -303,7 +318,7 @@ class FileMgr{
 
 			// 2.正常路径方式找不到文件时切换为只对比文件名的方式加载
 			if( tryPaths.length ){
-				let retState = loadFunc(tryPaths[0],true)
+				let retState = await loadFunc(tryPaths[0],true)
 				if(retState == 1){
 					continue;
 				}else if(retState == 0){
@@ -317,7 +332,7 @@ class FileMgr{
 			{
 				// 1.从硬盘上找出路径文件是否存在
 				let tryPath = tryPaths[i];
-				let retState = loadFunc(tryPath,false,true);
+				let retState = await loadFunc(tryPath,false,true);
 				if(retState == 1){
 					continue;
 				}else if(retState == 0){
@@ -432,7 +447,7 @@ class FileMgr{
 				}
 			}else{
 				// 清缓存
-				let vs_model = this.parent.monaco.editor.getModel(this.parent.monaco.Uri.parse(isOutside ? v.path : this.fsPathToModelUrl(v.path)))
+				let vs_model = this.parent.monaco.editor.getModel(this.parent.monaco.Uri.parse(this.fsPathToModelUrl(v.path)))
 				if(vs_model) vs_model.dispose()
 			}
 

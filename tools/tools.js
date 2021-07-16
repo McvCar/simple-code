@@ -125,6 +125,22 @@ module.exports = {
 		return success;
 	},
 
+	parseJson(text){
+		try {
+			return JSON.parse(text)
+		} catch (error) {
+			return undefined;
+		}
+	},
+
+	objectCount(obj){
+		let len = 0
+		for (const key in obj) {
+			len++
+		}
+		return len;
+	},
+
 	// 获得import路径
 	getImportStringPaths(codeText) {
 
@@ -216,7 +232,12 @@ module.exports = {
 			{
 				readFileCount--
 				console.log("readFileAsyn已处理:",readFileCount,args.filePath);
-				this._handleReadFileQueue()
+				if(readFileCount > 500){
+					setTimeout(this._handleReadFileQueue.bind(this),100)
+				}else{
+					this._handleReadFileQueue()
+				}
+
 				try {
 					args.callback(err,data);
 				} catch (error) {
@@ -302,7 +323,7 @@ module.exports = {
 	},
 
 	// 获得文件列表
-	getFileList(dirPath, result) {
+	getFileList(dirPath, result = []) {
 		let files = fs.readdirSync(dirPath);
 		files.forEach((val, index) => {
 			let fPath = path.join(dirPath, val);
@@ -317,7 +338,7 @@ module.exports = {
 		return fs.existsSync(fPath) && fs.statSync(fPath).isDirectory()
 	},
 
-	getDirAllFiles(dirPath, result) {
+	getDirAllFiles(dirPath, result = []) {
 		let files = fs.readdirSync(dirPath);
 		files.forEach((val, index) => {
 			let fPath = path.join(dirPath, val);
@@ -388,6 +409,15 @@ module.exports = {
 		}
 		return true;
 	},
+
+	async isFileExitAsync(file) {
+		return new Promise((resolev)=>{
+			fs.access(file,(err)=>{	
+				resolev(err == null);
+			});
+		});
+	},
+
 	_collectString(data, collectObject) {
 		for (let i in data) {
 			let char = data.charAt(i);
