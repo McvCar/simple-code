@@ -18,6 +18,9 @@ let NEW_FILE_RULE = path.join(
 let USER_NEW_FILE_RULE = path.join(config.cacheDir, 'new_script_rule.js');
 
 module.exports = {
+	/** @type import('../../panel/vs-panel/vs-panel-base') */
+	parent : null,
+
     // 面板初始化
     ready(parent) {
         // index.js 对象

@@ -13,6 +13,8 @@ const prsPath 		= Editor.Project && Editor.Project.path ? Editor.Project.path : 
 let is_lock			= false;
 
 module.exports = {
+	/** @type import('../../panel/vs-panel/vs-panel-base') */
+	parent : null,
 
 	// 面板初始化
 	onLoad(parent){

@@ -23,6 +23,9 @@ let NEW_VAR_RULE 	 	=  path.join(path.resolve(__dirname,"./"),"drag_var_rule.js"
 let USER_NEW_VAR_RULE 	=  path.join(config.cacheDir,"drag_var_rule.js");
 
 module.exports = {
+	/** @type import('../../panel/vs-panel/vs-panel-base') */
+	parent : null,
+
 
 	// 面板初始化
 	onLoad(parent){

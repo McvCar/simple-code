@@ -6,9 +6,13 @@
 'use strict';
 const path 			= require('path');
 const fs 			= require('fs');
+const tools = require('../../tools/tools');
 let id 				= 'editor-run-code'
 
 module.exports = {
+	/** @type import('../../panel/vs-panel/vs-panel-base') */
+	parent : null,
+
 
 	styleText : `.editorRunCodeIcon{
 		height: 0;
@@ -106,7 +110,11 @@ module.exports = {
 			e.preventDefault();
 			e.stopPropagation();
 			let text = this.parent.vs_editor.getModel().getValueInRange(this.parent.vs_editor.getSelection())
-			Editor.Scene.callSceneScript('simple-code', 'run-command-code', {type:'cmd',data:text});
+			try {
+				Editor.log( eval(text) )
+			} catch (error) {
+				Editor.log(tools.T('执行代码块出错:','Error executing code block:'),error)
+			}
 			this.parent.runExtendFunc('onExecCode',text);
 		},false)
 		this.runWidget.setActive(false);

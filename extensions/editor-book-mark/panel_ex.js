@@ -10,6 +10,9 @@ const config 		= Editor.require('packages://simple-code/config.js');
 let id 				= 'editor-book-mark'
 
 module.exports = {
+	/** @type import('../../panel/vs-panel/vs-panel-base') */
+	parent : null,
+
 
 	styleText : `.editor-book-mark {
 		background: lightblue;

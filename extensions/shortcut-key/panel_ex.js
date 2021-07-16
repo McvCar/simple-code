@@ -12,6 +12,9 @@ const inputType = {"text":1,"password":1,"number":1,"date":1,"color":1,"range":1
 
 
 module.exports = {
+	/** @type import('../../panel/vs-panel/vs-panel-base') */
+	parent : null,
+
 
 	// 面板初始化
 	onLoad(parent){

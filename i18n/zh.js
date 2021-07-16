@@ -88,8 +88,8 @@ module.exports = {
 
     'readCodeMode': '加载代码方式',
     'auto' :'自动',
-    'allImport' :'全部加载(JS智能提示推荐)',
-    'atImportTo' :'import时加载(TS推荐)',
+    'allImport' :'全部加载',
+    'atImportTo' :'import时加载',
 
     'enabledVim': 'vim编辑模式',
     'renameConverImportPath': '重命名同步修改import路径',

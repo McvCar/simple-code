@@ -11,6 +11,9 @@ const OLD_PRETTIER_CONFIG_FILE = path.join(__dirname,'prettier.config.js')
 const PRETTIER_CONFIG_FILE 	   = path.join(prsPath,'local','prettier.config.js');
 
 module.exports = {
+	/** @type import('../../panel/vs-panel/vs-panel-base') */
+	parent : null,
+
 
 	// 面板初始化
 	onLoad(parent) {

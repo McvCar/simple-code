@@ -10,6 +10,9 @@ const config 		= Editor.require('packages://simple-code/config');
 const eruda 		= Editor.require('packages://simple-code/extensions/editor-console/eruda/eruda.js');
 
 module.exports = {
+	/** @type import('../../panel/vs-panel/vs-panel-base') */
+	parent : null,
+
 	// 面板初始化
 	ready(parent){
 		// index.js 对象

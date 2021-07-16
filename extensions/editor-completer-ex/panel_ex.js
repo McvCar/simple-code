@@ -9,6 +9,9 @@ var fs 		= require('fs');
 
 
 module.exports = {
+	/** @type import('../../panel/vs-panel/vs-panel-base') */
+	parent : null,
+
 
 	// 
 	ready(parent){
@@ -105,21 +108,6 @@ module.exports = {
 				}
 			}
 		}
-	},
-
-	loadModelCompleter(model){
-		let m_url = model.uri.toString()
-		let ls_i = m_url.lastIndexOf('.');
-		if(ls_i == -1) return;
-
-		let s_i = m_url.lastIndexOf('/');
-		let name = m_url.substr(s_i+1,ls_i-s_i-1)
-		this.completor.imports.saveFile(
-			{
-			  path: m_url.substr(0,ls_i),
-			  aliases: [name],
-			  imports: AutoImport.regexTokeniser(model.getValue())
-		})
 	},
 
 	// 面板销毁

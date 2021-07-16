@@ -9,6 +9,9 @@ const config = require('../../config');
 const tools = require('../../tools/tools');
 
 module.exports = {
+	/** @type import('../../panel/vs-panel/vs-panel-base') */
+	parent : null,
+
     // 面板初始化
     ready(parent) {
         // index.js 对象

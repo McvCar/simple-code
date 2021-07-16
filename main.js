@@ -195,17 +195,7 @@ module.exports =
 		exec( (Editor.isWin32 ? "start " : "open ")+Editor.url("packages://simple-code/extensions") )
 	},
 
-	'runCommandLine'(){
-
-	  	Editor.Panel.open('simple-code');
-	  	Editor.Ipc.sendToPanel('simple-code','run-command-code',"cmd");
-	},
-
-	'run-node-js'(){
-		Editor.Panel.open('simple-code');
-		Editor.Ipc.sendToPanel('simple-code','run-command-code',"scene");
-	},
-	
+	 
 	'scene:enter-prefab-edit-mode' (event,uuid) {
 	   _lastUuid = uuid;
 	},

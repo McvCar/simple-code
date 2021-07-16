@@ -11,6 +11,9 @@ var md5     = require('md5');
 
 module.exports = {
 
+	/** @type import('../../panel/vs-panel/vs-panel-base') */
+	parent : null,
+
 	// 面板初始化
 	onLoad(parent){
 		// index.js 对象

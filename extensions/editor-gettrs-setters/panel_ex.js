@@ -7,6 +7,9 @@
 const fe = Editor.require('packages://simple-code/tools/tools.js');
 
 module.exports = {
+	/** @type import('../../panel/vs-panel/vs-panel-base') */
+	parent : null,
+
 
 	// 面板初始化
 	onLoad(parent) {

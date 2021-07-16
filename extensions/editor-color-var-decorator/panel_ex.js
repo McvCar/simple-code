@@ -8,6 +8,9 @@ const fs 			= require('fs');
 let id 				= 'cc.Color'
 
 module.exports = {
+	/** @type import('../../panel/vs-panel/vs-panel-base') */
+	parent : null,
+
 
 	// 面板初始化
 	ready(parent){
