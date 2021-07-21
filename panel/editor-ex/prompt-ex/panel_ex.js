@@ -106,6 +106,7 @@ module.exports = {
 		// 下拉框选中后操作事件
 		let onSearchAccept = (cmd,data)=>
 		{
+			Editor.Selection.clear('asset')
 			if (cmd == "findFileGoto")
 			{
 				// 高亮资源管理器

@@ -1,6 +1,7 @@
 {
 	"name": "simple-code",
-	"version": "3.0.9",
+  "package_version": 2,
+	"version": "3.1.0",
 	"description": "内置代码编辑器",
 	"author": "MCV",
 	"main": "./main.js",
@@ -13,11 +14,6 @@
       "path"    :"代码编辑器",
       "label"    :"打开",
       "message"  : "open"
-    },
-     {
-      "path":"代码编辑器",
-      "label"    :"预览",
-      "message": "openPreview"
     },
      {
       "path":"代码编辑器",
@@ -138,14 +134,16 @@
       "path":"代码编辑器/项目管理",
       "label"    :"配置代码输入提示",
       "message": "openConfigHitn"
-    }],
+    },{
+     "path":"代码编辑器",
+     "label"    :"交流QQ群",
+     "message": "openQQ"
+   }],
 
 
     "shortcuts": [
      {
-      "message"  : "open",
-      "win": "f1",
-      "mac": "f1"
+      "message"  : "open"
     },
      {
       "message": "setting",
@@ -249,7 +247,7 @@
       "cleanFile":{"methods":["vsEditor.cleanFile"]},
       "runCommandLine":{"methods":["open","vsEditor.runCommandLine"]},
       "refreshPreview":{"methods":["openPreview","preview.refreshPreview"]},
-      "rename":{"methods":["rename"]},
+      "rename":{"methods":["vsEditor.rename"]},
       "addNodeComp":{"methods":["vsEditor.addNodeComp"]},
       "addPrefab":{"methods":["vsEditor.addPrefab"]},
       "newFile":{"methods":["vsEditor.newFile"]},
@@ -262,6 +260,7 @@
       "openConfigExtendDir":{"methods":["openConfigExtendDir"]},
       "newFileDir":{"methods":["newFileDir"]},
       "openConfig":{"methods":["vsEditor.openConfig"]},
+      "openQQ":{"methods":["openQQ"]},
       "openConfigHitn":{"methods":["openConfigHitn"]}
       }
       
@@ -273,14 +272,6 @@
       "main": "./panel/index.js",
       "type": "dockable",
       "title": "代码编辑器",
-      "width": 400,
-      "height": 300
-    },
-    
-    "preview": {
-      "main": "./panel/preview.js",
-      "type": "dockable",
-      "title": "预览器",
       "width": 400,
       "height": 300
     }

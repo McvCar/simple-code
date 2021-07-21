@@ -92,14 +92,17 @@ module.exports = {
 
 		for (let i = 0; i < 10; i++) {
 			// 绑定页面全局快捷键事件,注意: 区分大小写 Ctrl = ctrl
-			this.parent.addKeybodyEvent([[String(i)]],(e)=>
+			this.parent.addKeybodyEvent( [[String(i)]],(e)=>
 			{
 				let uuid = localStorage.getItem("simple-code-tag_"+i);
-			    if (!this.inputTypeChk(e) && Editor.remote.assetdb.uuidToUrl(uuid))
+			    if (!this.inputTypeChk(e) && uuid)
 			    {
-					Editor.Selection.clear('asset')
-					Editor.Ipc.sendToAll('assets:hint', uuid)
-					Editor.Selection.select('asset', uuid)
+					Editor.remote.assetdb.uuidToUrl(uuid).then((url)=>{
+						if(!url) return;
+						Editor.Selection.clear('asset')
+						Editor.Ipc.sendToAll('assets:hint', uuid)
+						Editor.Selection.select('asset', uuid)
+					})
 					e.preventDefault();// 吞噬捕获事件
 					e.stopPropagation();
 					return false;

@@ -27,7 +27,7 @@ module.exports =
 
 	'openPreview' () {
 	  // open entry panel registered in package.json
-	  Editor.Panel.open('simple-code.preview');
+	//   Editor.Panel.open('simple-code.preview');
 	},
 
 	'openNodeFile' () {
@@ -81,7 +81,12 @@ module.exports =
 		Editor.Panel.open('simple-code.vsEditor');
 		Editor.Ipc.sendToPanel('simple-code', 'custom-cmd',{cmd:"setting"});
 	},
-	
+
+	'openQQ'(){
+		let url = 'https://qm.qq.com/cgi-bin/qm/qr?k=uha480KkJZa0P0rh_Pmrt8OkzQ6QIBqX&jump_from=webapi';
+		exec(Editor.isWin32 ? "cmd /c start "+url : "open "+url); 
+	},
+
 	'openConfig'(){
 		// exec( (Editor.isWin32 ? "start " : "open ")+Editor.url("packages://simple-code/config.js") )
 	},

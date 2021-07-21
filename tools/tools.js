@@ -6,9 +6,105 @@ var querystring = require('querystring');
 
 let espJsMap = {CallExpression:'{},',FunctionExpression:'()=>{},',ArrayExpression:'[],',Literal:'"0",',ArrowFunctionExpression:'()=>{}',}
 let patt = new RegExp('([0-9a-zA-Z_]+)[ =]*[ ]*[(].*[)][ \n=>]*{','g'); 
+let checkFsPath = new RegExp("\\.\\./", "g");
 
 module.exports = {
-	 copyToClipboard(str){
+
+	getFileName(filePath) {
+		let s_i = filePath.lastIndexOf('/');
+		if (s_i == -1) s_i = filePath.lastIndexOf('\\');
+		let name = filePath
+		if (s_i != -1) name = name.substr(s_i + 1)
+		s_i = name.lastIndexOf('.');
+		if (s_i != -1) {
+			name = name.substr(0, s_i)
+		}
+		return name;
+	},
+
+	parseJson(text){
+		try {
+			return JSON.parse(text)
+		} catch (error) {
+			return undefined;
+		}
+	},
+
+	objectCount(obj){
+		let len = 0
+		for (const key in obj) {
+			len++
+		}
+		return len;
+	},
+
+	// 获得import路径
+	getImportStringPaths(codeText) {
+
+		var regEx = /(require\(|import |reference path=)(.{0,}['"])(.+)['"]/g;
+		var match = regEx.exec(codeText);
+		var imports = []
+		while (match) {
+			let start = match.index + match[1].length + match[2].length;
+			imports.push({
+				path: match[3],
+				start: start,
+				length: match[3].length,
+			})
+			match = regEx.exec(codeText);
+		}
+		return imports
+	},
+
+	//将相对路径转为绝对路径
+	relativePathTofsPath(absolutePath, relativePath) {
+		var uplayCount = 0; // 相对路径中返回上层的次数。
+		var m = relativePath.match(checkFsPath);
+		if (m) uplayCount = m.length;
+
+		var lastIndex = absolutePath.length - 1;
+		var subString = absolutePath
+		for (var i = 0; i <= uplayCount; i++) {
+			lastIndex = subString.lastIndexOf("/", lastIndex);
+			subString = subString.substr(0, lastIndex)
+		}
+		return this.normPath( subString  + "/" + relativePath.substr(relativePath.lastIndexOf('./') + 2));
+	},
+
+	//将绝对路径转为相对路径
+	fsPathToRelativePath(currPath, importPath) {
+		let s_i = currPath.lastIndexOf('/')
+		if (s_i != -1) currPath = currPath.substr(0, s_i);
+		let relativePath = path.relative(currPath, importPath);
+		if (relativePath[0] != '.') {
+			relativePath = './' + relativePath;
+		}
+		return this.normPath(relativePath);
+	},
+
+
+	//转换相对路径
+	converRelative(relativePath, oldFilePath, newFilePath) {
+		let s_i = oldFilePath.lastIndexOf('/')
+		if (s_i != -1) oldFilePath = oldFilePath.substr(0, s_i);
+		s_i = newFilePath.lastIndexOf('/')
+		if (s_i != -1) newFilePath = newFilePath.substr(0, s_i);
+
+		let rve_to_abs = this.normPath(path.resolve(oldFilePath, relativePath));
+		relativePath = this.normPath(path.relative(newFilePath, rve_to_abs));
+		if (relativePath[0] != '.') {
+			relativePath = './' + relativePath;
+		}
+		return relativePath;
+	},
+
+
+
+	normPath(filePath) {
+		return filePath.replace(/\\/g, '/');
+	},
+
+	copyToClipboard(str){
 		var input = str;
 		const el = document.createElement('textarea');
 		el.value = input;

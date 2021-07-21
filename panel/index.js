@@ -159,6 +159,7 @@ let layer = {
 		// 读取配置文件
 		this.$.title0.style.display="none";
 
+		this.timer_map 			= {};
 		this.initAce();
 		this.initVsCode(() => {
 			this.initData();
@@ -323,6 +324,7 @@ let layer = {
 		this.key_cfg = [];
 		// 游戏资源路径缓存
 		this.file_list_buffer = [];
+		this.file_list_map 	  	= this.file_list_map || {};
 		// 当前场景所有子节点信息缓存
 		this.currSceneChildrenInfo = [];
 		// 重命名缓存
@@ -722,7 +724,7 @@ let layer = {
 				['Meta'] : e.metaKey,
 				['Shift'] : e.shiftKey,
 			}
-			
+			e.parameter = {}
 			ret_type = onApplyEvent(e, 'keydown');
 			_this.runExtendFunc("onKeyDown", e);
 			return ret_type;
@@ -761,7 +763,7 @@ let layer = {
 		
 		// 阻挡冒泡creator的快捷键
 		this.$.box.addEventListener("keydown", function (e) {
-			if (_this.vs_editor.hasTextFocus() && (e.key == "w" || e.key == "e" || e.key == "r" || e.key == "t")) {
+			if (_this.vs_editor.hasTextFocus() && (e.key == "w" || e.key == "e" || e.key == "r" || e.key == "t" || e.key == "2")) {
 				e.preventDefault();
 				e.stopPropagation();
 			}
@@ -974,7 +976,10 @@ let layer = {
 			let fsPath = is_url_type ? await Editor.assetdb.urlToFspath(file_path) : file_path;
 			if (!fe.isFileExit(fsPath)) return;
 
-			await this.loadVsModel(file_path,extname,is_url_type,true);
+			let model = await this.loadVsModel(file_path,extname,is_url_type,true);
+			if(model && this.file_list_map[fsPath] && is_url_type){
+				this.file_list_map[fsPath].data = model.getValue()
+			}
 
 			// 插入模块名字提示
 			let word = file_name.substr(0,file_name.lastIndexOf('.'))
@@ -1046,6 +1051,10 @@ let layer = {
 		// console.log("load copms",model.uri.path);
 	},
 
+	getModelByFsPath(fsPath){
+		return this.monaco.editor.getModel(this.monaco.Uri.parse(this.fsPathToModelUrl(fsPath)))
+	},
+
 	// 项目函数转为全局提示，用于模糊提示；
 	async loadGlobalFunctionCompleter(file_path,extname,is_url_type){
 		let isJs = extname == ".js";
@@ -1079,6 +1088,17 @@ let layer = {
 			let isJs = extname == ".js";
 			let isTs = extname == ".ts";
 			let fsPath = is_url_type ? await Editor.assetdb.urlToFspath(file_path) : file_path;
+			return this.loadVsModelWorker(file_path,fsPath,extname, is_url_type,isReadText)
+		}
+		
+	},
+
+	loadVsModelWorker(url,fsPath,extname, is_url_type,isReadText=true) {
+		let file_type = this.FILE_OPEN_TYPES[extname.substr(1).toLowerCase()];
+		if(file_type)
+		{
+			let isJs = extname == ".js";
+			let isTs = extname == ".ts";
 			let js_text = isReadText ? fs.readFileSync(fsPath).toString() : "";
 			let str_uri   = this.fsPathToModelUrl(fsPath)
 
@@ -1088,7 +1108,7 @@ let layer = {
 				model = this.monaco.editor.createModel('',file_type,this.monaco.Uri.parse(str_uri))
 				model.onDidChangeContent((e) => this.onVsDidChangeContent(e,model));
 				model.fsPath = fsPath;
-				model.dbUrl  = is_url_type ? file_path : undefined;
+				model.dbUrl  = is_url_type ? url : undefined;
 			}
 			if(isReadText) model.setValue(js_text);
 			if(isTs || isJs) this.loadNavigationCompleter(model,isTs);
@@ -1368,12 +1388,14 @@ let layer = {
 		});
 	},
 
-	newFileInfo(extname, name, url, uuid) {
+	newFileInfo(extname, name, url, uuid,fsPath) {
 		let item_cfg = {
 			extname: extname,//格式
 			value: name == "" ? url : name,
 			meta: url,
+			url: url,
 			score: 0,//搜索优先级
+			fsPath:fsPath,
 			// matchMask: i,
 			// exactMatch: 0,
 			uuid: uuid,
@@ -1400,8 +1422,9 @@ let layer = {
 						let extname = result.url.substr(s_i)
 						if(this.SEARCH_BOX_IGNORE[extname] == null)
 						{
-							let item_cfg = this.newFileInfo(extname, result.name, result.url, result.uuid)
+							let item_cfg = this.newFileInfo(extname, result.name, result.url, result.uuid,result.file)
 							fileList.push(item_cfg);
+							this.file_list_map[result.file] = item_cfg
 						}
 					}
 				} // 2D
@@ -1410,8 +1433,9 @@ let layer = {
 					let url = await Editor.assetdb.uuidToUrl(result.uuid);//Editor.assetdb.uuidToUrl(result.uuid)
 					if (url) {
 						let name = url.substr(url.lastIndexOf('/') + 1);
-						let item_cfg = this.newFileInfo(result.extname, name, url, result.uuid)
+						let item_cfg = this.newFileInfo(result.extname, name, url, result.uuid,result.file)
 						fileList.push(item_cfg);
+						this.file_list_map[result.file] = item_cfg
 					}
 				}
 			}
@@ -1462,19 +1486,19 @@ let layer = {
 		}
 	},
 
-	// async saveFileByUrl(url,text)
-	// {
-	// 	Editor.assetdb.saveExists(url, text, async (err, meta)=>{
-	// 		if (err) {
-	// 			let fsPath = await Editor.assetdb.urlToFspath(url);
-	// 			fs.writeFileSync(fsPath, text); //外部文件
-	// 			Editor.error("保存代码出错:", err);
-	// 		}else{
-	// 			// 刚刚保存了，creator还没刷新
-	// 			this.is_save_wait_up = 1;
-	// 		}
-	// 	});
-	// },
+	saveFileByUrl(url,text)
+	{
+		Editor.assetdb.saveExists(url, text, async (err, meta)=>{
+			if (err) {
+				let fsPath = await Editor.assetdb.urlToFspath(url);
+				fs.writeFileSync(fsPath, text); //外部文件
+				Editor.error("保存代码出错:", err);
+			}else{
+				// 刚刚保存了，creator还没刷新
+				this.is_save_wait_up = 1;
+			}
+		});
+	},
 
 	// 读取文件到编辑器渲染
 	readFile(info) {
@@ -2147,6 +2171,80 @@ let layer = {
 		statistical.countStartupTimes();
 	},
 
+	async onAssetsMovedEvent(files){
+
+		for (let i = 0; i < files.length; i++) {
+			const info = files[i];
+			let id = this.getTabIdByUuid(info.uuid);
+			// 正在编辑的tab
+			let urlI = this.getUriInfo(info.url)
+			if (id != null && this.edit_list[id])
+			{
+				let editInfo = this.edit_list[id] 
+				editInfo.path = info.url;
+				editInfo.name = urlI.name;
+				if(editInfo.vs_model)
+				{
+					// 刷新 model 信息，不然函数转跳不正确
+					let text  = editInfo.vs_model.getValue();
+					editInfo.vs_model.dispose()
+					let model = this.loadVsModelWorker(info.url,info.destPath,urlI.extname,true,false)
+					if(model)
+					{
+						let is_show = this.vs_editor.getModel() == null;
+						model.setValue(text)
+						editInfo.vs_model = model;
+						if(is_show){
+							this.vs_editor.setModel(editInfo.vs_model);
+							this.setTabPage(id);
+						}
+					}
+					this.upTitle(editInfo.id)
+				}
+				this.upTitle(editInfo.id)
+			}else{
+				// 修改缓存
+				let vs_model = this.monaco.editor.getModel(this.fsPathToModelUrl(info.srcPath))
+				if(vs_model) {
+					let text = vs_model.getValue();
+					vs_model.dispose()
+					let model = this.loadVsModelWorker(info.url,info.destPath,urlI.extname,true,false)
+					model.setValue(text);
+				}
+			}
+		}
+		
+
+		this.runExtendFunc('onAssetsMovedEvent',files)
+	},
+
+	
+	// 调用原生JS的定时器
+	setTimeoutById(func,time,id='com') 
+	{
+		// 之前有定时器先停掉
+		if(this.timer_map[id]){
+			this.timer_map[id]()
+		}
+		let sTime = new Date().getTime()
+		let headler = setTimeout(()=>{
+			if(this.timer_map[id]) this.timer_map[id]()
+			this.timer_map[id] = undefined;
+			let dt = new Date().getTime() - sTime;
+			func(dt)
+		}, time);
+		this.timer_map[id] = ()=>clearTimeout(headler);
+		return this.timer_map[id];
+	},
+
+	stopTimeoutById(id='com'){
+		if(this.timer_map[id]){
+			this.timer_map[id]()
+			this.timer_map[id] = undefined;
+		}
+	},
+
+
 	messages: {
 
 		// 场景保存
@@ -2178,8 +2276,9 @@ let layer = {
 			let urlI = layer.getUriInfo(info.url)
 			if (urlI.extname != "" && layer.SEARCH_BOX_IGNORE[urlI.extname] == null) 
 			{
-				let item = layer.newFileInfo(urlI.extname, urlI.name, info.url, info.uuid)
+				let item = layer.newFileInfo(urlI.extname, urlI.name, info.url, info.uuid,info.file)
 				layer.file_list_buffer.push(item)
+				layer.file_list_map[info.file] = item;
 				layer.loadCompleterLib(item.meta, item.extname, true);
 				layer.loadGlobalFunctionCompleter(item.meta, item.extname, true);
 			}
@@ -2190,7 +2289,7 @@ let layer = {
 			if(!layer.is_init_finish) return;
 			if (!info && layer.file_list_buffer) return;
 
-			
+			delete layer.file_list_map[info.file];
 			for (let i = 0; i < layer.file_list_buffer.length; i++) {
 				let item = layer.file_list_buffer[i];
 				if (item.uuid == info.uuid) {
@@ -2201,11 +2300,32 @@ let layer = {
 
 			let is_remove = false
 			// 编辑信息
-			layer.edit_list.forEach((editInfo) => {
+			layer.edit_list.forEach(async (editInfo) => {
 				// 正在编辑的文件被删
 				if (editInfo && info.uuid == editInfo.uuid) {
 					editInfo.uuid = "outside";
 					editInfo.path = unescape(Editor.url(editInfo.path));
+					editInfo.can_remove_model = 1;
+					if(editInfo.vs_model)
+					{
+						// 刷新 model 信息，不然函数转跳不正确
+						let text  = editInfo.vs_model.getValue();
+						editInfo.vs_model.dispose()
+						let model = await layer.loadVsModel(editInfo.path,layer.getUriInfo(editInfo.path).extname,false,false)
+						if(model)
+						{
+							let is_show = layer.vs_editor.getModel() == null;
+							model.setValue(text)
+							editInfo.vs_model = model;
+							if(is_show){
+								layer.setTabPage(editInfo.id);
+							}
+							// editInfo.data = ' ';
+							// editInfo.is_need_save = true;
+							// layer.upTitle(editInfo.id);
+						}
+					}
+
 					layer.checkCurrFileChange(editInfo);
 					is_remove = true
 				}
@@ -2214,8 +2334,8 @@ let layer = {
 		},
 
 		// 项目资源文件发生改变
-		async 'assetChange'(event, info) {
-			if(!layer.is_init_finish) return;
+		'assetChange'(event, info) {
+			if(!layer.is_init_finish || info.isDirectory) return;
 
 			// 检查文件移动位置没有
 			let isChange = false;
@@ -2224,10 +2344,16 @@ let layer = {
 				if (item.uuid == info.uuid) 
 				{
 					if(item.meta != info.url){
+						info.srcPath = item.fsPath;
+						info.destPath = info.file;
 						let urlI = layer.getUriInfo(info.url)
 						item.extname = urlI.extname
 						item.value = urlI.name
 						item.meta = info.url
+						item.url = info.url
+						item.fsPath = info.file
+						delete layer.file_list_map[info.srcPath]
+						layer.file_list_map[info.destPath] = item;
 						isChange = true;
 					}
 					break;
@@ -2236,29 +2362,9 @@ let layer = {
 
 			// 文件被移动了，vs编辑信息
 			if(isChange){
-				layer.edit_list.forEach(async (editInfo,id) => 
-				{
-					if (editInfo && editInfo.uuid == info.uuid) {
-						let urlI = layer.getUriInfo(info.url)
-						editInfo.path = info.url;
-						editInfo.name = urlI.name;
-						if(editInfo.vs_model)
-						{
-							// 刷新 model 信息，不然函数转跳不正确
-							let model = await layer.loadVsModel(editInfo.path,layer.getUriInfo(editInfo.path).extname,true);
-							if(model)
-							{
-								let is_show = layer.vs_editor.getModel() == editInfo.vs_model;
-								model.setValue(editInfo.vs_model.getValue())
-								editInfo.vs_model = model;
-								if(is_show){
-									layer.setTabPage(id);
-								}
-							}
-						}
-						layer.upTitle(editInfo.id)
-					}
-				})
+		
+				// console.log("移动文件:",info.url)
+				layer.onAssetsMovedEvent([info])
 			}else{
 				// 读取代码缓存
 				layer.checkAllCurrFileChange();
