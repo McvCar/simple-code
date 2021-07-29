@@ -231,7 +231,6 @@ module.exports = {
 			fs.readFile(args.filePath,(err,data)=>
 			{
 				readFileCount--
-				console.log("readFileAsyn已处理:",readFileCount,args.filePath);
 				if(readFileCount > 500){
 					setTimeout(this._handleReadFileQueue.bind(this),100)
 				}else{

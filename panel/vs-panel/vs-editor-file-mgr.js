@@ -283,7 +283,7 @@ class FileMgr{
 			this.parent.loadVsModeAsyn(filePath, path.extname(filePath) , !isOutside,false,(model)=>{
 				delete this.waitReadModels[filePath]; // 读取完成
 			})
-			console.log("加载import:",filePath);
+			// console.log("加载import:",filePath);
 			return 0;
 		}
 
@@ -291,7 +291,7 @@ class FileMgr{
 		{
 			// 告诉解析器已经处理此路径
 			this.parent.tsWr.removeNeedImportPath(importPath)
-			console.log('尝试加载:',importPath)
+			// console.log('尝试加载:',importPath,tryPaths.length)
 			if(this.importPathBuffer[importPath]){
 				continue ;// 已经尝试加载过
 			}

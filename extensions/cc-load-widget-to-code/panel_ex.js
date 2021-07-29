@@ -13,11 +13,11 @@ const prsPath 		= Editor.Project && Editor.Project.path ? Editor.Project.path : 
 let is_lock			= false;
 let ASSETS_TYPE_MAP = {'sprite-atlas':"cc.SpriteAtlas",'sprite-frame':"cc.SpriteFrame",'texture':"cc.SpriteFrame",'prefab':"cc.Prefab",
 	'audio-clip':'cc.AudioClip','raw-asset':'cc.RawAsset','dragonbones':'dragonBones.DragonBonesAsset','dragonbones-atlas':'dragonBones.DragonBonesAtlasAsset',
-	'spine':'sp.SkeletonData',"particle":"cc.ParticleAsset",'asset':'cc.Asset'};
+	'spine':'sp.SkeletonData',"particle":"cc.ParticleAsset",'asset':'cc.Asset','material':'cc.Material','mesh':'cc.Mesh','skeleton-animation-clip':'cc.SkeletonAnimationClip'};
 
 let IS_URL_TYPE 	= ['cc.AudioClip','cc.RawAsset','cc.Asset']
 // 拖拽加入组件优先顺序
-let QUICK_LOAD_TYPE_ORDER 	= ['cc.Slider','cc.ProgressBar','cc.Toggle','dragonBones.ArmatureDisplay','sp.Skeleton','cc.Animation','cc.Sprite','cc.Label','cc.EditBox','cc.RichText']
+let QUICK_LOAD_TYPE_ORDER 	= ['cc.SkinnedMeshRenderer','cc.MeshRenderer','cc.Slider','cc.ProgressBar','cc.Toggle','dragonBones.ArmatureDisplay','sp.Skeleton','cc.Animation','cc.Sprite','cc.Label','cc.EditBox','cc.RichText']
 
 let NEW_VAR_RULE 	 	=  path.join(path.resolve(__dirname,"./"),"drag_var_rule.js");
 let USER_NEW_VAR_RULE 	=  path.join(config.cacheDir,"drag_var_rule.js");
@@ -43,9 +43,9 @@ module.exports = {
 	// 插入组件入口
 	insertWidgetAction(isQuick,widgetType,insertUuids)
 	{
-		let nodes = insertUuids || Editor.Selection.curSelection('node');
-
-		Editor.Scene.callSceneScript('simple-code', 'getNodesInfo',nodes || [], (err, nodeInfos) => 
+		let nodes = insertUuids || Editor.Selection.curSelection('node') || [];
+		isQuick = isQuick || nodes.length >1
+		Editor.Scene.callSceneScript('simple-code', 'getNodesInfo',nodes, (err, nodeInfos) => 
 		{ 
 			if(!nodeInfos.length) return;
 
@@ -57,13 +57,18 @@ module.exports = {
 				let symbolNames = [];
 				for (let i = 0; i < nodeInfos.length; i++) 
 				{
+					// 定义变量类型
 					const nodeInfo = nodeInfos[i];
 					let symbolName = 'cc.Node';
-					for (let i = 0; i < QUICK_LOAD_TYPE_ORDER.length; i++) 
-					{
-						if( nodeInfo.compNames.indexOf(QUICK_LOAD_TYPE_ORDER[i]) != -1){
-							symbolName = QUICK_LOAD_TYPE_ORDER[i];
-							break;
+					if(widgetType && nodeInfo.compNames.indexOf(widgetType) != -1){
+						symbolName = widgetType
+					}else{
+						for (let i = 0; i < QUICK_LOAD_TYPE_ORDER.length; i++) 
+						{
+							if( nodeInfo.compNames.indexOf(QUICK_LOAD_TYPE_ORDER[i]) != -1){
+								symbolName = QUICK_LOAD_TYPE_ORDER[i];
+								break;
+							}
 						}
 					}
 					names.push(nodeInfo.name);
@@ -101,7 +106,7 @@ module.exports = {
 
 			let widgetType = ASSETS_TYPE_MAP[fileInfo.type];
 			if(widgetType==null){
-				Editor.info('不支持插入的资源类型:',fileInfo.type)
+				Editor.info('不支持插入的资源类型:',fileInfo.type,fileInfo)
 				return;
 			}
 
@@ -305,6 +310,8 @@ module.exports = {
 		// 1.保存刷新creator生成变量拖拽组件
 		if(oldCodeText === null || oldCodeText != codeText){
 			this.parent.saveFile(true,true);
+			// 标记场景切换时需要保存
+			Editor.Scene.callSceneScript('simple-code', 'scene-need-save')
 		}
 	},
 
@@ -327,9 +334,9 @@ module.exports = {
 		let findObj = text.match(reg);
 		if(findObj)
 		{
-			// 变量名如果有空格去掉
+			// 变量名去掉不符合规则的符号
 			symbolName = symbolName[0].toLowerCase() + symbolName.substr(1);
-			symbolName = symbolName.replace(/ /g,''); 
+			symbolName = symbolName.replace(/( |\.|\-|\~|\!|\@|\#|\%|\^|\&|\*|\(|\)|\=|\+|\`|\<|\>|\?)/g,''); 
 			
 			// 1.获得插入文本内容
 			let startPos = findObj.index + findObj[0].length;
@@ -583,7 +590,7 @@ module.exports = {
 	loadSymbolName(callback,defineName='',result=[])
 	{
 		// 要求输入变量名
-		let ps = {value:tools.translateZhAndEn('请输入变量名字','Please enter a variable name'),meta:'',score:0};
+		let ps = {value:tools.translateZhAndEn('请确认变量名','Please confirm the variable name'),meta:'',score:0};
 		result.unshift(ps)
 		// 下拉框选中后操作事件
 		let onSearchAccept = (data,cmdLine)=>
@@ -591,6 +598,8 @@ module.exports = {
 			let name = cmdLine.getValue();
 			if(ps.value != data.item.value){
 				name = data.item.value
+			}else{
+				name = defineName;
 			}
 			if(name && name != ps.value){
 				callback(name);
@@ -598,6 +607,7 @@ module.exports = {
 		}
 		// 修改搜索框时，通过该函数读取显示的实时显示下拉列表内容, cmdLine为输入文本框对象
 		let onCompletionsFunc = (cmdLine)=>{
+			defineName = cmdLine.getValue()
 			return result;
 		}
 		
@@ -624,7 +634,7 @@ module.exports = {
 		if(type == 'asset' || type == 'assets'){
 			this.insertAssets(this.parent.cfg.isQuickDrag,uuids)
 		}if(type == 'node' || type == 'hierarchy'){
-			this.insertWidgetAction(this.parent.cfg.isQuickDrag,'cc.Node',uuids);
+			this.insertWidgetAction(this.parent.cfg.isQuickDrag,null,uuids);
 		}
 	},
 
@@ -690,6 +700,19 @@ module.exports = {
 			}
 		})
 	},
+
+	getSelections(type){
+		if(this.currSelectInfo.type != type || !this.currSelectInfo.uuid){
+			return [];
+		}
+		// 判断当前选中资源中有无当前鼠标所在位置的资源
+		let uuids = Editor.Selection.curSelection(type) || [];
+		if(uuids.indexOf(this.currSelectInfo.uuid) != -1){
+			return uuids;
+		}else{
+			return [this.currSelectInfo.uuid];
+		}
+	},
 	
 	messages:{
 
@@ -713,7 +736,7 @@ module.exports = {
 		{
 			if(this.parent == null) return;
 			
-			let uuids = this.currSelectInfo.type == 'node' && this.currSelectInfo.uuid ? [this.currSelectInfo.uuid] : null;
+			let uuids = this.getSelections('node');
 			this.insertWidgetAction(false,args.label,uuids);
 		},
 
@@ -721,7 +744,7 @@ module.exports = {
 		'quickInsertWidget'(e,args)
 		{
 			if(this.parent == null) return;
-			let uuids = this.currSelectInfo.type == 'node' && this.currSelectInfo.uuid ? [this.currSelectInfo.uuid] : null;
+			let uuids = this.getSelections('node');
 			this.insertWidgetAction(true,null,uuids);
 		},
 
@@ -730,14 +753,14 @@ module.exports = {
 		'insertAssets'(e,args){
 			if(this.parent == null) return;
 
-			let uuids = this.currSelectInfo.type == 'asset' && this.currSelectInfo.uuid ? [this.currSelectInfo.uuid] : null;
+			let uuids = this.getSelections('asset');
 			this.insertAssets(false,uuids)
 		},
 
 		// 快速添加资源
 		'quickInsertAssets'(e,args){
 			if(this.parent == null) return;
-			let uuids = this.currSelectInfo.type == 'asset' && this.currSelectInfo.uuid ? [this.currSelectInfo.uuid] : null;
+			let uuids = this.getSelections('asset');
 			this.insertAssets(true,uuids)
 		},
 		 

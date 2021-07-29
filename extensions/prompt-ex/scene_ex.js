@@ -21,6 +21,7 @@ module.exports = {
 			{
 				node.addComponent(comp_name)
 			})
+			parent['scene-need-save']()
 		},
 
 

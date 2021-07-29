@@ -613,7 +613,6 @@ let layer = {
 		this.runExtendFunc("onBlur");
 	},
 
-
 	// onclose(){
 	// 	this.onDestroy()
 	// },

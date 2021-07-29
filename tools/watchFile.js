@@ -28,6 +28,7 @@ const tools = require("./tools");
          this.pathName = pathName;
          this.eventCallback = eventCallback;
          this._watchObj = watchObj;
+         /** @type Object<string,fs.Stats> */
          this._files = {}
          this._isChecking = false;
          this._isInit = false;
@@ -71,16 +72,14 @@ const tools = require("./tools");
  
      /**
       * 更新状态
-      * @param {fs.Stats} newFiles 
+      * @param {Object<string,fs.Stats>} newFiles 
       */
      _update(newFiles){
          let deleteFiles = [];
          let changeFiles = [];
          let createFiles = [];
          for (const filePath in this._files) {
-             /** @type fs.Stats */
              const oldFileStats = this._files[filePath];
-             /** @type fs.Stats */
              const newFileStats = newFiles[filePath]
              if(newFileStats == null){
                  // 文件被删
@@ -106,7 +105,7 @@ const tools = require("./tools");
  
          // 调用事件
          if(this.eventCallback){
-             if(isInit){
+             if(!isInit){
                  this.eventCallback('init',createFiles);
              }else{
                  if(deleteFiles.length) this.eventCallback('delete',deleteFiles);

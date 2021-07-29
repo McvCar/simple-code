@@ -6,11 +6,7 @@
 var path = require('path');
 var fs = require('fs');
 const config = require('../../config');
-
-// 新建js模板路径
-let getJsTemplatePath = (node_uuid, file_type) => {
-	return path.join(config.cacheDir, 'define.' + file_type)
-}
+const USER_NEW_FILE_RULE = require('./panel_ex').USER_NEW_FILE_RULE;
 
 let cc_require = (fileName)=>{
 	// 阻止报错提示
@@ -75,7 +71,10 @@ module.exports = {
 				}
 			}
 
-			let data = fs.readFileSync(args.templePath);
+			let data = fs.readFileSync(args.templePath).toString();
+			if(require(USER_NEW_FILE_RULE).getSaveText){
+				data = require(USER_NEW_FILE_RULE).getSaveText(data,args.saveUrl,node)
+			}
 			// 创建文件
 			Editor.assetdb.create(args.saveUrl, data, (err, results) => {
 				if (err) return event.reply(null, {});
@@ -96,6 +95,12 @@ module.exports = {
 								stop_func();
 								event.reply(null, { data: "", node_uuid: uuid, scipt_uuid: comp.__scriptUuid });
 								Editor.Ipc.sendToPanel('simple-code', 'custom-cmd', { cmd: "openFile" });
+								parent['scene-need-save']()
+								if(require(USER_NEW_FILE_RULE).onComplete){
+									setTimeout(()=>{
+										require(USER_NEW_FILE_RULE).onComplete(args.saveUrl,data,node,jsFileName);
+									},100)
+								}
 							}
 						} else {
 							// 阻止报错提示

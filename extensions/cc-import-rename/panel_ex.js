@@ -144,10 +144,10 @@ module.exports = {
 					hasUpdate = true;
 					// console.log('转换import:',info.new_path,importItem.path,'to',newImportPath)
 					text = text.substr(0,importItem.start) + newImportPath + text.substr(importItem.start+importItem.length)
-					saveList.push({model,text})
 				}
 			}
 			if(hasUpdate){
+				saveList.push({model,text})
 				hintText+=model.dbUrl+"\n";
 			}
 		}

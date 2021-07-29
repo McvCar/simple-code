@@ -418,6 +418,37 @@ var eventFuncs =
 		cc.engine._animatingInEditMode = is_cmd_mode
 	},
 
+	// 标记场景切换时需要保存
+	'scene-need-save'(){
+		let node = cc.director.getScene().children[0];
+		if(!node){
+			return;
+		}
+		let uuid = node.uuid;
+		let opacity = node.opacity;
+		// Editor.Ipc.sendToPanel('scene', 'scene:undo-commit'); 
+		// Editor.Ipc.sendToAll('scene:undo-record',uuid,{id:uuid});
+		// Editor.Ipc.sendToPanel('scene', 'scene:set-property',{
+		// 	id: uuid,
+		// 	path: "opacity",//要修改的属性
+		// 	type: "number",
+		// 	value: 2555,
+		// 	isSubProp: false,
+		// });
+		Editor.Ipc.sendToPanel('scene', 'scene:set-property',{
+			id: uuid,
+			path: "opacity",//要修改的属性
+			type: "number",
+			value: opacity,
+			isSubProp: false,
+		});
+		// 撤销
+		Editor.Ipc.sendToPanel('scene', 'scene:undo');
+		// 重做
+		Editor.Ipc.sendToPanel('scene', 'scene:redo')
+		Editor.Ipc.sendToPanel('scene', 'scene:undo-commit'); 
+	},
+
 	// 运行命令
 	'run-command-code': function (event,args) {
 		let require = cc.require;

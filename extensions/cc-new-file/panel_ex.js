@@ -18,6 +18,8 @@ let NEW_FILE_RULE = path.join(
 let USER_NEW_FILE_RULE = path.join(config.cacheDir, 'new_script_rule.js');
 
 module.exports = {
+    USER_NEW_FILE_RULE,
+
 	/** @type import('../../panel/vs-panel/vs-panel-base') */
 	parent : null,
 
@@ -106,11 +108,6 @@ module.exports = {
                         { cmd: 'openFile' }
                     );
                     
-                    if(require(USER_NEW_FILE_RULE).onComplete){
-                        setTimeout(()=>{
-                            require(USER_NEW_FILE_RULE).onComplete(saveUrl);
-                        },100)
-                    }
                 });
 
             } catch (error) {

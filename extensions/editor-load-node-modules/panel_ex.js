@@ -53,6 +53,32 @@ module.exports = {
 		this.initProjectConfig()
 	},
 
+	// 加载creator游戏脚本package.json、tsconfig.json配置
+	initProjectConfig()
+	{
+		// 加载、监听tsconfig项目配置变动
+		let tsconfigPath = path.join(prsPath,'tsconfig.json');
+		this.watchFile = this.parent.fileMgr.addWatchPath(tsconfigPath,this.onFileStatChange.bind(this))
+
+		// 必须先加载package项目配置
+		let packagePath = path.join(prsPath,'package.json');
+		if(tools.isFileExit(packagePath)){
+			let jsonText = fs.readFileSync(packagePath).toString()
+			this.updateProjectPackage(jsonText)
+		}
+
+		// 监听package项目配置变动
+		this.parent.fileMgr.addWatchPath(packagePath,(eventName,files)=>{
+			if (eventName == "create" || eventName == 'change') {
+				if(tools.isFileExit(packagePath)){
+					let jsonText = fs.readFileSync(packagePath).toString()
+					this.updateProjectPackage(jsonText,true)
+				}
+			}
+			this.onFileStatChange(eventName,files);
+		})
+	},
+
 	// 设置选项
 	setOptions(cfg,isInit) 
 	{	if(cfg.enabledNpmDir == null) return;
@@ -71,42 +97,25 @@ module.exports = {
 	// 初始化 node_modules 文件夹监听
 	initWatch(){
 		delete this.check_timeout;
-		this._isInit = true
-		// this.loadModuleDir()
-		this.watchFile = this.parent.fileMgr.addWatchPath(node_modules_path,(eventName,files)=> 
-		{
-			if (eventName == "init" || eventName == "create") {
-				// Finished walking the tree
-				this.addNodeModuleFiles(files);
-			}else if (eventName == 'change') {
-				this.changeNodeModuleFiles(files);
-
-			}else if (eventName == 'delete') {
-				this.unlinkNodeModuleFiles(files);
-			}
-			
-		})
+		this._isInit = true;
+		this.watchFile = this.parent.fileMgr.addWatchPath(node_modules_path,this.onFileStatChange.bind(this))
 	},
 	
+	// node_modules文件变化监听
+	onFileStatChange(eventName,files){
+		if (eventName == "init" || eventName == "create") {
+			// Finished walking the tree
+			this.addNodeModuleFiles(files);
+		}else if (eventName == 'change') {
+			this.changeNodeModuleFiles(files);
 
-	// 加载creator游戏脚本package.json、tsconfig.json配置
-	initProjectConfig()
-	{
-		// 加载tsconfig项目配置
-		let tsconfigPath = path.join(prsPath,'tsconfig.json');
-		if(tools.isFileExit(tsconfigPath)){
-			this.parent.loadVsModel(tsconfigPath,path.extname(tsconfigPath),false)
-		}
-		
-		// 加载package项目配置
-		let packagePath = path.join(prsPath,'package.json');
-		if(tools.isFileExit(packagePath)){
-			let model = this.parent.loadVsModel(packagePath,path.extname(packagePath),false)
-			this.updateProjectPackage(model.getValue())
+		}else if (eventName == 'delete') {
+			this.unlinkNodeModuleFiles(files);
 		}
 	},
 
-	updateProjectPackage(text){
+	// 读取项目package文件信息
+	updateProjectPackage(text,isLoadDependenciesFiles=false){
 		let packageContent = tools.parseJson(text);
 		if(packageContent == null){
 			return;
@@ -120,6 +129,18 @@ module.exports = {
 			packageContent.bundledDependencies,
 			packageContent.optionalDependencies,
 		);
+
+		// 加载依赖模块文件
+		if(isLoadDependenciesFiles){
+			for (const key in this.dependencies) {
+				let packagePath = path.join(node_modules_path,key,'package.json');
+				packagePath = packagePath.replace(/\\/g,'/')
+				if(tools.isFileExit(packagePath)){
+					let packageModel = this.parent.loadVsModel(packagePath,path.extname(packagePath),false);
+					this.updatePackageMainModulePath(packageModel);
+				};
+			}
+		}
 	},
 
 	// 系统文件保存修改内容
@@ -143,7 +164,7 @@ module.exports = {
 		setTimeout(async ()=>{
 			this.parent.tsWr.writeOtherFile(url,model.getValue()); // 保存package.json文件缓存到ts解析器参与进一步解析工作
 			let tryModulePaths = await this.parent.tsWr.getPackageMainModulePath(url);
-			console.log("modeule包路径:",url,tryModulePaths)
+			// console.log("modeule包路径:",url,tryModulePaths)
 			let filePath = await this.parent.fileMgr.loadNeedImportPathsAsync({[url]:tryModulePaths});
 			if(filePath){
 				// 性能优化: 忽略模块文件import路径深度解析功能
@@ -172,7 +193,8 @@ module.exports = {
 
 	// 多层 node_modules 目录
 	isMultilayerNodeModuleDir(filePath){
-		return filePath.match(REG_EXP_MULTILAYER).length>1;
+		let reg = filePath.match(REG_EXP_MULTILAYER);
+		return reg && reg.length>1;
 	},
 
 	isNodeModuleDir(path){
