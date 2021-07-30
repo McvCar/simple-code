@@ -44,6 +44,9 @@ module.exports = {
 	'findFileGoto' : { win32:[] , mac:[["Ctrl",'f']] }, 
 	// 搜索节点
 	'findNodes' : { win32:[["f"]] , mac:[["f"]] },  
+	// 全局搜索
+	'openGlobalSearch' : { win32:[["Ctrl","Shift",'f']] , mac:[["Meta","Shift",'f']] }, 
+	
 
 	// 跳到下个书签, 鼠标点击行数栏标记位置
 	'nextBookmark' : { win32:[["Alt",'`']] , mac:[["Meta",'F1']] },  

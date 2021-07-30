@@ -14,14 +14,13 @@ module.exports = {
 	{
 		// 批量添加组件
 		'set-node-comp'(event,comp_name,parent){
-
 			if(comp_name == null && comp_name == "") return cc.log("未选中绑定的组件");
 			let arrNode = parent.getSelectdNodes()
 			arrNode.forEach((node)=>
 			{
 				node.addComponent(comp_name)
 			})
-			parent['scene-need-save']()
+			parent['scene-need-save']();
 		},
 
 

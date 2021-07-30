@@ -20,6 +20,7 @@ module.exports = {
 		// index.js 对象
 		this.parent = parent; 
 
+		// 0代表只有非编辑状态时可用，1代表仅在在文本编辑状态使用，2全局不受影响
 		// 键盘事件：添加节点组件
 		this.parent.addKeybodyEventByName('addCompToScene',(e)=>
 		{
@@ -28,6 +29,13 @@ module.exports = {
 				e.preventDefault();// 吞噬捕获事件
 			}
 		},0)
+
+		// 键盘事件：全局搜索文本
+		this.parent.addKeybodyEventByName('openGlobalSearch',(e)=>
+		{	
+			this.openGlobalSearch()
+			e.preventDefault();// 吞噬捕获事件
+		},1)
 
 
 		// 键盘事件：批量插入预制节点
@@ -438,10 +446,6 @@ module.exports = {
 				// 下拉框转跳资源管理器
 				this.searchCmd(info.cmd)
 			}
-		},
-
-		'open-global-search'(){
-			this.parent.setTimeoutById(()=>this.openGlobalSearch(),100,'open-global-search')
 		},
 
 		'scene:saved'(){

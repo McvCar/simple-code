@@ -1,7 +1,7 @@
 {
 	"name": "simple-code",
 	"scene-script": "panel/scene-info.js",
-	"version": "2.7.9", 
+	"version": "2.8.1", 
 	"description": "快闪-代码编辑器",
 	"author": "嘉年华(mcv-cpu)",
 	"main": "main.js",
@@ -54,10 +54,6 @@
 		"i18n:simple-code.name/i18n:simple-code.search/i18n:simple-code.goto-asset": {
 			"message": "simple-code:findFileGoto",
 			"accelerator": "alt+F"
-		},
-		"i18n:simple-code.name/i18n:simple-code.search/i18n:simple-code.global-search": {
-			"message": "simple-code:open-global-search",
-			"accelerator": "CmdOrCtrl+shift+F"
 		},
 		"i18n:simple-code.name/i18n:simple-code.search/i18n:simple-code.search-unused-assets": {
 			"message": "simple-code:cleanFile",
@@ -138,6 +134,9 @@
 		"i18n:simple-code.name/i18n:simple-code.project-manage/i18n:simple-code.open-project-in-creator": {
 			"message": "simple-code:openProjectCreator",
 			"accelerator": "alt+f3"
+		},
+		"i18n:simple-code.name/i18n:simple-code.contact-author": {
+			"message": "simple-code:contactAuthor"
 		}
 	},
 	"panel": {

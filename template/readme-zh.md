@@ -2,8 +2,13 @@
 # 基础使用教程:
 1.鼠标单击选中脚本或场景上有绑定脚本的Node后自动加载代码进入编辑
 2.双击场景Label可直接编辑内容
-3.自适应布局设置:"https://forum.cocos.org/t/topic/103380
-4.最新文档:"https://store.cocos.com/#/resources/detail/2313"
+3.鼠标拖动资源或Node到代码窗口完成成员变量的绑定
+4.日常使用示例:"https://forum.cocos.org/t/topic/115563"
+5.自适应布局设置:"https://forum.cocos.org/t/topic/103380
+6.最新文档:"https://store.cocos.com/#/resources/detail/2313"
+
+# 将窗口嵌入Creator
+通过鼠标拖动左上角 "快闪编辑器" 蓝色的标题到Creator内完成嵌入
 
 # 主要功能
 - 1.备忘录（启动插件第一个页面）

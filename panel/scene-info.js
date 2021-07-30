@@ -447,6 +447,9 @@ var eventFuncs =
 		// 重做
 		Editor.Ipc.sendToPanel('scene', 'scene:redo')
 		Editor.Ipc.sendToPanel('scene', 'scene:undo-commit'); 
+		// 恢复 nodeTree 选择状态
+		let list = Editor.Selection.curSelection('node');
+		setTimeout(()=>Editor.Selection.select('node', list),1)
 	},
 
 	// 运行命令

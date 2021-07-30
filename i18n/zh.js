@@ -46,6 +46,7 @@ module.exports = {
     'open-project-directory': '打开项目目录',
     'open-project-to-external-editor': '打开项目到外部编辑器',
     'open-project-in-creator': '打开项目到Creator',
+    'contact-author':"联系作者",
 
     /**
      * UI

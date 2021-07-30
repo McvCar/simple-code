@@ -195,6 +195,12 @@ module.exports =
 		exec( (Editor.isWin32 ? "start " : "open ")+Editor.url("packages://simple-code/extensions") )
 	},
 
+	// 联系作者
+	'contactAuthor'(){
+		let url = 'https://qm.qq.com/cgi-bin/qm/qr?k=uha480KkJZa0P0rh_Pmrt8OkzQ6QIBqX&jump_from=webapi';
+		exec(Editor.isWin32 ? "cmd /c start "+url : "open "+url);
+	},
+
 	 
 	'scene:enter-prefab-edit-mode' (event,uuid) {
 	   _lastUuid = uuid;

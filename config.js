@@ -4,7 +4,7 @@ const fs 	= require("fs");
 const tools = require("./tools/tools");
 const cacheDir = path.join(path.resolve(__dirname,"../"),"simple-code-cache","cache");
 
-// 配置信息请写在这里,修改完重启creator生效,注意语法不要写错!!
+// 基础配置
 module.exports = {
 	
 	cacheDir : cacheDir,

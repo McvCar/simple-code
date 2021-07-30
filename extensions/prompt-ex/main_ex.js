@@ -54,11 +54,6 @@ module.exports = {
 			Editor.Ipc.sendToPanel('simple-code', 'openProject',"creator");
 		},
 
-		'open-global-search'(event){
-			Editor.Panel.open('simple-code');
-			Editor.Ipc.sendToPanel('simple-code', 'open-global-search');
-		},
-
 		'scene:saved'(){
 			// Editor.log("to save")
 		}

@@ -46,6 +46,7 @@ module.exports = {
     'open-project-directory': 'Open Project Directory',
     'open-project-to-external-editor': 'Open Project To External Editor',
     'open-project-in-creator': 'Open Project In Creator',
+    'contact-author':"联系作者",
 
     /**
      * UI
