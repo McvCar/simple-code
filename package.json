@@ -1,161 +1,468 @@
 {
 	"name": "simple-code",
-	"scene-script": "panel/scene-info.js",
-	"version": "2.8.1", 
+	"package_version": 2,
+	"version": "3.2.0",
 	"description": "快闪-代码编辑器",
 	"author": "嘉年华(mcv-cpu)",
-	"main": "main.js",
-	
-	"main-menu": {
-		"i18n:simple-code.name/i18n:simple-code.open": {
-			"message": "simple-code:open",
-			"accelerator": ""
+	"main": "./main.js",
+	"contributions": {
+		"scene": {
+			"script": "./panel/scene-info.js"
 		},
-		"i18n:simple-code.name/i18n:simple-code.preview": {
-			"message": "simple-code:openPreview",
-			"accelerator": ""
-		},
-		"i18n:simple-code.name/i18n:simple-code.setting/i18n:simple-code.set-panel": {
-			"message": "simple-code:setting",
-			"accelerator": ""
-		},
-		"i18n:simple-code.name/i18n:simple-code.setting/i18n:simple-code.set-ex": {
-			"message": "simple-code:openConfigExtendDir",
-			"accelerator": ""
-		},
-		"i18n:simple-code.name/i18n:simple-code.setting/i18n:simple-code.set-new-file": {
-			"message": "simple-code:newFileDir",
-			"accelerator": ""
-		},
-		"i18n:simple-code.name/i18n:simple-code.setting/i18n:simple-code.set-key-map": {
-			"message": "simple-code:openKeyMap",
-			"accelerator": ""
-		},
-		"i18n:simple-code.name/i18n:simple-code.setting/i18n:simple-code.set-other": {
-			"message": "simple-code:openConfig",
-			"accelerator": ""
-		},
-		"i18n:simple-code.name/i18n:simple-code.setting/i18n:simple-code.set-edit-suggest": {
-			"message": "simple-code:openConfigHitn",
-			"accelerator": ""
-		},
-		"i18n:simple-code.name/i18n:simple-code.setting/i18n:simple-code.set-drag-var-rule": {
-			"message": "simple-code:openDragVarRuleFile",
-			"accelerator": ""
-		},
-		"i18n:simple-code.name/i18n:simple-code.setting/i18n:simple-code.set-format-prettier": {
-			"message": "simple-code:openPrettierConfig",
-			"accelerator": ""
-		},
-		"i18n:simple-code.name/i18n:simple-code.search/i18n:simple-code.open-asset": {
-			"message": "simple-code:findFileAndOpen",
-			"accelerator": "alt+V"
-		},
-		"i18n:simple-code.name/i18n:simple-code.search/i18n:simple-code.goto-asset": {
-			"message": "simple-code:findFileGoto",
-			"accelerator": "alt+F"
-		},
-		"i18n:simple-code.name/i18n:simple-code.search/i18n:simple-code.search-unused-assets": {
-			"message": "simple-code:cleanFile",
-			"accelerator": "alt+L"
-		},
-		"i18n:simple-code.name/i18n:simple-code.debug/i18n:simple-code.exec-cmd": {
-			"message": "simple-code:runCommandLine",
-			"accelerator": "alt+R"
-		},
-		"i18n:simple-code.name/i18n:simple-code.debug/i18n:simple-code.refresh-preview": {
-			"message": "simple-code:refresh-preview",
-			"accelerator": "CmdOrCtrl+shift+r"
-		},
-		"i18n:simple-code.name/i18n:simple-code.edit/i18n:simple-code.batch-rename": {
-			"message": "simple-code:rename",
-			"accelerator": "alt+enter"
-		},
-		"i18n:simple-code.name/i18n:simple-code.edit/i18n:simple-code.batch-binding-component": {
-			"message": "simple-code:addNodeComp",
-			"accelerator": "alt+shift+enter"
-		},
-		"i18n:simple-code.name/i18n:simple-code.edit/i18n:simple-code.batch-insert-prefab": {
-			"message": "simple-code:addPrefab",
-			"accelerator": "alt+shift+i"
-		},
-		"i18n:simple-code.name/i18n:simple-code.edit/i18n:simple-code.add-next-occurrence-node": {
-			"message": "simple-code:selectNode",
-			"accelerator": "alt+d"
-		},
-		"i18n:simple-code.name/i18n:simple-code.edit/i18n:simple-code.batch-search": {
-			"message": "simple-code:selectNode",
-			"accelerator": ""
-		},
-		"i18n:simple-code.name/i18n:simple-code.edit/i18n:simple-code.new-file-and-bind-node": {
-			"message": "simple-code:newFile",
-			"accelerator": "f3"
-		},
-		"i18n:simple-code.name/i18n:simple-code.edit/i18n:simple-code.open-code": {
-			"message": "simple-code:openNodeFile",
-			"accelerator": ""
-		},
-		"i18n:simple-code.name/i18n:simple-code.edit/i18n:simple-code.folder-bind-shortcuts": {
-			"message": "",
-			"accelerator": ""
-		},
-		"i18n:simple-code.name/i18n:simple-code.edit/i18n:simple-code.shortcut-jump-folder": {
-			"message": "",
-			"accelerator": ""
-		},
-		"i18n:simple-code.name/i18n:simple-code.edit/i18n:simple-code.double-click-edit-text": {
-			"message": "",
-			"accelerator": ""
-		},
-		"i18n:simple-code.name/i18n:simple-code.edit/i18n:simple-code.shear-files": {
-			"message": "simple-code:selectNode",
-			"accelerator": ""
-		},
-		"i18n:simple-code.name/i18n:simple-code.edit/i18n:simple-code.paste-files": {
-			"message": "simple-code:selectNode",
-			"accelerator": ""
-		},
-		"i18n:simple-code.name/i18n:simple-code.edit/i18n:simple-code.load-custom-widgets-to-code": {
-			"message": "simple-code:loadCustomWidgetsToCode",
-			"accelerator": "CmdOrCtrl+Shift+E"
-		},
-		"i18n:simple-code.name/i18n:simple-code.edit/i18n:simple-code.delete-node-and-script": {
-			"message": "simple-code:removeNodeAndScript",
-			"accelerator": "alt+delete"
-		},
-		"i18n:simple-code.name/i18n:simple-code.project-manage/i18n:simple-code.open-project-directory": {
-			"message": "simple-code:openProjectDir",
-			"accelerator": "alt+f1"
-		},
-		"i18n:simple-code.name/i18n:simple-code.project-manage/i18n:simple-code.open-project-to-external-editor": {
-			"message": "simple-code:openProjectEditor",
-			"accelerator": "alt+f2"
-		},
-		"i18n:simple-code.name/i18n:simple-code.project-manage/i18n:simple-code.open-project-in-creator": {
-			"message": "simple-code:openProjectCreator",
-			"accelerator": "alt+f3"
-		},
-		"i18n:simple-code.name/i18n:simple-code.contact-author": {
-			"message": "simple-code:contactAuthor"
+		"menu": [
+			{
+				"path": "i18n:simple-code.name",
+				"label": "i18n:simple-code.open",
+				"message": "open"
+			},
+			{
+				"path": "i18n:simple-code.name",
+				"label": "i18n:simple-code.preview",
+				"message": "openPreview"
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.setting",
+				"label": "i18n:simple-code.set-panel",
+				"message": "setting"
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.setting",
+				"label": "i18n:simple-code.set-ex",
+				"message": "openConfigExtendDir"
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.setting",
+				"label": "i18n:simple-code.set-new-file",
+				"message": "newFileDir"
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.setting",
+				"label": "i18n:simple-code.set-key-map",
+				"message": "openKeyMap"
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.setting",
+				"label": "i18n:simple-code.set-other",
+				"message": "openConfig"
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.setting",
+				"label": "i18n:simple-code.set-edit-suggest",
+				"message": "openConfigHitn"
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.setting",
+				"label": "i18n:simple-code.set-drag-var-rule",
+				"message": "openDragVarRuleFile"
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.setting",
+				"label": "i18n:simple-code.set-format-prettier",
+				"message": "openPrettierConfig"
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.search",
+				"label": "i18n:simple-code.open-asset",
+				"message": "findFileAndOpen"
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.search",
+				"label": "i18n:simple-code.goto-asset",
+				"message": "findFileGoto"
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.search",
+				"label": "i18n:simple-code.search-unused-assets",
+				"message": "cleanFile"
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.debug",
+				"label": "i18n:simple-code.exec-cmd",
+				"message": "runCommandLine"
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.debug",
+				"label": "i18n:simple-code.refresh-preview",
+				"message": "refresh-preview"
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.edit",
+				"label": "i18n:simple-code.batch-rename",
+				"message": "rename"
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.edit",
+				"label": "i18n:simple-code.batch-binding-component",
+				"message": "addNodeComp"
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.edit",
+				"label": "i18n:simple-code.batch-insert-prefab",
+				"message": "addPrefab"
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.edit",
+				"label": "i18n:simple-code.add-next-occurrence-node",
+				"message": "selectNode"
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.edit",
+				"label": "i18n:simple-code.batch-search",
+				"message": ""
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.edit",
+				"label": "i18n:simple-code.new-file-and-bind-node",
+				"message": "newFile"
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.edit",
+				"label": "i18n:simple-code.open-code",
+				"message": "openNodeFile"
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.edit",
+				"label": "i18n:simple-code.folder-bind-shortcuts",
+				"message": ""
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.edit",
+				"label": "i18n:simple-code.shortcut-jump-folder",
+				"message": ""
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.edit",
+				"label": "i18n:simple-code.double-click-edit-text",
+				"message": ""
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.edit",
+				"label": "i18n:simple-code.shear-files",
+				"message": ""
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.edit",
+				"label": "i18n:simple-code.paste-files",
+				"message": ""
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.edit",
+				"label": "i18n:simple-code.load-custom-widgets-to-code",
+				"message": "loadCustomWidgetsToCode"
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.edit",
+				"label": "i18n:simple-code.delete-node-and-script",
+				"message": "removeNodeAndScript"
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.edit",
+				"label": "i18n:simple-code.open-project-directory",
+				"message": "openProjectDir"
+			},
+			{
+				"path": "i18n:simple-code.name",
+				"label": "i18n:simple-code.open-project-to-external-editor",
+				"message": "openProjectEditor"
+			},
+			{
+				"path": "i18n:simple-code.name",
+				"label": "i18n:simple-code.open-project-in-creator",
+				"message": "openProjectCreator"
+			},
+			{
+				"path": "i18n:simple-code.name",
+				"label": "i18n:simple-code.contact-author",
+				"message": "contactAuthor"
+			}
+		],
+		"shortcuts": [
+			{
+				"message": "open",
+				"win": "",
+				"mac": ""
+			},
+			{
+				"message": "openPreview",
+				"win": "",
+				"mac": ""
+			},
+			{
+				"message": "setting",
+				"win": "",
+				"mac": ""
+			},
+			{
+				"message": "openConfigExtendDir",
+				"win": "",
+				"mac": ""
+			},
+			{
+				"message": "newFileDir",
+				"win": "",
+				"mac": ""
+			},
+			{
+				"message": "openKeyMap",
+				"win": "",
+				"mac": ""
+			},
+			{
+				"message": "openConfig",
+				"win": "",
+				"mac": ""
+			},
+			{
+				"message": "openConfigHitn",
+				"win": "",
+				"mac": ""
+			},
+			{
+				"message": "openDragVarRuleFile",
+				"win": "",
+				"mac": ""
+			},
+			{
+				"message": "openPrettierConfig",
+				"win": "",
+				"mac": ""
+			},
+			{
+				"message": "findFileAndOpen",
+				"win": "alt+V",
+				"mac": "alt+V"
+			},
+			{
+				"message": "findFileGoto",
+				"win": "alt+F",
+				"mac": "alt+F"
+			},
+			{
+				"message": "cleanFile",
+				"win": "alt+L",
+				"mac": "alt+L"
+			},
+			{
+				"message": "runCommandLine",
+				"win": "alt+R",
+				"mac": "alt+R"
+			},
+			{
+				"message": "refresh-preview",
+				"win": "CmdOrCtrl+shift+r",
+				"mac": "CmdOrCtrl+shift+r"
+			},
+			{
+				"message": "rename",
+				"win": "alt+enter",
+				"mac": "alt+enter"
+			},
+			{
+				"message": "addNodeComp",
+				"win": "alt+shift+enter",
+				"mac": "alt+shift+enter"
+			},
+			{
+				"message": "addPrefab",
+				"win": "alt+shift+i",
+				"mac": "alt+shift+i"
+			},
+			{
+				"message": "selectNode",
+				"win": "alt+d",
+				"mac": "alt+d"
+			},
+			{
+				"message": "newFile",
+				"win": "f3",
+				"mac": "f3"
+			},
+			{
+				"message": "openNodeFile",
+				"win": "",
+				"mac": ""
+			},
+			{
+				"message": "loadCustomWidgetsToCode",
+				"win": "CmdOrCtrl+Shift+E",
+				"mac": "CmdOrCtrl+Shift+E"
+			},
+			{
+				"message": "removeNodeAndScript",
+				"win": "alt+delete",
+				"mac": "alt+delete"
+			},
+			{
+				"message": "openProjectDir",
+				"win": "alt+f1",
+				"mac": "alt+f1"
+			},
+			{
+				"message": "openProjectEditor",
+				"win": "alt+f2",
+				"mac": "alt+f2"
+			},
+			{
+				"message": "openProjectCreator",
+				"win": "alt+f3",
+				"mac": "alt+f3"
+			},
+			{
+				"message": "contactAuthor",
+				"win": "",
+				"mac": ""
+			}
+		],
+		"messages": {
+			"open": {
+				"methods": [
+					"open"
+				]
+			},
+			"openPreview": {
+				"methods": [
+					"openPreview"
+				]
+			},
+			"setting": {
+				"methods": [
+					"vsEditor.setting"
+				]
+			},
+			"openConfigExtendDir": {
+				"methods": [
+					"openConfigExtendDir"
+				]
+			},
+			"newFileDir": {
+				"methods": [
+					"newFileDir"
+				]
+			},
+			"openKeyMap": {
+				"methods": [
+					"openKeyMap"
+				]
+			},
+			"openConfig": {
+				"methods": [
+					"openConfig"
+				]
+			},
+			"openConfigHitn": {
+				"methods": [
+					"openConfigHitn"
+				]
+			},
+			"openDragVarRuleFile": {
+				"methods": [
+					"openDragVarRuleFile"
+				]
+			},
+			"openPrettierConfig": {
+				"methods": [
+					"openPrettierConfig"
+				]
+			},
+			"findFileAndOpen": {
+				"methods": [
+					"vsEditor.findFileAndOpen"
+				]
+			},
+			"findFileGoto": {
+				"methods": [
+					"vsEditor.findFileGoto"
+				]
+			},
+			"cleanFile": {
+				"methods": [
+					"vsEditor.cleanFile"
+				]
+			},
+			"runCommandLine": {
+				"methods": [
+					"vsEditor.runCommandLine"
+				]
+			},
+			"refresh-preview": {
+				"methods": [
+					"vsEditor.refreshPreview"
+				]
+			},
+			"rename": {
+				"methods": [
+					"vsEditor.rename"
+				]
+			},
+			"addNodeComp": {
+				"methods": [
+					"vsEditor.addNodeComp"
+				]
+			},
+			"addPrefab": {
+				"methods": [
+					"vsEditor.addPrefab"
+				]
+			},
+			"selectNode": {
+				"methods": [
+					"vsEditor.selectNode"
+				]
+			},
+			"newFile": {
+				"methods": [
+					"vsEditor.newFile"
+				]
+			},
+			"openNodeFile": {
+				"methods": [
+					"vsEditor.openNodeFile"
+				]
+			},
+			"loadCustomWidgetsToCode": {
+				"methods": [
+					"vsEditor.loadCustomWidgetsToCode"
+				]
+			},
+			"removeNodeAndScript": {
+				"methods": [
+					"vsEditor.removeNodeAndScript"
+				]
+			},
+			"openProjectDir": {
+				"methods": [
+					"openProjectDir"
+				]
+			},
+			"openProjectEditor": {
+				"methods": [
+					"openProjectEditor"
+				]
+			},
+			"openProjectCreator": {
+				"methods": [
+					"openProjectCreator"
+				]
+			},
+			"contactAuthor": {
+				"methods": [
+					"contactAuthor"
+				]
+			}
 		}
 	},
-	"panel": {
-		"icon": "./panel/images/icon.png",
-		"main": "panel/vs-panel/vs-panel.js",
-		"type": "dockable",
-		"title": "i18n:simple-code.name",
-		"width": 400,
-		"height": 30
-	},
-	"panel.preview": {
-		"main": "panel/preview.js",
-		"type": "dockable",
-		"title": "i18n:simple-code.preview",
-		"webSecurity": false,
-		"width": 400,
-		"height": 300
+	"panels": {
+		"vsEditor": {
+			"icon": "./panel/images/icon.png",
+			"main": "./panel/vs-panel/vs-panel.js",
+			"type": "dockable",
+			"title": "i18n:simple-code.name",
+			"width": 400,
+			"height": 300
+		}
 	},
 	"dependencies": {
+		"md5": "^2.3.0",
 		"watch": "^1.0.2"
 	}
 }

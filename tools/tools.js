@@ -10,6 +10,8 @@ let readFileQueue = []
 let readFileMaxCount = 50
 let readFileCount = 0
 
+let translateMap = {}
+
 module.exports = {
 
 	// 不是输入状态是时
@@ -39,11 +41,13 @@ module.exports = {
 			const converText = mapList[key];
 			converList[packageCfg.name+'.'+key] = converText
 		}
-		Editor.i18n.extend(converList)
+		translateMap = converList;
+		// Editor.i18n.extend(converList)
 	},
 
 	translate(key){
-		return Editor.T(packageCfg.name+'.'+key)
+		let name = packageCfg.name+'.'+key
+		return translateMap[name] || Editor.T(name) || name
 	},
 
 	translateZhAndEn(zeText,enText){

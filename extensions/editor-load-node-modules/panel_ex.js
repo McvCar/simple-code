@@ -115,7 +115,7 @@ module.exports = {
 	},
 
 	// 读取项目package文件信息
-	updateProjectPackage(text,isLoadDependenciesFiles=false){
+	async updateProjectPackage(text,isLoadDependenciesFiles=false){
 		let packageContent = tools.parseJson(text);
 		if(packageContent == null){
 			return;
@@ -136,7 +136,7 @@ module.exports = {
 				let packagePath = path.join(node_modules_path,key,'package.json');
 				packagePath = packagePath.replace(/\\/g,'/')
 				if(tools.isFileExit(packagePath)){
-					let packageModel = this.parent.loadVsModel(packagePath,path.extname(packagePath),false);
+					let packageModel = await this.parent.loadVsModel(packagePath,path.extname(packagePath),false);
 					this.updatePackageMainModulePath(packageModel);
 				};
 			}

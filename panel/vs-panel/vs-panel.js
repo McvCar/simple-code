@@ -1,29 +1,33 @@
 // 代码编辑器窗口
 // 编辑功能 MonaocEditor 编辑器面板
 
-Editor.require('packages://simple-code/panel/vs-panel/ace/ace.js');
-
-const statistical 	= Editor.require('packages://simple-code/tools/statistical.js');
-const vsEditorPanel = Editor.require('packages://simple-code/panel/vs-panel/vs-panel-base.js');
-const acePanel 		= Editor.require('packages://simple-code/panel/vs-panel/ace-panel.js');
-const tools 		= Editor.require('packages://simple-code/tools/tools.js');
-const config 		= Editor.require('packages://simple-code/config.js');
-const keyMap 		= Editor.require('packages://simple-code/keyMap.js');
-const packageCfg 	= Editor.require('packages://simple-code/package.json');
-const updater 		= Editor.require('packages://simple-code/tools/updater.js');
 const fs 			= require('fs');
 const path 			= require("path");
 const electron 		= require('electron');
+const tools 		= require('../../tools/tools.js');
+const compatibleApi = require('../../tools/compatibleApi.js');
+compatibleApi.analogApi();
+tools.initI18t();
 
-const eventMerge 	= Editor.require('packages://simple-code/tools/eventMerge');
+// 加载编辑器里的 node_modules,有些公共库需要用的如：md5
+module.paths.push(path.join(Editor.App.path, 'node_modules'));
+
+Editor2D.require('packages://simple-code/panel/vs-panel/ace/ace.js');
+const statistical 	= Editor2D.require('packages://simple-code/tools/statistical.js');
+const vsEditorPanel = Editor2D.require('packages://simple-code/panel/vs-panel/vs-panel-base.js');
+const acePanel 		= Editor2D.require('packages://simple-code/panel/vs-panel/ace-panel.js');
+const config 		= Editor2D.require('packages://simple-code/config.js');
+const keyMap 		= Editor2D.require('packages://simple-code/keyMap.js');
+const packageCfg 	= Editor2D.require('packages://simple-code/package.json');
+const updater 		= Editor2D.require('packages://simple-code/tools/updater.js');
+
+const eventMerge 	= Editor2D.require('packages://simple-code/tools/eventMerge');
 
 
 const prsPath = Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
 
 let _scripts = [];
-let is_hint = false;
 
-tools.initI18t()
 /** @extends vsEditorPanel */
 let layer = {
 	
@@ -33,9 +37,9 @@ let layer = {
 			<div id="box">
 				<div id="editorA"></div>
 				<div id="editorB"></div>
-				<div id="layoutTab" class="layout horizontal justified titleBarFontSize">
+				<div id="layoutTab" class="layout horizontal titleBarFontSize">
 					<div id="tabList" class="layout horizontal">
-					<img src=file://${Editor.url("packages://simple-code/panel/images/settingIco.png")} id="waitIco" class="turnAnim"></img> <span></span> <span></span>
+						<img src=file://${Editor2D.url("packages://simple-code/panel/images/settingIco.png")} id="waitIco" class="turnAnim"></img> <span></span> <span></span>
 						<div id="title0" class="closeTab">
 							<div class="tabTitle"><nobr>无文件<nobr></div>
 							<div class="closeBtn"><nobr> x <nobr></div>
@@ -76,10 +80,13 @@ let layer = {
 	},
 
 	// 启动事件
-	ready() 
+	ready(args) 
 	{
+		this.$ = args.$;
+		this.panel = Editor2D.Panel.find("simple-code.vsEditor");
 		this.initStartData()
 		this.initCSS()
+		this.initCocosCreatorBroadcastEvent()
 		this.runExtendFunc("ready",this);
 		this.initVsEditor(()=>{
 			this.initData();
@@ -93,18 +100,27 @@ let layer = {
 			window._panel = this;
 		});
 	},
+
+	// 绑定creator事件
+	initCocosCreatorBroadcastEvent(){
+		for (const key in this.messages) {
+			if(key.indexOf(':') != -1){
+				this.addBroadcastListener(key,this.messages[key]);
+			}
+		}
+	},
 	
 	initCSS()
 	{
 		let text = 
 			// ace.editorCss +
-			fs.readFileSync(Editor.url("packages://simple-code/panel/vs-panel/vs-panel.css"), "utf-8") + '\n'+
-			fs.readFileSync(Editor.url("packages://simple-code/panel/vs-panel/monaco-editor/dev/vs/editor/editor.main.css"), "utf-8");
+			fs.readFileSync(Editor2D.url("packages://simple-code/panel/vs-panel/vs-panel.css"), "utf-8") + '\n'+
+			fs.readFileSync(Editor2D.url("packages://simple-code/panel/vs-panel/monaco-editor/dev/vs/editor/editor.main.css"), "utf-8");
 			
 
 		var style = document.createElement("style");
 		style.innerHTML = text;
-		this.$box.appendChild(style);
+		this.$.box.appendChild(style);
 		this.styleSheet = style.sheet;
 	},
 
@@ -114,10 +130,12 @@ let layer = {
 		this.file_list_map 	  = {};
 		// ipc event
 		this.listenIpcList	  = []
+		// addBroadcastListener
+		this.listenBroadcastList = []
 		// creator编辑资源选择信息
 		this.currCreatorEditorSelectInfo = {}
 		// 读取配置文件
-		this.$title0.style.display = 'none';
+		this.$.title0.style.display = 'none';
 		this.timer_map 			= {};
 		this.cfg 				= config.getLocalStorage();
 		this.pro_cfg 			= config.getProjectLocalStorage()
@@ -137,11 +155,11 @@ let layer = {
 			this.setTabBarPos(cfg.tabBarPos);
 		}
 		if(cfg.hideToolsBar != null){
-			this.$toolsPanel.hidden = cfg.hideToolsBar;
+			this.$.toolsPanel.hidden = cfg.hideToolsBar;
 		}
 		if(cfg.codeCompileMode != null || isInit){
-			this.$manualCompile.hidden = cfg.codeCompileMode != 'manual';
-			this.$gotoFileBtn.hidden = cfg.codeCompileMode == 'manual';
+			this.$.manualCompile.hidden = cfg.codeCompileMode != 'manual';
+			this.$.gotoFileBtn.hidden = cfg.codeCompileMode == 'manual';
 		}
 		if(cfg.titleBarFontSize != null){
 			this.setCssByName('.titleBarFontSize',`{font-size: ${cfg.titleBarFontSize}px}`)
@@ -181,20 +199,6 @@ let layer = {
 		}
 	},
 
- 	// 补充缺失的配置，升级版本导致的
-	loadDefineMeunCfg(cfg){
-		for (const key in config.optionGroups) {
-			const groups = config.optionGroups[key];
-			for (const k in groups) {
-				const option = groups[k];
-				if(cfg[option.path] === undefined && option.defaultValue !== undefined){
-					cfg[option.path] = option.defaultValue; // 补充缺失的配置，升级版本导致的
-				}
-			}
-		}
-		return cfg;
-	},
-
 	// 加载数据
 	initData() {
 		this.mouse_pos;
@@ -212,26 +216,26 @@ let layer = {
 	initBindEvent() {
 
 		// 失去焦点，编译代码
-		this.addEventListener('blur', () => {
+		this.panel.addEventListener('blur', () => {
 			if(this.cfg.codeCompileMode == 'blur'){
 				this.refreshSaveFild(false)
 			}
 		},false);
 
 		// 手动编译
-		this.$manualCompile.addEventListener('confirm', () => {
+		this.$.manualCompile.addEventListener('confirm', () => {
 			// if (this.file_info) this.saveFile(true);
 			this.refreshSaveFild(true)
 		},false);
 
 		// 设置
-		this.$settingBtn.addEventListener('confirm', () => {
+		this.$.settingBtn.addEventListener('confirm', () => {
 			// if (this.file_info) this.saveFile(true);
 			this.ace.openMenu()
 		},false);
 
 		// 重置
-		this.$resetBtn.addEventListener('confirm', () => {
+		this.$.resetBtn.addEventListener('confirm', () => {
 			if (this.file_info) {
 				let text = this.fileMgr.checkCurrFileChange(this.file_info);
 				if (this.file_info.data != this.vs_editor.getValue()) {
@@ -251,20 +255,20 @@ let layer = {
 		});
 		
 		// 定位文件
-		this.$gotoFileBtn.addEventListener('confirm', () => {
+		this.$.gotoFileBtn.addEventListener('confirm', () => {
 			if (this.file_info) {
-				Editor.Ipc.sendToAll('assets:hint', this.file_info.uuid);
+				Editor2D.Ipc.sendToAll('assets:hint', this.file_info.uuid);
 			}
 		});
 
 		// 锁定编辑
-		this.$lockChk.addEventListener('change', () => {
-			this.setLockEdit(this.$lockChk.checked ? true : false);
+		this.$.lockChk.addEventListener('change', () => {
+			this.setLockEdit(this.$.lockChk.checked ? true : false);
 		});
 
 		// 锁定窗口
-		this.$lockWindowChk.addEventListener('change', () => {
-			this.setLockWindow(this.$lockWindowChk.checked ? true : false);
+		this.$.lockWindowChk.addEventListener('change', () => {
+			this.setLockWindow(this.$.lockWindowChk.checked ? true : false);
 			this.saveOptionsByDelayTime()
 		});
 		
@@ -284,23 +288,23 @@ let layer = {
         });
 
 		// 读取拖入的文件
-		this.$editorB.addEventListener('dragover',(e)=>{
+		this.$.editorB.addEventListener('dragover',(e)=>{
 			// if(e.dataTransfer.files[0]){
-				this.$dropBg.style.display = "block";
+				this.$.dropBg.style.display = "block";
 				e.preventDefault();
 				e.stopPropagation();
 			// }
 		},false)
 		
 		// 读取拖入的文件
-		this.$editorB.addEventListener('drop',(e)=>{
-			this.$dropBg.style.display = "none";
+		this.$.editorB.addEventListener('drop',(e)=>{
+			this.$.dropBg.style.display = "none";
 			this.onDrag(e,dragsArgs || {});
 		},false);
 
 		
-		this.$editorB.addEventListener('dragleave',(e)=>{
-			this.$dropBg.style.display = "none";
+		this.$.editorB.addEventListener('dragleave',(e)=>{
+			this.$.dropBg.style.display = "none";
 		},false);
 		
 		this.addListenerIpc('selection:hoverin',(e,type,uuid)=>{
@@ -310,7 +314,7 @@ let layer = {
 		// 鼠标右键nodeTree|asset
 		this.addListenerIpc('selection:context',(e,type,uuid)=>{
 			if(uuid == null){
-				let curSls = Editor.Selection.curGlobalActivate()
+				let curSls = Editor2D.Selection.curGlobalActivate()
 				if(curSls && curSls.id != null){
 					return; // 下面函数 selection:activated 继续调用
 				}
@@ -350,10 +354,6 @@ let layer = {
 		}
 		this.addWindowEventListener('mousedown',mousedown,true)
 
-		// 关闭页面提示
-		this.onDestroy = this.onDestroy.bind(this)
-		window.addEventListener("beforeunload", this.onDestroy, false);
-
 		// 检测窗口改变大小调整
 		this.schFunc = this.setTimeoutToJS(() => 
 		{
@@ -373,10 +373,18 @@ let layer = {
 		electron.ipcRenderer.on(name,callback);
 	},
 
+	// creator事件广播监听
+	addBroadcastListener(name,callback){
+		let _callback = function(...args){ return callback(...args)} // 修复未知警告
+		this.listenBroadcastList.push({name,_callback});
+		Editor.Message.addBroadcastListener(name,_callback)
+	},
+	
+
 	upLayout(){
-		if (this.old_width == null || Math.abs(this.$box.scrollWidth - this.old_width) >3 || this.old_height == null || Math.abs(this.$box.scrollHeight - this.old_height) >3) {
-			this.old_width = this.$box.scrollWidth;
-			this.old_height = this.$box.scrollHeight;
+		if (this.old_width == null || Math.abs(this.$.box.scrollWidth - this.old_width) >3 || this.old_height == null || Math.abs(this.$.box.scrollHeight - this.old_height) >3) {
+			this.old_width = this.$.box.scrollWidth;
+			this.old_height = this.$.box.scrollHeight;
 			this.vs_editor.layout();
 			return true;
 		}
@@ -473,7 +481,7 @@ let layer = {
 		this.addWindowEventListener("focus", () => pressedKeys = {},true)
 		
 		// 阻挡冒泡creator的快捷键
-		this.$box.addEventListener("keydown", (e)=> {
+		this.$.box.addEventListener("keydown", (e)=> {
 			let className = e.path[0] && e.path[0].className || ''
 			if (className.indexOf('monaco') != -1 && (e.key == "w" || e.key == "e" || e.key == "r" || e.key == "t")) e.preventDefault()
 		}, false);
@@ -523,7 +531,7 @@ let layer = {
 	},
 
 	setTabBarPos(str){
-		this.$box.style.flexDirection = str ? 'column' : 'column-reverse';
+		this.$.box.style.flexDirection = str ? 'column' : 'column-reverse';
 	},
 	
 	// 锁定编辑
@@ -532,7 +540,7 @@ let layer = {
 		id = id == null ? this.edit_id : id;
 		let info = this.edit_list[id] || {};
 		// 打开文件解除锁定编辑
-		if (id == this.edit_id) this.$lockChk.checked = is_lock;
+		if (id == this.edit_id) this.$.lockChk.checked = is_lock;
 		info.is_lock = is_lock;
 		this.vs_editor.updateOptions({ lineNumbers: info.is_cmd_mode || id != 0 ? "on" : 'off' });
 		this.vs_editor.updateOptions({ lineNumbers: info.is_cmd_mode || id != 0 ? "on" : 'off' });
@@ -543,7 +551,7 @@ let layer = {
 	setLockWindow(is_lock) 
 	{
 		this.cfg.is_lock_window = is_lock;
-		this.$lockWindowChk.checked = is_lock ? true : false;
+		this.$.lockWindowChk.checked = is_lock ? true : false;
 	},
 
 	// 添加快捷键, 例子: this.addKeybodyEvent([ ["Ctrl","x"] ],()=>{})
@@ -573,20 +581,20 @@ let layer = {
 
 
 	setWaitIconActive(isActive){
-		if(this.$waitIco){
-			this.$waitIco.className = isActive ? 'turnAnim' : '';
+		if(this.$.waitIco){
+			this.$.waitIco.className = isActive ? 'turnAnim' : '';
 		}
 	},
 
 	// 刷新场景所有的子节点信息缓存
 	upCurrSceneChildrenInfo() {
 		// 从场景获得代码数据
-		Editor.Scene.callSceneScript('simple-code', 'scene-children-info', "", (err, data) => {
+		Editor2D.Scene.callSceneScript('simple-code', 'scene-children-info', "", (err, data) => {
 			if (!data || data == "") return;
 
 			this.currSceneChildrenInfo = JSON.parse(data);
 			this.onCurrSceneChildrenInfo(this.currSceneChildrenInfo);
-		}, -1)
+		})
 	},
 
 	onCheckLayout(isUpLayout){
@@ -625,8 +633,6 @@ let layer = {
 		this._super();
 		this.runExtendFunc("onDestroy");
 
-		// 移除 window 事件
-		window.removeEventListener('beforeunload',this.onDestroy,false);
 		for (let i = 0; i < this.window_event_listener.length; i++) {
 			const event = this.window_event_listener[i];
 			window.removeEventListener(event.eventName,event.callback,event.option)
@@ -635,6 +641,12 @@ let layer = {
 		for (let i = 0; i < this.listenIpcList.length; i++) {
 			const event = this.listenIpcList[i];
 			electron.ipcRenderer.removeListener(event.name,event.callback);
+		}
+
+		// 移除Creator事件
+		for (let i = 0; i < this.listenBroadcastList.length; i++) {
+			const event = this.listenBroadcastList[i];
+			Editor.Message.removeBroadcastListener(event.name,event.callback);
 		}
 
 		// 停止事件
@@ -694,10 +706,14 @@ let layer = {
 
 	initExtend() 
 	{
+		for (const key in this.messages) {
+			this.messages[key] = this.messages[key].bind(this);
+		}
 		// 合并事件函数,分发
-		let info = eventMerge.eventMerge(this.messages, "panel_ex.js");
-		_scripts = info.scripts;
-		this.messages = info.messages;
+		// let info = eventMerge.eventMerge(this.messages, "panel_ex.js");
+		// _scripts = info.scripts;
+		// this.messages = info.messages;
+		
 	},
 
 	runExtendFunc(funcName, ...args) {
@@ -743,28 +759,33 @@ let layer = {
 		e.preventDefault();
 		var fileObj = e.dataTransfer.files[0];
 		if(fileObj){
-			if(!this.openOutSideFile(fileObj.path,true))
-			{
-				Editor.log('暂不支持该文本类型:',path.extname(fileObj.path));
-			}
+			this.openOutSideFile(fileObj.path,true).then((m)=>{
+				if(!m) Editor.log('暂不支持该文本类型:',path.extname(fileObj.path));
+			})
 		}
 		
 		this.runExtendFunc('onDrag',e,dragsArgs)
 	},
 
-	// 扩展使用的事件
+	/**
+	 *  资源改变事件
+	 * @param {Object} file
+	 * @param {String} file.url
+	 * @param {String} file.uuid
+	 * @param {String} file.file
+	 */ 
+	onAssetsCreatedEvent(file){
+		this.runExtendFunc('onAssetsCreatedEvent',file)
+	},
+	onAssetsDeletedEvent(file){
+		this.runExtendFunc('onAssetsDeletedEvent',file)
+	},
 	onAssetsChangedEvent(file){
 		this._super(file);
 		this.runExtendFunc('onAssetsChangedEvent',file)
 	},
-	onAssetsCreatedEvent(files){
-		this.runExtendFunc('onAssetsCreatedEvent',files)
-	},
-	onAssetsDeletedEvent(files){
-		this.runExtendFunc('onAssetsDeletedEvent',files)
-	},
-	onAssetsMovedEvent(files){
-		this.runExtendFunc('onAssetsMovedEvent',files)
+	onAssetsMovedEvent(file){
+		this.runExtendFunc('onAssetsMovedEvent',file)
 	},
 
 	// 检查更新
@@ -773,7 +794,7 @@ let layer = {
 		// 打印到控制台
 		if (newVersionDesc) {
 			let hitnText = tools.translateZhAndEn('发现新版本,请过”扩展商店”下载更新,更新内容如下:\n','If you find the new version, please go to the "Extension Store" to download the update as follows :\n')
-			Editor.info(`[${packageCfg.description}]`, hitnText ,newVersionDesc);
+			Editor.log(`[${packageCfg.description}]`, hitnText ,newVersionDesc);
 		}
 
 		statistical.countStartupTimes();
@@ -783,73 +804,61 @@ let layer = {
 	messages: {
 
 		// 场景保存
-		'scene:saved'(event) {
+		'scene:save'(event) {
 			if(!this.is_init_finish) return;
 			this.saveFileFromDelayTime();
 			this.upCurrSceneChildrenInfo();
 		},
 
 		// 场景加载完
-		'scene:ready'(event) {
-			if(!this.is_init_finish) return;
-			this.upCurrSceneChildrenInfo();
-		},
-
-		// 预制节点加载完
-		'scene:enter-prefab-edit-mode'(event) {
+		'scene:ready'(event,a) {
+			console.log(event,a)
 			if(!this.is_init_finish) return;
 			this.upCurrSceneChildrenInfo();
 		},
 
 		// 选择改变
-		'selection:activated'(event) {
-			if(!this.is_init_finish ||this.is_not_select_active) return;
+		'selection:select'(event,a) {
+			if(!this.is_init_finish || this.is_not_select_active) return;
 			// 阻止保存时tab乱切换
 			if(this._isMoveDown || !this.isFocused()){
 				this.openActiveFile(!this.is_save_wait_up && this.cfg.clickToViewCode,!this.is_save_wait_up);
 			}
 		},
 
-		// 项目资源文件uuid发生改变
-		'asset-db:asset-uuid-changed'(event) {
-		},
-
-		// 项目资源文件发生改变
-		'asset-db:asset-changed'(event, info) {
-			if(!this.is_init_finish || this.is_not_select_active) return;
-
-			this.fileMgr.assetsChangedEvent(info);
-			this.onAssetsChangedEvent(info);
-		},
-
 		// 项目资源创建
-		'asset-db:assets-created'(event, files) {
+		'asset-db:asset-add'(event, file) {
 			if(!this.is_init_finish) return;
-			if (!files && this.file_list_buffer) return;
+			if (!file && this.file_list_buffer) return;
 
-			this.fileMgr.assetsCreatedEvent(files)
-			this.onAssetsCreatedEvent(files);
+			this.fileMgr.assetsCreatedEvent(file)
 		},
 
 		// 项目文件被删除
-		'asset-db:assets-deleted'(event, files) {
+		'asset-db:asset-delete'(event, file) {
 			if(!this.is_init_finish) return;
-			if (!files && this.file_list_buffer) return;
+			if (!file && this.file_list_buffer) return;
 
 			
-			this.fileMgr.assetsDeletedEvent(files)
-			this.onAssetsDeletedEvent(files);
+			this.fileMgr.assetsDeletedEvent(file)
+		},
+
+		// 项目资源文件发生改变、移动、重命名、
+		async 'asset-db:asset-change'(event, file) {
+			if(!this.is_init_finish || this.is_not_select_active || file.isDirectory) return;
+
+			this.fileMgr.assetsChangedEvent(file);
 		},
 
 		// 项目文件被移动了
-		'asset-db:assets-moved'(event, files) 
-		{
-			if(!this.is_init_finish) return;
-			if (!files) return;
+		// 'asset-db:assets-moved'(event, files) 
+		// {
+		// 	if(!this.is_init_finish) return;
+		// 	if (!files) return;
 
-			this.fileMgr.assetsMovedEvent(files)
-			this.onAssetsMovedEvent(files);
-		},
+		// 	await this.fileMgr.assetsMovedEvent(files)
+		// 	this.onAssetsMovedEvent(files);
+		// },
 
 
 		'open-code-file'(e,file){
@@ -871,5 +880,18 @@ let layer = {
 
 layer.initExtend();
 tools.extendTo(layer,vsEditorPanel);
-Editor.Panel.extend(layer);
-module.exports = layer;
+
+exports.ready = function(){ layer.ready(this) };
+exports.beforeClose = function(){ layer.onDestroy() };
+// exports.close = ()=> layer.close;
+exports.methods = layer.messages;
+exports.template = layer.template;
+exports.style = layer.style;
+exports.$ = layer.$;
+// 监听面板事件
+exports.linsteners = {
+    // 面板显示的时候触发的钩子
+    show() {},
+    // 面板隐藏的时候触发的钩子
+    hide() {},
+};

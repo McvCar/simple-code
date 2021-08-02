@@ -28,11 +28,11 @@ var eventFuncs =
  						let now_func = obj.messages[name].bind(obj)
  						messages[name] = function(...args){
  							old_func(...args,old_msg);
- 							now_func(...args,old_msg);
+ 							return now_func(...args,old_msg);
  						}
  					}else{
  						let now_func = obj.messages[name].bind(obj)
- 						messages[name] = function(...args){ now_func(...args,old_msg)}
+ 						messages[name] = function(...args){ return now_func(...args,old_msg)}
  					}
  				}
  			}
@@ -45,7 +45,7 @@ var eventFuncs =
  				let now_func = messages[name]
  				messages[name] = function(...args){
  					(old_func.bind(this))(...args,old_msg);
- 					now_func(...args,old_msg);
+ 					return now_func(...args,old_msg);
  				}
  			}else{
  				messages[name] = old_msg[name]

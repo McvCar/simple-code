@@ -26,8 +26,8 @@
 #editorA {width: 0%;height: 0%;}
 #editorB {overflow:hidden;flex: 1 1 auto;}
 #title {line-height: 15px;}
-#tabList {overflow: hidden;-webkit-transition:all 0.1s;}
-#layoutTab {-webkit-transition:all 0.1s;}
+#tabList { display: flex;overflow: hidden;-webkit-transition:all 0.1s;}
+#layoutTab {-webkit-transition:all 0.1s;line-height:16px; display: flex;justify-content:space-between;}
 
 #box {
 	display: flex;

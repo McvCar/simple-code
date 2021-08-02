@@ -49,7 +49,7 @@ module.exports = {
 	},
 
 	// 开始修改import路径
-	tryLoadRenameFile()
+	async tryLoadRenameFile()
 	{
 		if(!this.move_files.length){
 			return
@@ -73,7 +73,7 @@ module.exports = {
 			let model = this.parent.fileMgr.getModelByFsPath(file.destPath)  
 			if(model == null){
 				// 加载路径的代码文件到缓存
-				model = this.parent.loadVsModel(file.url,path.extname(file.url),true);
+				model = await this.parent.loadVsModel(file.url,path.extname(file.url),true);
 			}
 			usedPaths[file.destPath] = model;
 		}
@@ -92,7 +92,7 @@ module.exports = {
 				let model = this.parent.fileMgr.getModelByFsPath(fsPath); 
 				if(!model){
 					// 加载旧路径的代码文件到缓存
-					model = this.parent.loadVsModel(item.meta,item.extname,true,false);
+					model = await this.parent.loadVsModel(item.meta,item.extname,true,false);
 					model.setValue(item.data);
 				}
 				usedPaths[fsPath] = model;

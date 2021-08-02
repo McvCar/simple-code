@@ -13,7 +13,5 @@ module.exports = {
 	/*************  事件 *************/  
 	messages: 
 	{
-		// 'get-active-uuid'(event,args,parent){
-		// }
 	}
 };

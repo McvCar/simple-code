@@ -26,7 +26,7 @@ class FileMgr{
 			return ;
 		};
 
-		Editor.assetdb.queryAssets('db://**/*', '', (err, results)=> {
+		Editor.assetdb.deepQuery((err, results)=> {
 			if(this.parent.file_list_buffer && this.parent.file_list_buffer.length >0) return;
 			
 			for (let i = 0; i < results.length; i++) 
@@ -35,11 +35,12 @@ class FileMgr{
 				let info = this.getUriInfo(result.url);
 				if (info.extname != "" && this.parent.SEARCH_BOX_IGNORE[info.extname] == null) 
 				{
-					let name = info.name;
 					result.extname = info.extname
-					let item_cfg = this.newFileInfo(result.extname, name, result.url, result.uuid,result.path)
+					result.file = fe.normPath( result.file )
+					let item_cfg = this.newFileInfo(info.extname, info.name, result.url, result.uuid,result.file)
 					this.parent.file_list_buffer.push(item_cfg);
-					this.parent.file_list_map[fe.normPath( result.path )] = item_cfg;
+					this.parent.file_list_map[result.file] = item_cfg;
+					this.parent.file_list_uuid[result.uuid] = item_cfg;
 					this.parent.file_counts[result.extname] = (this.parent.file_counts[result.extname] || 0) + 1
 				}
 			}
@@ -87,17 +88,13 @@ class FileMgr{
 		let name = ""
 		if (s_i != -1) name = url.substr(s_i + 1)
 
-		s_i = name.lastIndexOf('.');
-		let extname = ""
-		if (s_i != -1) {
-			extname = name.substr(s_i).toLowerCase()
-		}
+		let extname = path.extname(name).toLowerCase()
 		return { name, extname,url }
 	}
 	
-	getFileUrlInfoByUuid(uuid) {
-		let url = Editor.remote.assetdb.uuidToUrl(uuid);
-		let fs_path = Editor.remote.assetdb.urlToFspath(url);
+	async getFileUrlInfoByUuidAsync(uuid) {
+		let url = await Editor.assetdb.uuidToUrl(uuid);
+		let fs_path = await Editor.assetdb.urlToFspath(url);
 		if(url == null || fs_path == null) return;
 		fs_path = fs_path.replace(/\\/g,'/');
 
@@ -111,11 +108,11 @@ class FileMgr{
 		return { data: text, uuid: uuid, path: url, name: name, file_type: file_type ,fs_path:fs_path};
 	}
 
-	getFileUrlInfoByFsPath(fs_path) 
+	async getFileUrlInfoByFsPathAsync(fs_path) 
 	{
 		fs_path = fs_path.replace(/\\/g,'/');
-		let uuid = Editor.remote.assetdb.fspathToUuid(fs_path) || "outside";
-		let url = uuid == "outside" ? fs_path.replace(/\\/g,'/') : Editor.remote.assetdb.uuidToUrl(uuid);
+		let uuid = await Editor.assetdb.fspathToUuid(fs_path) || "outside";
+		let url = uuid == "outside" ? fs_path.replace(/\\/g,'/') : await Editor.assetdb.uuidToUrl(uuid);
 
 		let name = url.substr(url.lastIndexOf('/') + 1);
 		let file_type = name.substr(name.lastIndexOf('.') + 1)
@@ -131,12 +128,12 @@ class FileMgr{
 		return this.parent.monaco.editor.getModel(this.fsPathToModelUrl(fsPath))
 	}
 	
-	getModelByUrl(url){
-		return this.getModelByFsPath(Editor.remote.assetdb.urlToFspath(url))
+	async getModelByUrlAsync(url){
+		return this.getModelByFsPath(await Editor.assetdb.urlToFspath(url))
 	}
 
 	fsPathToModelUrl(fsPath){
-		let str_uri = Editor.isWin32 ? fsPath.replace(/ /g,'').replace(/\\/g,'/') : fsPath;
+		let str_uri = Editor2D.isWin32 ? fsPath.replace(/ /g,'').replace(/\\/g,'/') : fsPath;
 		return this.parent.monaco.Uri.parse(str_uri).toString();
 	}
 	
@@ -152,15 +149,15 @@ class FileMgr{
 	// 	return str_uri;
 	// }
 	
+	// 检查当前文件在外边是否被改变
 	checkCurrFileChange(editInfo) {
-		// 正在编辑的文件被删
 		if (editInfo && editInfo.uuid) {
-			let file_path = editInfo.uuid == "outside" ? editInfo.path : unescape(Editor.url(editInfo.path));
+			let file_path = editInfo.uuid == "outside" ? editInfo.path : unescape(Editor2D.url(editInfo.path));
 			let text = ""
 			try {
 				text = fs.readFileSync(file_path).toString();
 			} catch (e) {
-				Editor.info("正在编辑的文件被删除:", file_path)
+				Editor.log("正在编辑的文件被删除:", file_path)
 				return;
 			}
 
@@ -189,7 +186,7 @@ class FileMgr{
 		}
 	}
 
-	// 检查当前文件在外边是否被改变
+	// 检查当前所有打开的文件在外边是否被改变
 	checkAllCurrFileChange() {
 		// 编辑信息
 		this.parent.edit_list.forEach((editInfo) => {
@@ -198,7 +195,7 @@ class FileMgr{
 	}
 	
 	/**
-	 * 
+	 * 监听指定文件或文件夹变动
 	 * @param {sting} pathName 
 	 * @param {import('../../tools/watchFile').WatchEventCallback} eventCallback 
 	 * @returns {WatchFile} 
@@ -270,7 +267,7 @@ class FileMgr{
 
 			let isOutside = fileItem.uuid == "outside";
 			let filePath = fileItem.meta;
-			let vs_model = isOutside ? this.getModelByFsPath(filePath) : this.getModelByUrl(filePath);
+			let vs_model = isOutside ? this.getModelByFsPath(filePath) : await this.getModelByUrlAsync(filePath);
 			importCompletePath = filePath;
 			if(this.waitReadModels[filePath] || vs_model && vs_model.getValue() != ''){
 				return 0; // 已经存在缓存，不再继续读取
@@ -346,171 +343,225 @@ class FileMgr{
 		return importCompletePath;
 	}
 
-	// 项目资源文件发生改变
-	assetsChangedEvent(info)
-	{	
-		this.checkAllCurrFileChange();
-		let isOutside = info.uuid == 'outside';// 内部修改
-		let url = isOutside ? info.url : Editor.remote.assetdb.uuidToUrl(info.uuid); // outside额外做处理
-		if(!url) return;
-
-		let edit_id = this.parent.getTabIdByPath(url);
-		if(edit_id == null || !this.parent.edit_list[edit_id] || !this.parent.edit_list[edit_id].is_need_save)
+	/**
+	 *  项目资源创建
+	 * @param {Object} file
+	 * @param {String} file.url
+	 * @param {String} file.uuid
+	 * @param {String} file.file
+	 */ 
+	async assetsCreatedEvent(file)
+	{
+		let urlI = this.getUriInfo(file.url)
+		if (urlI.extname != "" && this.parent.SEARCH_BOX_IGNORE[urlI.extname] == null) 
 		{
-			// 刷新文件/代码提示,只有未被编辑情况下才刷新
-			let urlI = this.getUriInfo(url);
-			let model = isOutside ? this.getModelByFsPath(url) : this.getModelByUrl(url) 
-			if(model){
-				this.parent.loadVsModel(url, urlI.extname, !isOutside);
-				if(this.parent.file_list_map[model.fsPath]){
-					this.parent.file_list_map[model.fsPath].data = model.getValue();
-				}
+			let isOutside = file.uuid == 'outside';// 内部修改
+			let fsPath = fe.normPath( file.file );
+			let item = this.newFileInfo(urlI.extname, urlI.name, file.url, file.uuid, fsPath);
+			this.parent.file_list_buffer.push(item);
+			this.parent.file_list_map[fsPath] = item;
+			if(!isOutside) this.parent.file_list_uuid[file.uuid] = item;
+			await this.parent.loadAssetAndCompleter(item.meta, item.extname,!isOutside);
+
+			// 刷新编译
+			this.parent.setTimeoutById(()=>{
+				this.importPathBuffer = {};
+				this.parent.upCompCodeFile()
+			},500,'loadNeedImportPaths');
+		}
+		this.parent.onAssetsCreatedEvent(file);
+	}
+
+	/**
+	 *  项目文件被删除
+	 * @param {Object} file
+	 * @param {String} file.url
+	 * @param {String} file.uuid
+	 * @param {String} file.file
+	 */ 
+	async assetsDeletedEvent(file)
+	{
+		let isOutside = file.uuid == 'outside';
+		// 删除缓存
+		delete this.parent.file_list_map[fe.normPath(file.file)];
+		if(!isOutside) delete this.parent.file_list_uuid[file.uuid];
+
+		for (let i = this.parent.file_list_buffer.length-1; i >= 0 ; i--) {
+			let item = this.parent.file_list_buffer[i];
+			if ( !isOutside && item.uuid == file.uuid || isOutside && file.url == item.meta ) {
+				this.parent.file_list_buffer.splice(i, 1);
+				break;
 			}
 		}
-	}
 
-	// 项目资源创建
-	assetsCreatedEvent(files)
-	{
-		files.forEach((v, i) => {
-			let urlI = this.getUriInfo(v.url)
-			if (urlI.extname != "" && this.parent.SEARCH_BOX_IGNORE[urlI.extname] == null) 
-			{
-				let isOutside = v.uuid == 'outside';// 内部修改
-				let fsPath = fe.normPath( isOutside ? v.url : Editor.remote.assetdb.urlToFspath(v.url) );
-				let item = this.newFileInfo(urlI.extname, urlI.name, v.url, v.uuid,fsPath);
-				this.parent.file_list_buffer.push(item);
-				this.parent.file_list_map[fsPath] = item;
-				this.parent.loadAssetAndCompleter(item.meta, item.extname,!isOutside);
-			}
-		})
+		let is_remove = false
 		
-		// 刷新编译
-		this.parent.setTimeoutById(()=>{
-			this.importPathBuffer = {};
-			this.parent.upCompCodeFile()
-		},500,'loadNeedImportPaths');
-	}
-
-	// 项目文件被删除
-	assetsDeletedEvent(files)
-	{
-		files.forEach((v) => 
+		// 刷新编辑信息
+		let old_url = isOutside ? file.file : await Editor2D.assetdb.fspathToUrl(file.file) ;
+		let id = this.parent.getTabIdByPath(old_url);
+		// 正在编辑的tab
+		if(id != null)
 		{
-			let isOutside = v.uuid == 'outside';
-			// 删除缓存
-			delete this.parent.file_list_map[fe.normPath(v.path)];
-			for (let i = this.parent.file_list_buffer.length-1; i >= 0 ; i--) {
-				let item = this.parent.file_list_buffer[i];
-				if ( !isOutside && item.uuid == v.uuid || isOutside && v.url == item.meta ) {
-					this.parent.file_list_buffer.splice(i, 1);
-					break;
-				}
-			}
-
-			let is_remove = false
-			
-			// 刷新编辑信息
-			let old_url = isOutside ? v.path : Editor.remote.assetdb.fspathToUrl(v.path) ;
-			let id = this.parent.getTabIdByPath(old_url);
-			// 正在编辑的tab
-			if(id != null)
-			{
-				// 正在编辑的文件被删
-				let editInfo = this.parent.edit_list[id] 
-				if (editInfo && ( !isOutside && v.uuid == editInfo.uuid || isOutside && v.path == editInfo.path)) {
-					editInfo.uuid = "outside";
-					editInfo.path = isOutside ? v.path : unescape(Editor.url(editInfo.path));
-					editInfo.can_remove_model = 1;
-					if(editInfo.vs_model)
-					{
-						// 刷新 model 信息，不然函数转跳不正确
-						let text  = editInfo.vs_model.getValue();
-						editInfo.vs_model.dispose()
-						let model = this.parent.loadVsModel(editInfo.path,this.getUriInfo(editInfo.path).extname,false,false)
-						if(model)
-						{
-							let is_show = this.parent.vs_editor.getModel() == null;
-							model.setValue(text)
-							editInfo.vs_model = model;
-							if(is_show){
-								this.parent.setTabPage(id);
-							}
-							editInfo.data = ' ';
-							editInfo.is_need_save = true;
-							this.parent.upTitle(id);
-						}
-					}
-
-					this.checkCurrFileChange(editInfo);
-					is_remove = true
-				}
-			}else{
-				// 清缓存
-				let vs_model = this.parent.monaco.editor.getModel(this.parent.monaco.Uri.parse(this.fsPathToModelUrl(v.path)))
-				if(vs_model) vs_model.dispose()
-			}
-
-		})
-
-		// 刷新编译
-		this.parent.setTimeoutById(()=>{
-			this.importPathBuffer = {};
-			this.parent.upCompCodeFile();
-		},500,'loadNeedImportPaths');
-	}
-
-	assetsMovedEvent(files)
-	{
-		files.forEach((v, i) => 
-		{
-			let urlI = this.getUriInfo(v.url)
-			v.extname = urlI.extname;
-			v.srcPath = fe.normPath(v.srcPath);
-			v.destPath = fe.normPath(v.destPath);
-			
-			// 更新文件缓存
-			delete this.parent.file_list_map[v.srcPath];
-			for (let i = 0; i < this.parent.file_list_buffer.length; i++) {
-				let item = this.parent.file_list_buffer[i];
-				if (item.uuid == v.uuid) 
+			// 正在编辑的文件被删
+			let editInfo = this.parent.edit_list[id] 
+			if (editInfo && ( !isOutside && file.uuid == editInfo.uuid || isOutside && file.file == editInfo.path)) {
+				editInfo.uuid = "outside";
+				editInfo.path = isOutside ? file.file : unescape(Editor2D.url(editInfo.path));
+				editInfo.can_remove_model = 1;
+				if(editInfo.vs_model)
 				{
-					let s_i = this.parent.refresh_file_list.indexOf(item.meta)
-					if(s_i != -1) this.parent.refresh_file_list[s_i] = v.url; // 需要手动编译的文件
-					item.extname = urlI.extname
-					item.value = urlI.name
-					item.meta = v.url
-					item.url = v.url
-					item.fsPath = v.destPath;
-					this.parent.file_list_map[item.fsPath] = item;
-					break;
+					// 刷新 model 信息，不然函数转跳不正确
+					let text  = editInfo.vs_model.getValue();
+					editInfo.vs_model.dispose()
+					let model = await this.parent.loadVsModel(editInfo.path,this.getUriInfo(editInfo.path).extname,false,false)
+					if(model)
+					{
+						let is_show = this.parent.vs_editor.getModel() == null;
+						model.setValue(text)
+						editInfo.vs_model = model;
+						if(is_show){
+							this.parent.setTabPage(id);
+						}
+						editInfo.data = ' ';
+						editInfo.is_need_save = true;
+						this.parent.upTitle(id);
+					}
+				}
+
+				this.checkCurrFileChange(editInfo);
+				is_remove = true
+			}
+		}else{
+			// 清缓存
+			let vs_model = this.parent.monaco.editor.getModel(this.parent.monaco.Uri.parse(this.fsPathToModelUrl(file.file)))
+			if(vs_model) {
+				vs_model.dispose()
+				is_remove = true;
+			}
+		}
+
+		if(is_remove){
+			// 刷新编译
+			this.parent.setTimeoutById(()=>{
+				this.importPathBuffer = {};
+				this.parent.upCompCodeFile();
+			},500,'loadNeedImportPaths');
+		}
+		
+		this.parent.onAssetsDeletedEvent(file);
+	}
+
+	
+	/**
+	 *  项目资源文件发生改变
+	 * @param {Object} file
+	 * @param {String} file.url
+	 * @param {String} file.uuid
+	 * @param {String} file.file
+	 */ 
+	 async assetsChangedEvent(file)
+	 {	
+		let isOutside = file.uuid == 'outside';
+		 // 检查文件移动位置没有
+		let isMoveFile = false;
+		if(!isOutside){
+			let item = this.parent.file_list_uuid[file.uuid];
+			if(item.url != file.url){
+				file.srcPath = item.fsPath;
+				file.destPath = fe.normPath(file.file);
+				isMoveFile = true;
+			}
+		}
+
+		// 文件被移动了，vs编辑信息
+		if(isMoveFile){
+			// console.log("移动文件:",file.url)
+			this.assetsMovedEvent(file)
+		}else{
+			// 检测当前文件在外部是否被修改
+			let url = isOutside ? file.file : file.url; // outside额外做处理
+			let edit_id = this.parent.getTabIdByPath(url);
+			let editInfo = edit_id != null ? this.parent.edit_list[edit_id] : undefined;
+			if(editInfo){
+				let editInfo = this.parent.edit_list[id] 
+				this.checkCurrFileChange(editInfo);
+			}
+
+			if(!editInfo || !editInfo.is_need_save)
+			{
+				// 刷新文件/代码提示,只有未被编辑情况下才刷新
+				let urlI = this.getUriInfo(url);
+				let model = isOutside ? this.getModelByFsPath(url) : await this.getModelByUrlAsync(url) 
+				if(model){
+					model.setValue(fs.readFileSync(file.file).toString());
+					if(this.parent.file_list_map[model.fsPath]){
+						this.parent.file_list_map[model.fsPath].data = model.getValue();
+					}
 				}
 			}
-			this.onMoveFile(v);
-		});
+			this.parent.onAssetsChangedEvent(file);
+		}
 
+	 }
+ 
+
+	/**
+	 *  移动资源文件
+	 * @param {Object} file
+	 * @param {String} file.url
+	 * @param {String} file.uuid
+	 * @param {String} file.file
+	 * @param {String} file.srcPath
+	 * @param {String} file.destPath
+	 */ 
+	 async assetsMovedEvent(file)
+	{
+		let urlI = this.getUriInfo(file.url)
+		file.extname = urlI.extname;
+		
+		for (let i = 0; i < this.parent.file_list_buffer.length; i++) {
+			let item = this.parent.file_list_buffer[i];
+			if (item.uuid == file.uuid) 
+			{
+				// 移动文件
+				let s_i = this.parent.refresh_file_list.indexOf(item.url)
+				if(s_i != -1) this.parent.refresh_file_list[s_i] = file.url; // 需要手动编译的文件
+
+				item.extname = urlI.extname
+				item.value = urlI.name
+				item.meta = file.url
+				item.url = file.url
+				item.fsPath = file.destPath
+				delete this.parent.file_list_map[file.srcPath]
+				this.parent.file_list_map[file.destPath] = item;
+				break;
+			}
+		}
+		
+		await this.onMoveFile(file);
+		this.parent.onAssetsMovedEvent(file)
 	}
 
 	// 移动 ts/js代码文件
-	onMoveFile(v)
+	async onMoveFile(file)
 	{
 		// 刷新编辑信息
-		let urlI = this.getUriInfo(v.url)
-		let id = this.parent.getTabIdByPath(Editor.remote.assetdb.fspathToUrl(v.srcPath));
+		let urlI = this.getUriInfo(file.url)
+		let id = this.parent.getTabIdByUuid(file.uuid);
 		let hasMoveCodeFile = false;
 		// 正在编辑的tab
 		if (id != null)
 		{
 			let editInfo = this.parent.edit_list[id] 
-			if (editInfo && editInfo.uuid == v.uuid) {
-				editInfo.path = v.url;
+			if (editInfo && editInfo.uuid == file.uuid) {
+				editInfo.path = file.url;
 				editInfo.name = urlI.name;
 				if(editInfo.vs_model)
 				{
 					// 刷新 model 信息，不然函数转跳不正确
 					let text  = editInfo.vs_model.getValue();
 					editInfo.vs_model.dispose()
-					let model = this.parent.loadVsModel(editInfo.path,urlI.extname,true,false)
+					let model = await this.parent.loadVsModel(editInfo.path,urlI.extname,true,false)
 					if(model)
 					{
 						let is_show = this.parent.vs_editor.getModel() == null;
@@ -527,11 +578,11 @@ class FileMgr{
 			}
 		}else{
 			// 修改缓存
-			let vs_model = this.parent.monaco.editor.getModel(this.fsPathToModelUrl(v.srcPath))
+			let vs_model = this.parent.monaco.editor.getModel(this.fsPathToModelUrl(file.srcPath))
 			if(vs_model) {
 				let text = vs_model.getValue();
 				vs_model.dispose()
-				let model = this.parent.loadVsModel(v.url,urlI.extname,true,false)
+				let model = await this.parent.loadVsModel(file.url,urlI.extname,true,false)
 				model.setValue(text);
 				hasMoveCodeFile = true;
 			}

@@ -1090,7 +1090,7 @@ module.exports = {
 		if(this.pro_cfg){
 			return this.pro_cfg;
 		}
-		const fe 	= Editor.require('packages://simple-code/tools/tools.js');
+		const fe 	= Editor2D.require('packages://simple-code/tools/tools.js');
 
 		const savePath = path.join(this.prsPath,'local','simple-code-config.json')
 		
@@ -1105,7 +1105,7 @@ module.exports = {
 	
 	// 编辑器用户配置
 	getUserEditorConfig(){
-		let cfg = this.importUserConfigFile(Editor.url('packages://simple-code/editor_config.js'));
+		let cfg = this.importUserConfigFile(Editor2D.url('packages://simple-code/editor_config.js'));
 		Object.assign(this.vsEditorConfig,cfg);
 		return this.vsEditorConfig;
 	},

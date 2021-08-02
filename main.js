@@ -4,116 +4,88 @@ const electron  = require('electron');
 const exec 		= require('child_process').exec;
 let fs 			= require("fs");
 
+// 加载编辑器里的 node_modules,有些公共库需要用的如：md5
+module.paths.push(path.join(Editor.App.path, 'node_modules'));
+const compatibleApi = require('./tools/compatibleApi');
+
 
 let _lastUuid ;//最后打开的预制节点,记录当前打开层的uuid
-module.exports = 
-{
 
-  load () {
-	// 上次加载事件未释放
-	if(global._simpleCodeMain){
-		this.unload.bind(global._simpleCodeMain)()
-	}
+let methods = { 
 
-	// 执行扩展逻辑
-	this.initExtend();
-	this.runExtendFunc("onLoad",this);
-
-	try{
-		this.changeConfig();
-	} catch (exception) {
-		Editor.error("配置插件config.js出错:,",exception);
-	} 
-	global._simpleCodeMain = this;
-  },
-
-  // 2.4.4 发现保存后不会刷新
-  unload () {
-	delete global._simpleCodeMain
-	this.scripts.forEach((obj)=>
-	{ 
-		for(let name in obj.messages)
-		{
-			let state = electron.ipcMain.removeListener( name.indexOf(':') == -1 ? "simple-code:"+name : name,obj.messages[name] ) ; 
+	load () {
+		// 上次加载事件未释放
+		if(global._simpleCodeMain){
+			this.unload.bind(global._simpleCodeMain)()
+		}else{
+			// 兼容creator2dApi
+			compatibleApi.analogApi();
 		}
+	
+		// 执行扩展逻辑
+		this.initExtend();
+		this.runExtendFunc("onLoad",this);
+		global._simpleCodeMain = this;
+	},
 
-		try {
-			if(obj.onDestroy){
-				obj.onDestroy()
-			}
-		} catch (error) {
-			Editor.error(error);
-		}
-	})
-  }, 
-
-
-  changeConfig(){
-
-  	// let packageJson = JSON.parse( fs.readFileSync(Editor.url("packages://simple-code/package.json")) );
-  	// let cfg 		= eval( fs.readFileSync(Editor.url("packages://simple-code/config.js")).toString() );
-  	// let menuCfg 	= cfg["main-menu"]
-  	// let menuCfgOld 	= packageJson["main-menu"];
-  	// let isNeedSave  = false;
-
-  	// for (let key in menuCfg) 
-  	// {
-  	// 	let v = menuCfg[key];
-  	// 	if (menuCfgOld[key] == null || v.accelerator != menuCfgOld[key].accelerator || v.message != menuCfgOld[key].message)
-  	// 	{
-  	// 		isNeedSave = true;
-  	// 		break;
-  	// 	}
-  	// }
-
-  	// if (isNeedSave){
-  	// 	packageJson["main-menu"] = menuCfg;
-  	// 	Editor.log("替换编辑器插件快捷方式",Editor.url("packages://simple-code/package.json"),JSON.stringify( packageJson , null, "\t"))
-  	// 	fs.writeFile(Editor.url("packages://simple-code/package.json"),JSON.stringify( packageJson , null, "\t"), 'utf-8');
-  	// }
-  },
-
-  // 读取扩展逻辑文件
-  initExtend()
-  {
-  	const fe     = Editor.require('packages://simple-code/tools/tools.js'); 
-
-	this.scripts = [];
-	let fileList = fe.getDirAllFiles(Editor.url("packages://simple-code/extensions"),[]);
-	fileList.forEach((v)=>
-	{
-		if(v.substr(v.lastIndexOf(path.sep)+1) == "main_ex.js")
+	// 2.4.4 发现保存后不会刷新
+	unload () {
+		delete global._simpleCodeMain
+		this.scripts.forEach((obj)=>
 		{ 
-			let obj = require(v);
-			this.scripts.push(obj);
 			for(let name in obj.messages)
 			{
-				obj.messages[name] = obj.messages[name].bind(obj)
-				electron.ipcMain.on(name.indexOf(':') == -1 ? "simple-code:"+name : name,obj.messages[name]); 
+				let state = electron.ipcMain.removeListener( name.indexOf(':') == -1 ? "simple-code:"+name : name,obj.messages[name] ) ; 
 			}
+
+			try {
+				if(obj.onDestroy){
+					obj.onDestroy()
+				}
+			} catch (error) {
+				Editor.error(error);
+			}
+		})
+	}, 
+
+	// 读取扩展逻辑文件
+	initExtend()
+	{
+		const fe     = require('./tools/tools');
+
+		this.scripts = [];
+		let fileList = fe.getDirAllFiles(Editor.url("packages://simple-code/extensions"),[]);
+		fileList.forEach((v)=>
+		{
+			if(v.substr(v.lastIndexOf(path.sep)+1) == "main_ex.js")
+			{ 
+				let obj = require(v);
+				this.scripts.push(obj);
+				for(let name in obj.messages)
+				{
+					obj.messages[name] = obj.messages[name].bind(obj)
+					electron.ipcMain.on(name.indexOf(':') == -1 ? "simple-code:"+name : name,obj.messages[name]); 
+				}
+			}
+		})
+	},
+
+	// 运行扩展文件的方法
+	runExtendFunc(funcName,...args){
+		this.scripts.forEach((obj)=>{
+		if (obj[funcName])
+		{
+			obj[funcName](...args);
 		}
-	})
-  },
+		})
+	},
 
-  // 运行扩展文件的方法
-  runExtendFunc(funcName,...args){
-	this.scripts.forEach((obj)=>{
-	  if (obj[funcName])
-	  {
-		obj[funcName](...args);
-	  }
-	})
-  },
-
-  // register your ipc messages here
-  messages: { 
 	'loadWidgetToCode'(){
-
 		Editor.Ipc.sendToPanel('simple-code', 'loadWidgetToCode');
 	},
 	'open' () {
 	  // open entry panel registered in package.json
-	  Editor.Panel.open('simple-code');
+	  Editor.Panel.open('simple-code.vsEditor');
 	},
 
 	'openPreview' () {
@@ -130,17 +102,17 @@ module.exports =
 	
 	'openNodeFile' () {
 	  // send ipc message to panel
-	  Editor.Panel.open('simple-code');
+	  Editor.Panel.open('simple-code.vsEditor');
 	  Editor.Ipc.sendToPanel('simple-code', 'custom-cmd',{cmd:"openFile"});
 	},
 
 	'findFileAndOpen' () {
-		Editor.Panel.open('simple-code');
+		Editor.Panel.open('simple-code.vsEditor');
 		Editor.Ipc.sendToPanel('simple-code', 'custom-cmd',{cmd:"findFileAndOpen"});
 	},
 
 	'findFileGoto' () {
-		Editor.Panel.open('simple-code');
+		Editor.Panel.open('simple-code.vsEditor');
 		Editor.Ipc.sendToPanel('simple-code', 'custom-cmd',{cmd:"findFileGoto"});
 	},
 
@@ -170,7 +142,7 @@ module.exports =
 	},
 	
 	'setting'(){
-		Editor.Panel.open('simple-code');
+		Editor.Panel.open('simple-code.vsEditor');
 		Editor.Ipc.sendToPanel('simple-code', 'custom-cmd',{cmd:"setting"});
 	},
 	
@@ -210,5 +182,17 @@ module.exports =
 		Editor.Ipc.sendToPanel('simple-code.preview','refresh-preview');
 	},
 
+}
+
+module.exports = 
+{
+  load () {
+	methods.load()
   },
+  // 2.4.4 发现保存后不会刷新
+  unload () {
+	methods.unload()
+  }, 
+  // register your ipc messages here
+  methods,
 };

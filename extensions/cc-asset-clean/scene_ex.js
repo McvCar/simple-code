@@ -60,8 +60,5 @@ module.exports = {
 			Editor.remote.assetdb.delete(files);
 		},
 
-		'get-active-uuid'(event,args,parent){
-			// Editor.log("scene test")
-		}
 	}
 };

@@ -15,7 +15,7 @@ module.exports = {
 		// index.js 对象
 		// 读取自动布局信息
 		this.parent = parent;
-		this.parent_dom 		= Editor.Panel.find('simple-code');
+		this.parent_dom 		= Editor2D.Panel.find('simple-code');
 		this.layout_dom_flex 	= this.getLayoutDomFlex()
 		this.self_flex_per 		= this.parent.cfg.self_flex_per || this.getSelfFlexPercent();
 	},
@@ -33,7 +33,7 @@ module.exports = {
 
 		this.parent_dom.addEventListener('blur',(e)=>{
 			setTimeout(()=>{
-				let panel = Editor.Panel.getFocusedPanel()
+				let panel = Editor2D.Panel.getFocusedPanel()
 				let is_need_close = this.isSameGroupPanel(panel);
 				if(is_need_close){
 					this.setAutoLayout(panel == this)

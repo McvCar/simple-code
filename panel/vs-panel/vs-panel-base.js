@@ -4,13 +4,12 @@
  * 2.管理文件资源
  */
 const electron 		= require('electron')
-const fe 			= Editor.require('packages://simple-code/tools/tools.js');
-const config 		= Editor.require('packages://simple-code/config.js');
-const packageCfg 	= Editor.require('packages://simple-code/package.json');
-const fs 	= require('fs');
-const path 	= require("path");
-const exec 	= require('child_process').exec;
-const md5 	= require('md5');
+const fe 			= Editor2D.require('packages://simple-code/tools/tools.js');
+const config 		= Editor2D.require('packages://simple-code/config.js');
+const packageCfg 	= Editor2D.require('packages://simple-code/package.json');
+const fs 			= require('fs');
+const path 			= require("path");
+const exec 			= require('child_process').exec;
 const { isArray } 	= require('./monaco-editor/dev/vs/editor/editor.main');
 const eventMgr 		= require('../../tools/eventMgr');
 const fileMgr 		= require('./vs-editor-file-mgr');
@@ -21,9 +20,9 @@ let layer =
 {
 	SEARCH_SCORES : { ".fire": 100, ".prefab": 90 },
 	// 主题文件位置
-	THEME_DIR 	   : Editor.url("packages://simple-code/panel/vs-panel/monaco-editor/custom_thems"),
+	THEME_DIR 	   : Editor2D.url("packages://simple-code/panel/vs-panel/monaco-editor/custom_thems"),
 	// .d.ts 通用代码提示文件引入位置
-	TS_API_LIB_PATHS : [prsPath,Editor.url('packages://simple-code/template/api_doc')],
+	TS_API_LIB_PATHS : [prsPath,Editor2D.url('packages://simple-code/template/api_doc')],
 	// 备忘录位置
 	MEMO_FILE_PATH : prsPath + path.sep + "temp" + path.sep + (fe.getLanguage() == 'zh' ? "备忘录.md" : "Memo.md"),
 	CMD_FILE_PATH : prsPath + path.sep + "temp" + path.sep + "commandLine.js",
@@ -46,13 +45,7 @@ let layer =
 	// 启动事件
 	initVsEditor(callback) 
 	{
-		this.timer_map 			= {};
-		this.file_list_buffer  	= this.file_list_buffer || [];
-		this.file_list_map 	  	= this.file_list_map || {};
-		this.window_event_listener = []
-		this.fileMgr 			= new fileMgr(this);
-		this.enableUpdateTs 	= false;
-		this.menu  = null;
+		this.initEditorStartData();
 		this.initVsCode(() => {
 			this.initEditorData();
 			this.fileMgr.initFileListBuffer(()=>{
@@ -64,6 +57,17 @@ let layer =
 			});
 		});
 	},
+	
+	initEditorStartData(){
+		this.timer_map 			= {};
+		this.file_list_buffer  	= this.file_list_buffer || [];
+		this.file_list_map 	  	= this.file_list_map || {};
+		this.file_list_uuid 	= this.file_list_uuid || {};
+		this.window_event_listener = []
+		this.enableUpdateTs 	= false;
+		this.menu  				= null;
+		this.fileMgr 			= new fileMgr(this);
+	},
 
 	// 初始化事件
 	onLoadEvent(){
@@ -72,7 +76,7 @@ let layer =
 
 	initVsCode(callback) {
 		if(Promise.prototype.finally == null){
-			// Editor.require('packages://simple-code/node_modules/promise.prototype.finally').shim();
+			// Editor2D.require('packages://simple-code/node_modules/promise.prototype.finally').shim();
 			Promise.prototype.finally = function (callback) {
 				let P = this.constructor;
 				return this.then(
@@ -82,17 +86,17 @@ let layer =
 			};
 		}
 
-		const vsLoader = Editor.require('packages://simple-code/panel/vs-panel/monaco-editor/dev/vs/loader.js');
+		const vsLoader = Editor2D.require('packages://simple-code/panel/vs-panel/monaco-editor/dev/vs/loader.js');
 		// vs代码路径
-		vsLoader.require.config({ 'vs/nls': { availableLanguages: { '*': fe.getLanguage() == 'zh' ? 'zh-cn' : '' } }, paths: { 'vs': Editor.url('packages://simple-code/panel/vs-panel/monaco-editor/dev/vs', 'utf8') } });
+		vsLoader.require.config({ 'vs/nls': { availableLanguages: { '*': fe.getLanguage() == 'zh' ? 'zh-cn' : '' } }, paths: { 'vs': Editor2D.url('packages://simple-code/panel/vs-panel/monaco-editor/dev/vs', 'utf8') } });
 		// 创建vs编辑器，api参考 monaco.d.ts文件
 		vsLoader.require(['vs/editor/editor.main'], (monaco) => 
 		{
-			this.monaco = Editor.monaco = Editor.monaco || monaco;
+			this.monaco = Editor2D.monaco = Editor.monaco = Editor.monaco || monaco;
 			let vsEditorConfig = config.getUserEditorConfig();
 			vsEditorConfig.language = 'javascript';  // 预热 typescript模块。json、javascript脚本统一交给typescript解析器一起解析，方便混合编码
 			vsEditorConfig.value = ``
-			var editor = monaco.editor.create(this.$editorB,vsEditorConfig);
+			var editor = monaco.editor.create(this.$.editorB,vsEditorConfig);
 
 			this.defind_model = monaco.editor.createModel('',"plaintext",monaco.Uri.parse('defind_model'));
 			Editor.monaco.vs_editor = this.vs_editor = editor;
@@ -126,52 +130,6 @@ let layer =
 				// })})
 			},100)
 		})
-	},
-
-	// 更新游戏项目文件列表缓存
-	initFileListBuffer(callback) {
-		if (this.file_list_buffer && this.file_list_buffer.length != 0) {
-			if(callback) callback();
-			return ;
-		};
-
-		// 重复检测直到资源读取成功
-		// let schId = this.setTimeoutToJS(() => this.initFileListBuffer(()=>{
-		// 	// if(callback) 
-		// 	// {
-		// 	// 	let temp = callback;
-		// 	// 	callback = null;
-		// 	// 	temp();
-		// 	// }
-		// }), 1.5, { count: 0 });
-		Editor.assetdb.queryAssets('db://**/*', '', (err, results)=> {
-			if(this.file_list_buffer && this.file_list_buffer.length >0) return;
-			
-			for (let i = 0; i < results.length; i++) 
-			{
-				let result = results[i];
-				let info = this.getUriInfo(result.url);
-				if (info.extname != "" && this.SEARCH_BOX_IGNORE[info.extname] == null) 
-				{
-					let name = info.name;
-					result.extname = info.extname
-					let item_cfg = this.newFileInfo(result.extname, name, result.url, result.uuid,result.path)
-					this.file_list_buffer.push(item_cfg);
-					this.file_list_map[fe.normPath( result.path )] = item_cfg;
-					this.file_counts[result.extname] = (this.file_counts[result.extname] || 0) + 1
-				}
-			}
-
-			this.sortFileBuffer();
-			if(callback && this.file_list_buffer.length > 0) 
-			{
-				let temp = callback;
-				callback = null;
-				// schId()
-				// schId = null;
-				temp();
-			}
-	   });
 	},
 
 	// 右键菜单初始化
@@ -217,19 +175,19 @@ let layer =
 			// 线条
 			{ type: 'separator' },
 			// 在文件夹中显示
-			{label:fe.translate('reveal-in-finder'),click:()=>
+			{label:fe.translate('reveal-in-finder'),click: async ()=>
 			{
 				if(this.menu.currTabId == null || this.edit_list[this.menu.currTabId] == null) return;
 				let file_info = this.edit_list[this.menu.currTabId];
-				let url =  (file_info.uuid == "outside" ? file_info.path.replace(new RegExp('/','g'),path.sep) : Editor.remote.assetdb.urlToFspath(file_info.path));
-				exec(Editor.isWin32 ? 'Explorer /select,"'+url+'"' : "open -R " + url)
+				let url =  (file_info.uuid == "outside" ? file_info.path.replace(new RegExp('/','g'),path.sep) : await Editor2D.assetdb.urlToFspath(file_info.path));
+				exec(Editor2D.isWin32 ? 'Explorer /select,"'+url+'"' : "open -R " + url)
 			}},
 			// 跳到资源管理器
 			{label:fe.translate('reveal-in-side-bar'),click:()=>
 			{
 				if(this.menu.currTabId == null || this.edit_list[this.menu.currTabId] == null) return;
 				let file_info = this.edit_list[this.menu.currTabId];
-				Editor.Ipc.sendToAll('assets:hint', file_info.uuid);
+				Editor2D.Ipc.sendToAll('assets:hint', file_info.uuid);
 			}},
 		]);
 
@@ -240,11 +198,11 @@ let layer =
 			// keybindings: [this.monaco.KeyMod.CtrlCmd | this.monaco.KeyCode.KEY_J], // 绑定快捷键
 			contextMenuGroupId: '9_cutcopypaste', // 所属菜单的分组
 			contextMenuOrder: 9,
-			run: () => {
+			run: async () => {
 				// 点击后执行的操作
 				if (this.file_info.uuid == null) return;
-				let url =  (this.file_info.uuid == "outside" ? this.file_info.path.replace(new RegExp('/','g'),path.sep) : Editor.remote.assetdb.urlToFspath(this.file_info.path));
-				exec(Editor.isWin32 ? 'Explorer /select,"'+url+'"' : "open -R " + url)
+				let url =  (this.file_info.uuid == "outside" ? this.file_info.path.replace(new RegExp('/','g'),path.sep) : await Editor2D.assetdb.urlToFspath(this.file_info.path));
+				exec(Editor2D.isWin32 ? 'Explorer /select,"'+url+'"' : "open -R " + url)
 			}, 
 		})
 	},
@@ -347,10 +305,24 @@ let layer =
 		this.loadSysFonts()
 	},
 
+ 	// 补充缺失的配置，升级版本导致的
+	 loadDefineMeunCfg(cfg){
+		for (const key in config.optionGroups) {
+			const groups = config.optionGroups[key];
+			for (const k in groups) {
+				const option = groups[k];
+				if(cfg[option.path] === undefined && option.defaultValue !== undefined){
+					cfg[option.path] = option.defaultValue; // 补充缺失的配置，升级版本导致的
+				}
+			}
+		}
+		return cfg;
+	},
+
 	// 读取系统字体列表
 	loadSysFonts()
 	{
-		let fontList = Editor.require('packages://simple-code/node_modules/node-font-list-master/index.js');
+		let fontList = Editor2D.require('packages://simple-code/node_modules/node-font-list-master/index.js');
 		fontList.getFonts()
 		.then(fonts => {
 			for (let i = 0; i < fonts.length; i++) 
@@ -394,18 +366,18 @@ let layer =
 
 
 	initSceneData(callback) {
-		setTimeout(()=>
+		setTimeout(async ()=>
 		{
-			this.oepnDefindFile();
+			await this.oepnDefindFile();
 			// 打开历史文件tab列表
 			let showId;
 			for (const key in this.file_cfg) {
 				let info = this.file_cfg[key];
 				if (key.indexOf("db://") != -1) {
-					let uuid = Editor.remote.assetdb.urlToUuid(key);
+					let uuid = await Editor2D.assetdb.urlToUuid(key);
 					if (!uuid) continue;
-					let temp = this.fileMgr.getFileUrlInfoByUuid(uuid);
-					let file_info = this.openFile(temp, true);
+					let temp = await this.fileMgr.getFileUrlInfoByUuidAsync(uuid);
+					let file_info = await this.openFile(temp, true);
 					if (file_info) {
 						this.setLockEdit(true,file_info.id);
 					}
@@ -414,9 +386,10 @@ let layer =
 					}
 				}
 			}
-			this.openActiveFile();
 			if(showId){
 				this.setTabPage(showId)
+			}else{
+				this.openActiveFile();
 			}
 			if(callback) callback()
 		},2);
@@ -437,25 +410,25 @@ let layer =
 		},true);
 
 		//获得焦点
-		this.vs_editor.onDidFocusEditorText((e) => {
-			// if (!this.isWindowMode){
-			// creator上层按键事件无法吞噬掉, 只能把撤销重置命令截取了
-			this._sendToPanel = this._sendToPanel || Editor.Ipc.sendToPanel;
-			Editor.Ipc.sendToPanel = (n, r, ...i) => {
-				if (!stopCamds[r]) {
-					return this._sendToPanel(n, r, ...i);
-				}
-			}
-			(document.getElementById("tools") || this).transformTool = "move";
-			// 关闭cocosCreator 默认的tab键盘事件,不然会冲突
-			require(Editor.appPath + "/editor-framework/lib/renderer/ui/utils/focus-mgr.js").disabled = true;
-		});
+		// this.vs_editor.onDidFocusEditorText((e) => {
+		// 	// if (!this.isWindowMode){
+		// 	// creator上层按键事件无法吞噬掉, 只能把撤销重置命令截取了
+		// 	this._sendToPanel = this._sendToPanel || Editor.Ipc.sendToPanel;
+		// 	Editor.Ipc.sendToPanel = (n, r, ...i) => {
+		// 		if (!stopCamds[r]) {
+		// 			return this._sendToPanel(n, r, ...i);
+		// 		}
+		// 	}
+		// 	(document.getElementById("tools") || this).transformTool = "move";
+		// 	// 关闭cocosCreator 默认的tab键盘事件,不然会冲突
+		// 	require(Editor.appPath + "/editor-framework/lib/renderer/ui/utils/focus-mgr.js").disabled = true;
+		// });
 
 		// 失去焦点
-		this.vs_editor.onDidBlurEditorText((e) => {
-			Editor.Ipc.sendToPanel = this._sendToPanel || Editor.Ipc.sendToPanel;
-			require(Editor.appPath + "/editor-framework/lib/renderer/ui/utils/focus-mgr.js").disabled = false;
-		});
+		// this.vs_editor.onDidBlurEditorText((e) => {
+		// 	Editor.Ipc.sendToPanel = this._sendToPanel || Editor.Ipc.sendToPanel;
+		// 	require(Editor.appPath + "/editor-framework/lib/renderer/ui/utils/focus-mgr.js").disabled = false;
+		// });
 
 		// 记录光标位置
 		this.vs_editor.onDidChangeCursorPosition((e)=>{
@@ -528,7 +501,7 @@ let layer =
 		// vs功能:焦点
 		this.monaco.listenEvent('vs-editor-focus',(url) =>
 		{
-			if(Editor.Panel.getFocusedPanel() == this){
+			if(Editor2D.Panel.getFocusedPanel() == this.panel){
 				this.vs_editor.focus();
 			}
 		})
@@ -540,18 +513,18 @@ let layer =
 		})
 		
 		// vs功能:打开文件、转跳到实现、定义
-		this.monaco.listenEvent('vs-open-file-tab',(info) =>
+		this.monaco.listenEvent('vs-open-file-tab',async (info) =>
 		{
 			let uuid;
 			let url_info ;
 			let vs_model = info.uri._formatted && this.monaco.editor.getModel(info.uri._formatted);
 			if(vs_model == null){
 				if(info.uri.scheme == 'http' || info.uri.scheme == 'https'){
-					exec(Editor.isWin32 ? "cmd /c start "+info.uri._formatted : "open "+info.uri._formatted); 
+					exec(Editor2D.isWin32 ? "cmd /c start "+info.uri._formatted : "open "+info.uri._formatted); 
 					return 
 				}else if(info.fsPath){
-					let url = Editor.remote.assetdb.fspathToUrl(info.fsPath);
-					vs_model = this.loadVsModel(url || info.fsPath,path.extname(url || info.fsPath),url != null)
+					let url = await Editor2D.assetdb.fspathToUrl(info.fsPath);
+					vs_model = await this.loadVsModel(url || info.fsPath,path.extname(url || info.fsPath),url != null)
 				}else{
 					Editor.warn('未找到文件,vs_model == null:',info.uri && info.uri._formatted);
 					return 
@@ -568,16 +541,16 @@ let layer =
 			}
 			
 			if(uuid){
-				url_info = this.fileMgr.getFileUrlInfoByUuid(uuid) 
+				url_info = await this.fileMgr.getFileUrlInfoByUuidAsync(uuid) 
 			}else{
 				// 项目根目录的代码提示文件
 				if(fe.isFileExit(vs_model.fsPath)){
-					url_info = this.fileMgr.getFileUrlInfoByFsPath(vs_model.fsPath);
+					url_info = await this.fileMgr.getFileUrlInfoByFsPathAsync(vs_model.fsPath);
 				}
 			}
 
 			if(url_info){
-				let file_info = this.openFile(url_info,true);
+				let file_info = await this.openFile(url_info,true);
 				if(file_info && info.selection && this.vs_editor.getModel() == file_info.vs_model) 
 				{
 					if(uuid == null){
@@ -749,7 +722,7 @@ let layer =
 		}
 	},
 
-	loadAllScript()
+	async loadAllScript()
 	{
 		// 加载所有脚本文件到缓存
 		let script_num = 0;
@@ -759,7 +732,7 @@ let layer =
 			let file_info = this.file_list_buffer[i];
 			if(file_info.uuid.length < 9) continue; // outside < 9
 			
-			let isScript = this.loadAssetAndCompleter(file_info.meta, file_info.extname, true, false, true, ()=>{
+			let isScript = await this.loadAssetAndCompleter(file_info.meta, file_info.extname, true, false, true, ()=>{
 				read_num ++;
 				if(read_num == script_num){
 					//所有脚本加载完成,刷新下已显示的代码页面
@@ -777,18 +750,7 @@ let layer =
 		window.addEventListener(eventName,callback,option);
 	},
 
-
-	// 初始化时代码文件加载方式
-	isReadCode(){
-		return this.cfg.readCodeMode == 'all' || // 加载全部文件方式
-			this.cfg.readCodeMode == 'auto' && 
-			(
-				this.file_counts['.js'] > this.file_counts['.ts'] && // js文件多则加载全部文件方式，否则按import需求加载
-				this.file_counts['.js'] < 500 ||
-				(this.file_counts['.js'] + this.file_counts['.ts']) < 100
-			)
-	},
-
+	// 用户编辑文本
 	onVsDidChangeContent(e,model) {
 		let file_info ;
 		if(model == this.file_info.vs_model ){
@@ -807,7 +769,6 @@ let layer =
 			}
 		}
 		
-		(document.getElementById("tools") || this).transformTool = "move";//因为键盘事件吞噬不了,需要锁定场景操作为移动模式
 
 		let model_url = model.uri._formatted;
 		this.setTimeoutById(()=>{
@@ -825,12 +786,12 @@ let layer =
 	},
 	
 	// 读取资源文件,只在文件初始化时调用该函数
-	loadAssetAndCompleter(filePath, extname, isUrlType = false, isCover=true, isSasync = true, finishCallback)
+	async loadAssetAndCompleter(filePath, extname, isUrlType = false, isCover=true, isSasync = true, finishCallback)
 	{
 		let isScript = extname == ".js" || extname == ".ts" || extname == ".json";
 		if(isScript)
 		{
-			let fsPath = fe.normPath(  isUrlType ? Editor.remote.assetdb.urlToFspath(filePath)  : filePath );
+			let fsPath = fe.normPath(  isUrlType ? await Editor2D.assetdb.urlToFspath(filePath)  : filePath );
 			if (!fe.isFileExit(fsPath)) return;
 			
 			let isRead = this.cfg.readCodeMode == 'all' || 
@@ -840,9 +801,9 @@ let layer =
 			// console.log("loadAssetAndCompleter: ",filePath,isRead)
 			if(isUrlType || isRead)
 			{
-				let loadFunc = (err,code)=>
+				let loadFunc = async (err,code)=>
 				{
-					if(err) return Editor.info('读取文件失败:',err);
+					if(err) return Editor.log('读取文件失败:',err);
 					if(this._is_destroy) return;
 					code = code.toString()
 					
@@ -853,7 +814,7 @@ let layer =
 					if(isRead){
 						// js的 d.ts提示文件
 						// this.monaco.languages.typescript.javascriptDefaults.addExtraLib(code,'lib://model/' + file_name); 
-						let vs_model = this.loadVsModel(filePath,extname,isUrlType,false);
+						let vs_model = await this.loadVsModel(filePath,extname,isUrlType,false);
 						if(isCover || vs_model.getValue() == ''){
 							vs_model.setValue(code)
 						}
@@ -885,7 +846,7 @@ let layer =
 		if (!fe.isFileExit(fsPath)) {
 			return;
 		}
-		fe.readFileAsyn(fsPath,(err,code)=>{
+		fe.readFileAsyn(fsPath,async (err,code)=>{
 			if(err) {
 				if(callback) callback();
 				return Editor.info('读取文件失败:',err);
@@ -901,7 +862,7 @@ let layer =
 			if(this.file_list_map[fsPath]){
 				this.file_list_map[fsPath].data = code;
 			}
-			let vs_model = this.loadVsModel(filePath,extname,isUrlType,false);
+			let vs_model = await this.loadVsModel(filePath,extname,isUrlType,false);
 			if(isCover || vs_model.getValue() == ''){
 				vs_model.setValue(code)
 			}
@@ -910,11 +871,11 @@ let layer =
 	},
 
 	// *.d.ts文件里读取自定义代码輸入提示，提供精准代码提示;
-	loadVsModel(filePath, extname, isUrlType,isReadText=true) {
+	async loadVsModel(filePath, extname, isUrlType,isReadText=true) {
 		let file_type = this.FILE_OPEN_TYPES[extname.substr(1).toLowerCase()];
 		if(file_type)
 		{
-			let fsPath = fe.normPath(  isUrlType ? Editor.remote.assetdb.urlToFspath(filePath) : filePath );
+			let fsPath = fe.normPath(  isUrlType ? await Editor.assetdb.urlToFspath(filePath) : filePath );
 			if (isReadText && !fe.isFileExit(fsPath)) return;
 			let js_text = isReadText ? fs.readFileSync(fsPath).toString() : "";
 			let str_uri   = this.fileMgr.fsPathToModelUrl(fsPath)
@@ -1003,7 +964,7 @@ let layer =
 	},
 
 	// 保存修改
-	saveFile(isMandatorySaving = false, isMustCompile = false, id = -1) {
+	async saveFile(isMandatorySaving = false, isMustCompile = false, id = -1) {
 		id = id == -1 ? this.edit_id : id;
 		let file_info = this.edit_list[id];
 		if (file_info && file_info.uuid && (file_info.is_need_save || isMandatorySaving)) {
@@ -1020,7 +981,7 @@ let layer =
 				if(this.cfg.codeCompileMode == 'save' || isMustCompile){
 					is_save = this.saveFileByUrl(file_info.path,edit_text);
 				}else{
-					fs.writeFileSync(Editor.remote.assetdb.urlToFspath(file_info.path), edit_text);
+					fs.writeFileSync(await Editor2D.assetdb.urlToFspath(file_info.path), edit_text);
 					// 用于脱离编辑状态后刷新creator
 					if(this.refresh_file_list.indexOf(file_info.path) == -1){ 
 						this.refresh_file_list.push(file_info.path);
@@ -1042,7 +1003,7 @@ let layer =
 
 	saveFileByUrl(url,text)
 	{
-		Editor.assetdb.saveExists(url, text, (err, meta)=> {
+		Editor2D.assetdb.saveExists(url, text, (err, meta)=> {
 			if (err) {
 				fs.writeFileSync(Editor.remote.assetdb.urlToFspath(url), text); //外部文件
 				Editor.warn("保存的脚本存在语法错误或是只读文件:",url,err,meta);
@@ -1059,7 +1020,7 @@ let layer =
 	},
 
 	// 刷新保存后未编译的脚本
-	refreshSaveFild(isRefreshApi = false)
+	async refreshSaveFild(isRefreshApi = false)
 	{
 		// 用于脱离编辑状态后刷新creator
 		if(this.refresh_file_list.length){
@@ -1068,10 +1029,10 @@ let layer =
 			{
 				let url = this.refresh_file_list[i];
 				if(isRefreshApi){
-					Editor.assetdb.refresh(url);// 导入保存的代码状态，连续保存会引起报错
+					Editor2D.assetdb.refresh(url);// 导入保存的代码状态，连续保存会引起报错
 				}else{
-					let text = fs.readFileSync(Editor.remote.assetdb.urlToFspath(url)).toString();
-					Editor.assetdb.saveExists(url, text, (err, meta)=> {
+					let text = fs.readFileSync(await Editor2D.assetdb.urlToFspath(url)).toString();
+					Editor2D.assetdb.saveExists(url, text, (err, meta)=> {
 						if (err) {
 							Editor.warn("保存的脚本存在语法错误:",url,err,meta);
 						}
@@ -1154,8 +1115,8 @@ let layer =
 
 	getTabDiv(id) {
 		if (id == null) return;
-		for (var i = 0; i < this.$tabList.children.length; i++) {
-			let obj = this.$tabList.children[i]
+		for (var i = 0; i < this.$.tabList.children.length; i++) {
+			let obj = this.$.tabList.children[i]
 			if (obj._id == id) {
 				return obj;
 			}
@@ -1164,8 +1125,8 @@ let layer =
 
 	getTabList() {
 		let list = [];
-		for (var i = 0; i < this.$tabList.children.length; i++) {
-			let obj = this.$tabList.children[i]
+		for (var i = 0; i < this.$.tabList.children.length; i++) {
+			let obj = this.$.tabList.children[i]
 			if (obj._id != null) {
 				list.push(obj);
 			}
@@ -1204,7 +1165,7 @@ let layer =
 	},
 
 	// 设置编辑页面信息
-	newPageInfo(id, uuid, path, name, file_type, data, is_not_draw = false, is_need_save = false, is_lock = false) {
+	async newPageInfo(id, uuid, path, name, file_type, data, is_not_draw = false, is_need_save = false, is_lock = false) {
 		let file_info = this.edit_list[id] = this.edit_list[id] || {};
 		
 		this.defind_model.setValueNotUndo(data);
@@ -1226,7 +1187,7 @@ let layer =
 		file_info.selection = undefined;
 		if (!file_info.vs_model) 
 		{
-			let vs_model = this.loadVsModel(path, this.fileMgr.getUriInfo(path).extname , uuid != "outside",is_not_draw);
+			let vs_model = await this.loadVsModel(path, this.fileMgr.getUriInfo(path).extname , uuid != "outside",is_not_draw);
 			if(!vs_model) {
 				delete this.edit_list[id];
 				Editor.warn("<代码编辑>读取文件失败:",path);
@@ -1247,11 +1208,11 @@ let layer =
 		let tabBg = this.getTabDiv(id);
 		if (tabBg) return tabBg;
 
-		tabBg = this.$title0.cloneNode(true);
+		tabBg = this.$.title0.cloneNode(true);
 		tabBg.id = "title" + id;
 		tabBg.hidden = false;
 		tabBg.style.display = 'block'
-		this.$tabList.appendChild(tabBg);
+		this.$.tabList.appendChild(tabBg);
 
 		// 切换标题
 		tabBg._id = id;
@@ -1285,7 +1246,7 @@ let layer =
 			let rectB = tabBg.getBoundingClientRect()
 			if(e.clientX>rectB.left && e.clientX<rectB.right){
 				let rectA = this.currTabDiv.getBoundingClientRect()
-				rectA.left > rectB.left ? this.$tabList.insertBefore(this.currTabDiv,tabBg) : this.$tabList.insertBefore(this.currTabDiv,tabBg.nextSibling)
+				rectA.left > rectB.left ? this.$.tabList.insertBefore(this.currTabDiv,tabBg) : this.$.tabList.insertBefore(this.currTabDiv,tabBg.nextSibling)
 			}
 			delete this.currTabDiv;
 		})
@@ -1300,9 +1261,9 @@ let layer =
 	},
 
 	setWaitIconActive(isActive){
-		if(this.$waitIco){
+		if(this.$.waitIco){
 			
-			this.$waitIco.className = isActive ? 'turnAnim' : '';
+			this.$.waitIco.className = isActive ? 'turnAnim' : '';
 		}
 	},
 
@@ -1384,22 +1345,22 @@ let layer =
 	},
 
 	// 打开外部文件
-	openOutSideFile(filePath, isShow = false) {
-		return this.openFile(this.fileMgr.getFileUrlInfoByFsPath(filePath),isShow);
+	async openOutSideFile(filePath, isShow = false) {
+		return await this.openFile(await this.fileMgr.getFileUrlInfoByFsPathAsync(filePath),isShow);
 		// this.setLockEdit(is_lock);
 	},
 
 	// 打开文件到编辑器
-	openFileByUrl(url, isShow) {
-		let uuid = Editor.remote.assetdb.urlToUuid(url);
+	async openFileByUrl(url, isShow) {
+		let uuid = await Editor2D.assetdb.urlToUuid(url);
 		if(uuid){
-			return this.openFile(this.fileMgr.getFileUrlInfoByUuid(uuid),isShow);
+			return await this.openFile(await this.fileMgr.getFileUrlInfoByUuidAsync(uuid),isShow);
 		}
 	},
 
 
 	// 打开文件到编辑器
-	openFile(info, isShow) {
+	async openFile(info, isShow) {
 		if (info == null || !this.FILE_OPEN_TYPES[info.file_type]) {
 			return false
 		}
@@ -1407,7 +1368,7 @@ let layer =
 		// 初始化载入代码编辑
 		let id = info.uuid == "outside" ? this.getTabIdByPath(info.path) : this.getTabIdByUuid(info.uuid);
 		if (id == null) {
-			let file_info = this.newPageInfo(this.getNewPageInd(false, false), info.uuid, info.path, info.name, info.file_type, info.data, this.file_info.is_lock && !isShow);
+			let file_info = await this.newPageInfo(this.getNewPageInd(false, false), info.uuid, info.path, info.name, info.file_type, info.data, this.file_info.is_lock && !isShow);
 			return file_info;
 		} else if (!this.file_info.is_lock || isShow) {
 			return this.setTabPage(id)
@@ -1417,7 +1378,7 @@ let layer =
 	// 打开node上的文件到编辑器
 	openActiveFile(isShow,isCloseUnmodifiedTabs = true) {
 		// 获得当前焦点uuid的信息
-		Editor.Scene.callSceneScript('simple-code', 'get-active-uuid', "", (err, event) => {
+		Editor2D.Scene.callSceneScript('simple-code', 'get-active-uuid', "",async (err, event) => {
 			if (!event) {
 				return
 			};
@@ -1436,14 +1397,14 @@ let layer =
 
 			// 打开文件tab
 			let ld_list = [];
-			let act = Editor.Selection.curGlobalActivate()
+			let act = Editor2D.Selection.curGlobalActivate()
 			for (let i = 0; i < event.uuids.length; i++) 
 			{
 				const uuid = event.uuids[i];
-				const info = this.fileMgr.getFileUrlInfoByUuid(uuid);
+				const info = await this.fileMgr.getFileUrlInfoByUuidAsync(uuid);
 				if(act.type != 'node' || !config.vsEditorConfig.ignoreAutoOpenFile || !path.basename(info.path).match(new RegExp(config.vsEditorConfig.ignoreAutoOpenFile)))
 				{
-					let file_info = this.openFile(info, isShow);
+					let file_info = await this.openFile(info, isShow);
 					if (file_info) {
 						file_info._is_lock = file_info.is_lock;
 						file_info.is_lock = true
@@ -1464,12 +1425,12 @@ let layer =
 			// 	this.oepnDefindFile();
 			// }
 
-		}, -1)
+		})
 	},
 
 
 	// 打开默认的备忘录、命令行文本
-	oepnDefindFile() {
+	async oepnDefindFile() {
 
 		// 没有备忘录就先复制一个
 		let filePath = this.MEMO_FILE_PATH;
@@ -1493,10 +1454,10 @@ let layer =
 			this.saveFile(false,false,0); 
 		}
 
-		let info = this.fileMgr.getFileUrlInfoByFsPath(filePath)
+		let info = await this.fileMgr.getFileUrlInfoByFsPathAsync(filePath)
 		if(!this.edit_list[0] || this.edit_list[0].name != info.name)
 		{
-			this.newPageInfo(0, 
+			await this.newPageInfo(0, 
 				info.uuid,
 				info.path,
 				info.name,
@@ -1508,7 +1469,7 @@ let layer =
 			this.edit_list[0].enabled_close = false
 			this.getTabDiv(0).getElementsByClassName("closeBtn")[0].hidden = true;
 		}else{
-			this.openOutSideFile(filePath, !this.file_info.is_lock);
+			await this.openOutSideFile(filePath, !this.file_info.is_lock);
 		}
 
 		// 清除撤销记录
@@ -1609,7 +1570,7 @@ let layer =
 
 
 	isFocused(){
-		return Editor.Panel.getFocusedPanel() == Editor.Panel.find('simple-code');
+		return Editor2D.Panel.getFocusedPanel() == this.panel;
 	},
 
 	// 调用原生JS的定时器
