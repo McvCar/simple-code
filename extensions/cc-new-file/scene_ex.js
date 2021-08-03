@@ -22,6 +22,19 @@ let cc_require = (fileName)=>{
 	return comp;
 }
 
+let onComplete = (saveUrl,data,node,jsFileName)=>{
+	
+	if(require(USER_NEW_FILE_RULE).onComplete){
+		setTimeout(()=>{
+			try{
+				data = data || fs.readFileSync( Editor.remote.assetdb.urlToFspath(saveUrl)).toString();
+			}catch{err}{
+			}
+			require(USER_NEW_FILE_RULE).onComplete(saveUrl,data,node,jsFileName);
+		},100)
+	}
+}
+
 module.exports = {
 
 
@@ -60,11 +73,13 @@ module.exports = {
 			// 判断文件是否存在
 			let comp = node.getComponent(jsFileName);
 			if (comp) {
+				onComplete(args.saveUrl,null,node,jsFileName)
 				event.reply(null, {});// 回调通知结果
 				return;
 			}else{
 				comp = cc_require(jsFileName);
 				if (comp) {
+					onComplete(args.saveUrl,null,node,jsFileName)
 					node.addComponent(jsFileName);
 					event.reply(null, {});// 回调通知结果
 					return;
@@ -96,11 +111,7 @@ module.exports = {
 								event.reply(null, { data: "", node_uuid: uuid, scipt_uuid: comp.__scriptUuid });
 								Editor.Ipc.sendToPanel('simple-code', 'custom-cmd', { cmd: "openFile" });
 								parent['scene-need-save']()
-								if(require(USER_NEW_FILE_RULE).onComplete){
-									setTimeout(()=>{
-										require(USER_NEW_FILE_RULE).onComplete(args.saveUrl,data,node,jsFileName);
-									},100)
-								}
+								onComplete(args.saveUrl,data,node,jsFileName)
 							}
 						} else {
 							// 阻止报错提示

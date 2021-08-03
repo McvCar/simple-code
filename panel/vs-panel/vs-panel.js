@@ -729,6 +729,7 @@ let layer = {
 	 * @param type = node | asset 
 	 * */ 
 	 onRefreshCreatorMenu(type,uuid){
+		if(!this.is_init_finish) return;
 		this.currCreatorEditorSelectInfo.type = type;
 		this.currCreatorEditorSelectInfo.uuid = uuid;
 		this.runExtendFunc('onRefreshCreatorMenu',type,uuid)

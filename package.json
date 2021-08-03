@@ -84,7 +84,7 @@
 			"accelerator": "alt+d"
 		},
 		"i18n:simple-code.name/i18n:simple-code.edit/i18n:simple-code.batch-search": {
-			"message": "simple-code:selectNode",
+			"message": "",
 			"accelerator": ""
 		},
 		"i18n:simple-code.name/i18n:simple-code.edit/i18n:simple-code.new-file-and-bind-node": {
@@ -108,11 +108,11 @@
 			"accelerator": ""
 		},
 		"i18n:simple-code.name/i18n:simple-code.edit/i18n:simple-code.shear-files": {
-			"message": "simple-code:selectNode",
+			"message": "",
 			"accelerator": ""
 		},
 		"i18n:simple-code.name/i18n:simple-code.edit/i18n:simple-code.paste-files": {
-			"message": "simple-code:selectNode",
+			"message": "",
 			"accelerator": ""
 		},
 		"i18n:simple-code.name/i18n:simple-code.edit/i18n:simple-code.load-custom-widgets-to-code": {

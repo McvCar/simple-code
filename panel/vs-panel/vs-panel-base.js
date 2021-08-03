@@ -128,52 +128,6 @@ let layer =
 		})
 	},
 
-	// 更新游戏项目文件列表缓存
-	initFileListBuffer(callback) {
-		if (this.file_list_buffer && this.file_list_buffer.length != 0) {
-			if(callback) callback();
-			return ;
-		};
-
-		// 重复检测直到资源读取成功
-		// let schId = this.setTimeoutToJS(() => this.initFileListBuffer(()=>{
-		// 	// if(callback) 
-		// 	// {
-		// 	// 	let temp = callback;
-		// 	// 	callback = null;
-		// 	// 	temp();
-		// 	// }
-		// }), 1.5, { count: 0 });
-		Editor.assetdb.queryAssets('db://**/*', '', (err, results)=> {
-			if(this.file_list_buffer && this.file_list_buffer.length >0) return;
-			
-			for (let i = 0; i < results.length; i++) 
-			{
-				let result = results[i];
-				let info = this.getUriInfo(result.url);
-				if (info.extname != "" && this.SEARCH_BOX_IGNORE[info.extname] == null) 
-				{
-					let name = info.name;
-					result.extname = info.extname
-					let item_cfg = this.newFileInfo(result.extname, name, result.url, result.uuid,result.path)
-					this.file_list_buffer.push(item_cfg);
-					this.file_list_map[fe.normPath( result.path )] = item_cfg;
-					this.file_counts[result.extname] = (this.file_counts[result.extname] || 0) + 1
-				}
-			}
-
-			this.sortFileBuffer();
-			if(callback && this.file_list_buffer.length > 0) 
-			{
-				let temp = callback;
-				callback = null;
-				// schId()
-				// schId = null;
-				temp();
-			}
-	   });
-	},
-
 	// 右键菜单初始化
 	initContextMenu(){
 		this.menu = electron.remote.Menu.buildFromTemplate([
@@ -1137,6 +1091,7 @@ let layer =
 			let title = tabBg.getElementsByClassName("tabTitle")[0];
 			title.textContent = (info.is_need_save ? info.name + "* " : info.name || "无文件");
 			title.setAttribute('style',info.is_lock || id == 0 ? 'font-style:normal;' : 'font-style:italic;');
+			title.title = info.path;
 		} else {
 			Editor.warn(id)
 		}
