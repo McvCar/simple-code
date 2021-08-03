@@ -4522,7 +4522,7 @@ exports.loadModule = function(moduleName, onLoad) {
 
     if (window.define == null) window.define = define;
 
-    let url = Editor.url('packages://simple-code/'+moduleName);
+    let url = Editor2D.url('packages://simple-code/'+moduleName);
     try{
         onLoad && onLoad(require(url))
         return;

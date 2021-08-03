@@ -72,8 +72,8 @@ let Editor2D =
 			if(!global.document) return null;
 
 			let dock = document.getElementById('dock')
-			if(!dock) return [];
-			return dock.activeElement;
+			if(!dock) return null;
+			return dock.shadowRoot.activeElement;
 		},
 		/**@type Array<Element> */
 		panels:[],
@@ -92,7 +92,7 @@ let Editor2D =
 			if(temp[1]){
 				Editor2D.Ipc._send(temp[0],temp[1] || "",...args);
 			}else{
-				Editor.Message.send(cmd,...args);
+				Editor.Message.broadcast(cmd,...args);
 			}
 		},
 
@@ -257,6 +257,11 @@ let Editor2D =
 		curSelection(type){
 			return Editor.Selection.getSelected(type);
 		},
+		
+		select(type,uuidOrArray){
+			Editor.Selection.clear(type);
+			Editor.Selection.select(type,uuidOrArray)
+		}
 	}
 }
 

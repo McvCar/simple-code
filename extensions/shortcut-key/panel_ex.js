@@ -6,7 +6,7 @@
 var path 	= require('path');
 var fs 		= require('fs');
 var md5     = require('md5');
-var fe 			= Editor.require('packages://simple-code/tools/tools.js');
+var fe 		= Editor2D.require('packages://simple-code/tools/tools.js');
 
 const inputType = {"text":1,"password":1,"number":1,"date":1,"color":1,"range":1,"month":1,"week":1,"time":1,"email":1,"search":1,"url":1,"textarea":1}
 
@@ -64,14 +64,14 @@ module.exports = {
 		// this.parent.addKeybodyEventByName('execCode',(e)=>
 		// {
 		// 	// 运行命令
-	  	// 	Editor.Ipc.sendToPanel('simple-code','run-command-code',"cmd");
+	  	// 	Editor2D.Ipc.sendToPanel('simple-code','run-command-code',"cmd");
 		// },1)
 
 		// // 绑定页面全局快捷键事件
 		// this.parent.addKeybodyEventByName('execCodeByScene',(e)=>
 		// {
 		// 	// 运行 Scene 命令
-	  	// 	Editor.Ipc.sendToPanel('simple-code','run-command-code',"scene");
+	  	// 	Editor2D.Ipc.sendToPanel('simple-code','run-command-code',"scene");
 		// },2)
 		
 		// 锁定/解锁编程
@@ -98,14 +98,14 @@ module.exports = {
 
 		for (let i = 0; i < 10; i++) {
 			// 绑定页面全局快捷键事件,注意: 区分大小写 Ctrl = ctrl
-			this.parent.addKeybodyEvent([[Editor.isWin32 ? "Alt" : "Meta",String(i)]],(e)=>
+			this.parent.addKeybodyEvent([[Editor2D.isWin32 ? "Alt" : "Meta",String(i)]],async (e)=>
 			{
-			    let activeInfo  = Editor.Selection.curGlobalActivate() // 检测面板焦点在资源管理器还是层级管理器
+			    let activeInfo  = Editor2D.Selection.curGlobalActivate() // 检测面板焦点在资源管理器还是层级管理器
 			    if (activeInfo && activeInfo.type == "asset")
 			    {
-			    	Editor.info("设置标签:",Editor.remote.assetdb.uuidToUrl(activeInfo.id));
-					localStorage.setItem("simple-code-tag_"+i,activeInfo.id);
 					e.preventDefault();// 吞噬捕获事件
+			    	Editor.log("设置标签:",await Editor2D.assetdb.uuidToUrl(activeInfo.id));
+					localStorage.setItem("simple-code-tag_"+i,activeInfo.id);
 					return false;
 				}
 			},0)
@@ -114,14 +114,16 @@ module.exports = {
 
 		for (let i = 0; i < 10; i++) {
 			// 绑定页面全局快捷键事件,注意: 区分大小写 Ctrl = ctrl
-			this.parent.addKeybodyEvent([[String(i)]],(e)=>
+			this.parent.addKeybodyEvent([[String(i)]],async (e)=>
 			{
 				let uuid = localStorage.getItem("simple-code-tag_"+i);
-			    if (!this.inputTypeChk(e) && Editor.remote.assetdb.uuidToUrl(uuid))
-			    {
-					Editor.Ipc.sendToAll('assets:hint', uuid)
-					Editor.Selection.select('asset', uuid)
+				if(uuid){
 					e.preventDefault();// 吞噬捕获事件
+				}
+			    if (!this.inputTypeChk(e) && uuid && await Editor2D.assetdb.uuidToUrl(uuid))
+			    {
+					Editor2D.Ipc.sendToAll('assets:hint', uuid)
+					Editor2D.Selection.select('asset', uuid)
 					return false;
 				}
 			},0)
@@ -129,12 +131,12 @@ module.exports = {
 
 		this.parent.addKeybodyEventByName('setNodeTreeTag',(e)=>
 		{
-		    let activeInfo  = Editor.Selection.curGlobalActivate() // 检测面板焦点在资源管理器还是层级管理器
+		    let activeInfo  = Editor2D.Selection.curGlobalActivate() // 检测面板焦点在资源管理器还是层级管理器
 		    if (activeInfo && activeInfo.type == "node")
 		    {
-		    	let nodes = Editor.Selection.curSelection("node");
+		    	let nodes = Editor2D.Selection.curSelection("node");
 		    	this._select_nodes = nodes;
-		    	Editor.info("设置Node标签");
+		    	Editor.log("设置Node标签");
 				e.preventDefault();// 吞噬捕获事件
 				return false;
 			}
@@ -144,7 +146,7 @@ module.exports = {
 		{
 		    if (this._select_nodes)
 		    {
-		    	Editor.Selection.select('node', this._select_nodes);
+		    	Editor2D.Selection.select('node', this._select_nodes);
 				e.preventDefault();// 吞噬捕获事件
 			}
 		},0);
@@ -154,57 +156,14 @@ module.exports = {
 		{
 			if (!this.inputTypeChk(e)){
 				e.preventDefault();// 吞噬捕获事件
-				Editor.Scene.callSceneScript('simple-code', 'select-node' ,"");
+				Editor2D.Scene.callSceneScript('simple-code', 'select-node' ,"");
 			}
 		},0)
 
-
-		// 绑定页面全局快捷键事件,注意: 区分大小写 Ctrl = ctrl
-		this.arr_cut_asset = [];
-		this.parent.addKeybodyEvent([['x']],(e)=>
-		{
-		    let activeInfo  = Editor.Selection.curGlobalActivate() // 检测面板焦点在资源管理器还是层级管理器
-		    if (activeInfo && activeInfo.type == "asset" && !this.inputTypeChk(e))
-		    {
-		    	this.arr_cut_asset = Editor.Selection.curSelection('asset')
-		    	for (var i = 0; i < this.arr_cut_asset.length; i++) {
-					Editor.Ipc.sendToAll('assets:hint', this.arr_cut_asset[i]);
-				}
-				Editor.log("操作: 剪切选中的文件,请按‘c’粘贴到指定位置");
-				e.preventDefault();// 吞噬捕获事件
-				return false;
-			}
-		},0)
-
-		this.parent.addKeybodyEvent([['c']],(e)=>
-		{
-		    let activeInfo  = Editor.Selection.curGlobalActivate() // 检测面板焦点在资源管理器还是层级管理器
-		    if (activeInfo && activeInfo.type == "asset" && !this.inputTypeChk(e))
-		    {
-		    	let t_url = Editor.remote.assetdb.uuidToUrl(activeInfo.id);
-		    	let t_path = Editor.remote.assetdb.urlToFspath(t_url);
-
-		    	if(!fe.isDirectory(t_path))
-		    	{
-		    		t_url = t_url.substr(0,t_url.lastIndexOf('/'));
-		    	}
-
-		    	for (var i = 0; i < this.arr_cut_asset.length; i++) {
-		    		let m_url = Editor.remote.assetdb.uuidToUrl(this.arr_cut_asset[i]);
-		    		let wb = m_url.substr(m_url.lastIndexOf('/'));
-		    		Editor.assetdb.move(m_url, t_url+wb);
-		    	}
-		    	this.arr_cut_asset = [];
-				e.preventDefault();// 吞噬捕获事件
-				return false;
-			}
-		},0)
-
+		// 显示、隐藏node
 		this.parent.addKeybodyEventByName('setNodeActive',(e)=>
 		{
-			Editor.Scene.callSceneScript('simple-code', 'active-curr-node' ,{},function (err, event) {
-				// Editor.log("delect node")
-			});
+			Editor2D.Scene.callSceneScript('simple-code', 'active-curr-node' ,{});
 			e.preventDefault();// 吞噬捕获事件
 			return false;
 		},0)
@@ -240,13 +199,9 @@ module.exports = {
 
 	messages:{
 
-		// 快捷键打开当前选中文件/节点进入编辑
-		'custom-cmd' (event,info) {
-		},
-
-		'scene:saved'(){
-			// Editor.log("事件 save")
-		}
+		// 'scene:saved'(){
+		// 	// Editor.log("事件 save")
+		// }
 	},
 	
 };

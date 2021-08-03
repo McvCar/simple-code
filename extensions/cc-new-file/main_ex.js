@@ -20,14 +20,14 @@ module.exports = {
 
 	messages:
 	{
-		'newFile'() {
-			Editor.Ipc.sendToPanel('simple-code','new-js-file');
-		},
+		// 'newFile'() {
+		// 	Editor.Ipc.sendToPanel('simple-code','new-js-file');
+		// },
 
-		'newFileDir'(){
-			// 打开目录
-			Editor.Ipc.sendToPanel('simple-code','custom-template');
-		},
+		// 'newFileDir'(){
+		// 	// 打开目录
+		// 	Editor.Message.send('simple-code','vsEditor.openSetting')
+		// },
 	
 	}
 };

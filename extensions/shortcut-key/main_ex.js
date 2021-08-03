@@ -6,9 +6,6 @@
 'use strict';
 var path 	= require('path');
 var fs 		= require('fs');
-var md5     = require('md5');
-
-
 
 module.exports = {
 
@@ -28,17 +25,14 @@ module.exports = {
 
 	messages:
 	{
-		'openNodeFile'(){
-			// Editor.Ipc.sendToPanel('simple-code', 'custom-cmd',{cmd:"findFileGoto"});
-			// Editor.log("openNodeFile")
-		},
-		'scene:saved'(){
-			// Editor.log("scene save")
-		},
+		// 'openNodeFile'(){
+		// },
+		// 'scene:saved'(){
+		// },
 		// 删除节点与脚本回收
 		'removeNodeAndScript'(){
 			// 发送事件到场景脚本处理
-			Editor.Scene.callSceneScript('simple-code', 'removeNodeAndScript' ,{},function (err, event) {
+			Editor2D.Scene.callSceneScript('simple-code', 'removeNodeAndScript' ,{},function (err, event) {
 				// Editor.log("delect node")
 			});
 			

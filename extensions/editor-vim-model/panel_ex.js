@@ -21,7 +21,7 @@ module.exports = {
 
 	// monaco 编辑器初始化
 	onLoad(){
-		vsVim 		= Editor.require('packages://simple-code/extensions/editor-vim-model/vim/lib/index.js');
+		vsVim 		= Editor2D.require('packages://simple-code/extensions/editor-vim-model/vim/lib/index.js');
 		this.isWait = false;
 		this.parent.vs_editor.onDidChangeCursorPosition((e)=>{
 			if(this.isWait){
@@ -60,7 +60,7 @@ module.exports = {
 		parent != this.parent.$box && parent.children[0] ?  parent.insertBefore(this.vimStatusBar,parent.children[0]) : parent.appendChild(this.vimStatusBar);
 
 
-		vsVim 		= vsVim || Editor.require('packages://simple-code/extensions/editor-vim-model/vim/lib/index.js');;
+		vsVim 		= vsVim || Editor2D.require('packages://simple-code/extensions/editor-vim-model/vim/lib/index.js');;
 		const vim_mode = vsVim.initVimMode(this.parent.vs_editor, this.vimStatusBar);
 		this.vim_cursor[0] = vim_mode;
 		Editor.monaco.vim_mode = this.vim_mode = vim_mode;

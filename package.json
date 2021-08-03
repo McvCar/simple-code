@@ -156,17 +156,17 @@
 				"message": "removeNodeAndScript"
 			},
 			{
-				"path": "i18n:simple-code.name/i18n:simple-code.edit",
+				"path": "i18n:simple-code.name/i18n:simple-code.project-manage",
 				"label": "i18n:simple-code.open-project-directory",
 				"message": "openProjectDir"
 			},
 			{
-				"path": "i18n:simple-code.name",
+				"path": "i18n:simple-code.name/i18n:simple-code.project-manage",
 				"label": "i18n:simple-code.open-project-to-external-editor",
 				"message": "openProjectEditor"
 			},
 			{
-				"path": "i18n:simple-code.name",
+				"path": "i18n:simple-code.name/i18n:simple-code.project-manage",
 				"label": "i18n:simple-code.open-project-in-creator",
 				"message": "openProjectCreator"
 			},
@@ -326,7 +326,7 @@
 			},
 			"setting": {
 				"methods": [
-					"vsEditor.setting"
+					"vsEditor.openSetting"
 				]
 			},
 			"openConfigExtendDir": {
@@ -336,32 +336,32 @@
 			},
 			"newFileDir": {
 				"methods": [
-					"newFileDir"
+					"vsEditor.custom-template"
 				]
 			},
 			"openKeyMap": {
 				"methods": [
-					"openKeyMap"
+					"vsEditor.openKeyMap"
 				]
 			},
 			"openConfig": {
 				"methods": [
-					"openConfig"
+					"vsEditor.openConfig"
 				]
 			},
 			"openConfigHitn": {
 				"methods": [
-					"openConfigHitn"
+					"vsEditor.openConfigHitn"
 				]
 			},
 			"openDragVarRuleFile": {
 				"methods": [
-					"openDragVarRuleFile"
+					"vsEditor.openDragVarRuleFile"
 				]
 			},
 			"openPrettierConfig": {
 				"methods": [
-					"openPrettierConfig"
+					"vsEditor.openPrettierConfig"
 				]
 			},
 			"findFileAndOpen": {
@@ -431,17 +431,17 @@
 			},
 			"openProjectDir": {
 				"methods": [
-					"openProjectDir"
+					"vsEditor.openProjectDir"
 				]
 			},
 			"openProjectEditor": {
 				"methods": [
-					"openProjectEditor"
+					"vsEditor.openProjectEditor"
 				]
 			},
 			"openProjectCreator": {
 				"methods": [
-					"openProjectCreator"
+					"vsEditor.openProjectCreator"
 				]
 			},
 			"contactAuthor": {

@@ -12,13 +12,13 @@ const path 			= require("path");
 const exec 			= require('child_process').exec;
 const { isArray } 	= require('./monaco-editor/dev/vs/editor/editor.main');
 const eventMgr 		= require('../../tools/eventMgr');
-const fileMgr 		= require('./vs-editor-file-mgr');
+const fileMgr 		= require('./file-mgr');
 
 const prsPath = Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
 
 let layer = 
 {
-	SEARCH_SCORES : { ".fire": 100, ".prefab": 90 },
+	SEARCH_SCORES : { ".scene": 100, ".prefab": 90 },
 	// 主题文件位置
 	THEME_DIR 	   : Editor2D.url("packages://simple-code/panel/vs-panel/monaco-editor/custom_thems"),
 	// .d.ts 通用代码提示文件引入位置
@@ -29,7 +29,7 @@ let layer =
 	// 下拉框 过滤文件类型 
 	SEARCH_BOX_IGNORE: {},//{".png":1,".jpg":1}
 	// 忽略文件
-	IGNORE_FILE: ["png", "jpg", "zip", "labelatlas", "ttf", "mp3", "mp4", "wav", "ogg", "rar", 'fire', 'prefab', 'plist'],
+	IGNORE_FILE: ["png", "jpg", "zip", "labelatlas", "ttf", "mp3", "mp4", "wav", "ogg", "rar", 'scene', 'prefab', 'plist'],
 	// 打开文件格式对应的类型
 	FILE_OPEN_TYPES: { md: "markdown", js: "typescript", ts: "typescript", effect: "yaml", coffee: "coffeescript", lua: "lua", sql: "mysql", php: "php", xml: "xml", html: "html", css: "css", json: "json", manifest: "typescript", plist: "xml", gitignore: "gitignore", glsl: "glsl",text:"markdown",txt:"markdown",c:"c",cpp:"cpp",h:"cpp" },
 	// 须加载配置文件
@@ -64,9 +64,12 @@ let layer =
 		this.file_list_map 	  	= this.file_list_map || {};
 		this.file_list_uuid 	= this.file_list_uuid || {};
 		this.window_event_listener = []
+		this.document_event_listener = []
 		this.enableUpdateTs 	= false;
 		this.menu  				= null;
 		this.fileMgr 			= new fileMgr(this);
+		/** @type  import("./cc-menu-mgr")  */
+		this.ccMenuMgr 			= this.ccMenuMgr || null;
 	},
 
 	// 初始化事件
@@ -397,7 +400,6 @@ let layer =
 
 	// 綁定事件
 	initEditorEvent() {
-		let stopCamds = { "scene:undo": 1, "scene:redo": 1, };
 
 		// 窗口进入前台
 		this.addWindowEventListener("focus",()=>{
@@ -408,27 +410,6 @@ let layer =
 		this.addWindowEventListener("blur",()=>{
 			this.setTimeoutById(this.onBlur.bind(this),100,'windowfocus');
 		},true);
-
-		//获得焦点
-		// this.vs_editor.onDidFocusEditorText((e) => {
-		// 	// if (!this.isWindowMode){
-		// 	// creator上层按键事件无法吞噬掉, 只能把撤销重置命令截取了
-		// 	this._sendToPanel = this._sendToPanel || Editor.Ipc.sendToPanel;
-		// 	Editor.Ipc.sendToPanel = (n, r, ...i) => {
-		// 		if (!stopCamds[r]) {
-		// 			return this._sendToPanel(n, r, ...i);
-		// 		}
-		// 	}
-		// 	(document.getElementById("tools") || this).transformTool = "move";
-		// 	// 关闭cocosCreator 默认的tab键盘事件,不然会冲突
-		// 	require(Editor.appPath + "/editor-framework/lib/renderer/ui/utils/focus-mgr.js").disabled = true;
-		// });
-
-		// 失去焦点
-		// this.vs_editor.onDidBlurEditorText((e) => {
-		// 	Editor.Ipc.sendToPanel = this._sendToPanel || Editor.Ipc.sendToPanel;
-		// 	require(Editor.appPath + "/editor-framework/lib/renderer/ui/utils/focus-mgr.js").disabled = false;
-		// });
 
 		// 记录光标位置
 		this.vs_editor.onDidChangeCursorPosition((e)=>{
@@ -499,14 +480,14 @@ let layer =
 		})
 
 		// vs功能:焦点
-		this.monaco.listenEvent('vs-editor-focus',(url) =>
+		this.monaco.listenEvent('vs-editor-focus',(isFocuseEditor) =>
 		{
-			if(Editor2D.Panel.getFocusedPanel() == this.panel){
+			if(isFocuseEditor || Editor2D.Panel.getFocusedPanel() == this.panel){
 				this.vs_editor.focus();
 			}
 		})
 		
-		// vs功能: 
+		// vs功能: 刷新编译已打开的文件
 		this.monaco.listenEvent('vs-up-code-file',(_) =>
 		{
 			this.upCompCodeFile();
@@ -750,6 +731,11 @@ let layer =
 		window.addEventListener(eventName,callback,option);
 	},
 
+	addDocumentEventListener(eventName,callback,option){
+		this.document_event_listener.push({eventName,callback,option});
+		document.body.addEventListener(eventName,callback,option);
+	},
+	
 	// 用户编辑文本
 	onVsDidChangeContent(e,model) {
 		let file_info ;
@@ -1098,6 +1084,7 @@ let layer =
 			let title = tabBg.getElementsByClassName("tabTitle")[0];
 			title.textContent = (info.is_need_save ? info.name + "* " : info.name || "无文件");
 			title.setAttribute('style',info.is_lock || id == 0 ? 'font-style:normal;' : 'font-style:italic;');
+			title.title = info.path;
 		} else {
 			Editor.warn(id)
 		}
@@ -1210,7 +1197,6 @@ let layer =
 
 		tabBg = this.$.title0.cloneNode(true);
 		tabBg.id = "title" + id;
-		tabBg.hidden = false;
 		tabBg.style.display = 'block'
 		this.$.tabList.appendChild(tabBg);
 
@@ -1358,6 +1344,10 @@ let layer =
 		}
 	},
 
+	// 打开文件到编辑器
+	async openFileByUuid(uuid, isShow) {
+		return await this.openFile(await this.fileMgr.getFileUrlInfoByUuidAsync(uuid),isShow);
+	},
 
 	// 打开文件到编辑器
 	async openFile(info, isShow) {
@@ -1402,7 +1392,7 @@ let layer =
 			{
 				const uuid = event.uuids[i];
 				const info = await this.fileMgr.getFileUrlInfoByUuidAsync(uuid);
-				if(act.type != 'node' || !config.vsEditorConfig.ignoreAutoOpenFile || !path.basename(info.path).match(new RegExp(config.vsEditorConfig.ignoreAutoOpenFile)))
+				if(info && (act.type != 'node' || !config.vsEditorConfig.ignoreAutoOpenFile || !path.basename(info.path).match(new RegExp(config.vsEditorConfig.ignoreAutoOpenFile))))
 				{
 					let file_info = await this.openFile(info, isShow);
 					if (file_info) {
@@ -1467,7 +1457,7 @@ let layer =
 
 			// x不显示
 			this.edit_list[0].enabled_close = false
-			this.getTabDiv(0).getElementsByClassName("closeBtn")[0].hidden = true;
+			this.getTabDiv(0).getElementsByClassName("closeBtn")[0].style.display = 'none';
 		}else{
 			await this.openOutSideFile(filePath, !this.file_info.is_lock);
 		}
@@ -1626,15 +1616,14 @@ let layer =
 	},
 
 	
-	// 窗口获得焦点
+	// creator窗口获得焦点
 	onFocus(){
 		// 回调前台刷新需要监听的文件状态
 		this.fileMgr.checkWatch();
 	},
 
-	// 窗口失去焦点
+	// creator窗口失去焦点
 	onBlur(){
-
 	},
 
 	// 页面关闭

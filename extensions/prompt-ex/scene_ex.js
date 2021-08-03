@@ -22,8 +22,7 @@ module.exports = {
 			})
 			parent['scene-need-save']();
 		},
-
-
+		
 		// 批量插入组件
 		'add-prefab'(event,info,parent){
 
@@ -31,7 +30,7 @@ module.exports = {
 		 	arrNode.forEach((parentNode)=>
 		 	{
 		 		// 插入个预制节点
-		 		Editor.Ipc.sendToPanel("scene","scene:create-nodes-by-uuids",[info.uuid],parentNode.uuid,{unlinkPrefab:undefined});
+		 		Editor2D.Ipc.sendToPanel("scene","scene:create-nodes-by-uuids",[info.uuid],parentNode.uuid,{unlinkPrefab:undefined});
 		 	});
 		},
 
@@ -64,8 +63,7 @@ module.exports = {
 			    list.push(item_cfg)
 			}) 
 			
-			list = JSON.stringify(list)
-			event.reply(null,list);
+			return JSON.stringify(list);
 		}
 	}
 };

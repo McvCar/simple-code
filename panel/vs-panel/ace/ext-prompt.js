@@ -2448,6 +2448,7 @@ function prompt(editor, message, options, callback) {
     function done() {
         overlay.close();
         callback && callback();
+        options && options.onDone && options.onDone(cmdLine);
         Editor.monaco.sendEvent('vs-editor-focus');
         openPrompt = null;
     }

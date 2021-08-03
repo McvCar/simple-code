@@ -6,14 +6,13 @@
 const path 		= require('path');
 const md5     	= require('md5');
 const fs 		= require('fs');
-const fe 		= Editor.require('packages://simple-code/tools/tools.js');
-const cfg 		= Editor.require('packages://simple-code/config.js');
+const fe 		= Editor2D.require('packages://simple-code/tools/tools.js');
+const cfg 		= Editor2D.require('packages://simple-code/config.js');
 const exec 		= require('child_process').exec
 const inputType = {"text":1,"password":1,"number":1,"date":1,"color":1,"range":1,"month":1,"week":1,"time":1,"email":1,"search":1,"url":1,"textarea":1}
 module.exports = {
 	/** @type import('../../panel/vs-panel/vs-panel-base') */
 	parent : null,
-
 
 		// 面板初始化
 	onLoad(parent){
@@ -24,7 +23,7 @@ module.exports = {
 		// 键盘事件：添加节点组件
 		this.parent.addKeybodyEventByName('addCompToScene',(e)=>
 		{
-			if ( Editor.Selection.curSelection("node").length> 0){
+			if ( Editor2D.Selection.curSelection("node").length> 0){
 				this.openodeCompList();
 				e.preventDefault();// 吞噬捕获事件
 			}
@@ -41,7 +40,7 @@ module.exports = {
 		// 键盘事件：批量插入预制节点
 		this.parent.addKeybodyEventByName('insertPrefab',(e)=>
 		{
-			if ( !this.inputTypeChk(e) && Editor.Selection.curSelection("node").length> 0){
+			if ( !this.inputTypeChk(e) && Editor2D.Selection.curSelection("node").length> 0){
 				this.openPrefabList();
 				e.preventDefault();// 吞噬捕获事件
 			}
@@ -105,22 +104,22 @@ module.exports = {
 			if (cmd == "findFileGoto")
 			{
 				// 高亮资源管理器
-				Editor.Ipc.sendToAll('assets:hint', data.item.uuid)
-				Editor.Selection.select('asset', data.item.uuid)
+				Editor2D.Ipc.sendToAll('assets:hint', data.item.uuid)
+				Editor2D.Selection.select('asset', data.item.uuid)
 				this.parent.openActiveFile()
 			}else //if(cmd == "findFileAndOpen")
 			{
 				if (data.item.extname == ".prefab") {
-					Editor.Ipc.sendToAll('scene:enter-prefab-edit-mode', data.item.uuid);
+					Editor2D.Ipc.sendToAll('scene:enter-prefab-edit-mode', data.item.uuid);
 				}
-				if (data.item.extname == ".fire") {
-					Editor.Ipc.sendToAll('scene:open-by-uuid', data.item.uuid);
+				if (data.item.extname == ".scene") {
+					Editor2D.Ipc.sendToAll('scene:open-by-uuid', data.item.uuid);
 				}else{
 					if(data.item.uuid == 'outside'){
 						this.parent.openOutSideFile(data.item.meta,true)
 					}else{
-						Editor.Selection.select('asset', data.item.uuid)
-						setTimeout(()=>this.parent.openActiveFile(true),50) 
+						Editor2D.Selection.select('asset', data.item.uuid)
+						setTimeout(()=>this.parent.openActiveFile(true,false),50) 
 					}
 				}
 			}
@@ -146,7 +145,7 @@ module.exports = {
 			{
 				// 过滤文件: 特定的文件才能打开
 				let extname = v.extname.substr(1);
-				if (extname == "prefab" || extname == "fire" || this.parent.FILE_OPEN_TYPES[extname]){
+				if (extname == "prefab" || extname == "scene" || this.parent.FILE_OPEN_TYPES[extname]){
 					fileList.push(v)
 				}
 			});
@@ -173,8 +172,8 @@ module.exports = {
 	// 搜索选中节点
 	openFindNode(){
 
-		let uuid_list = Editor.Selection.curSelection('node');
-		if(uuid_list.length == 0) return Editor.info("请选中节点后再继续操作");
+		let uuid_list = Editor2D.Selection.curSelection('node');
+		if(uuid_list.length == 0) return Editor2D.info("请选中节点后再继续操作");
 		let node_uuid = uuid_list[0];
 
 		let sch_id ;
@@ -190,7 +189,7 @@ module.exports = {
 				if(name != "")
 				{
 					sch_id = null;
-					Editor.Scene.callSceneScript('simple-code', 'select-node-by-name',{name:name,parent_uuid:node_uuid});
+					Editor2D.Scene.callSceneScript('simple-code', 'select-node-by-name',{name:name,parent_uuid:node_uuid});
 				}
 			},400);
 			return ["请输入需要批量选中的node名字"];
@@ -225,12 +224,10 @@ module.exports = {
 		let onSearchAccept = (data)=>
 		{
 			// 获得选中的节点
-			Editor.Scene.callSceneScript('simple-code', 'set-node-comp' ,data.item.value, (err, args)=>
-			{
-			});
+			Editor2D.Scene.callSceneScript('simple-code', 'set-node-comp' ,data.item.value);
 		}
 
-		Editor.Scene.callSceneScript('simple-code', 'get-comps' ,"", (err, args)=>
+		Editor2D.Scene.callSceneScript('simple-code', 'get-comps' ,"", (err, args)=>
 		{
 			// 打开搜索框: 文件定位转跳
 			let list = JSON.parse(args)
@@ -245,9 +242,7 @@ module.exports = {
 		let onSearchAccept = (data)=>
 		{
 			// 获得选中的节点
-			Editor.Scene.callSceneScript('simple-code', 'add-prefab' ,data.item, (err, args)=>
-			{
-			});
+			Editor2D.Scene.callSceneScript('simple-code', 'add-prefab' ,data.item);
 		}
 
 		let list = []
@@ -356,6 +351,63 @@ module.exports = {
 		this.parent.ace.openSearchBox(searchText,[],(data,cmdLine)=>onSearchAccept(data,cmdLine),(cmdLine)=>onCompletionsFunc(cmdLine))
 	},
 
+	// 通过项目目录打开新项目
+	openProject(type){
+
+		// 下拉框选中后操作事件
+		let onSearchAccept = (data)=>
+		{
+			let dir_path = data.item.meta
+			if (type == "dir")
+			{
+				// 打开目录
+				exec( (Editor2D.isWin32 ? "start " : "open ")+dir_path )
+			}else if (type == "editor")
+			{
+				// 打开项目到外部代码编辑器
+				exec( (Editor2D.isWin32 ? '"'+cfg.editorPath.win+'"' :'"'+ cfg.editorPath.mac+'"')+" "+dir_path)
+
+				// 打开项目从新creator
+				if (Editor2D.isWin32){ 
+					exec('"'+cfg.editorPath.win+'" '+dir_path)
+				}else{
+					// Mac
+					exec("\""+cfg.editorPath.mac+"\" "+dir_path+"");
+				}
+			}else if (type == "creator")
+			{
+				// 打开项目从新creator
+				if (Editor2D.isWin32){
+					let appPath = Editor.appPath.substr(0,Editor.appPath.lastIndexOf(path.sep)) 
+					appPath = appPath.substr(0,appPath.lastIndexOf(path.sep))
+					appPath = '"'+ appPath + path.sep+'CocosCreator.exe"'+ ' --path '
+					exec( appPath+dir_path)
+				}else{
+					// Mac
+					let appPath = Editor.appPath.substr(0,Editor.appPath.lastIndexOf(path.sep)) 
+					appPath.substr(0,appPath.lastIndexOf(path.sep))
+					exec("nohup "+appPath+" "+dir_path+" >/dev/null 2>&1 &")
+				}
+			}
+			Editor.log("正在执行打开操作:"+dir_path)
+		}
+
+		// 获得总项目目录位置: 当前项目上级目录
+		let root_path 	= Editor2D.url("db://assets/")
+		root_path 		= root_path.substr(0,root_path.lastIndexOf(path.sep))
+		root_path 		= root_path.substr(0,root_path.lastIndexOf(path.sep))
+
+
+		// 所有项目的列表
+		let dirList 	= fe.getDirList(root_path,[]);
+		let list 		= []
+		dirList.forEach((dir_path)=>
+		{
+			list.push( this.parent.getItem( dir_path.substr(dir_path.lastIndexOf(path.sep)+1) ,dir_path,0) )
+		})
+		// 打开搜索框: 文件定位转跳
+		this.parent.ace.openSearchBox("",list,(data)=>onSearchAccept(data));
+	},
 	/*************  事件 *************/  
 
 	messages:{
@@ -371,63 +423,16 @@ module.exports = {
 			this.openPrefabList();
 		},
 
-
-		// 通过项目目录打开新项目
-		'openProject'(event,type){
-
-			// 下拉框选中后操作事件
-			let onSearchAccept = (data)=>
-			{
-				let dir_path = data.item.meta
-				if (type == "dir")
-				{
-					// 打开目录
-					exec( (Editor.isWin32 ? "start " : "open ")+dir_path )
-				}else if (type == "editor")
-				{
-					// 打开项目到外部代码编辑器
-					exec( (Editor.isWin32 ? '"'+cfg.editorPath.win+'"' :'"'+ cfg.editorPath.mac+'"')+" "+dir_path)
-
-					// 打开项目从新creator
-					if (Editor.isWin32){ 
-						exec('"'+cfg.editorPath.win+'" '+dir_path)
-					}else{
-						// Mac
-						exec("\""+cfg.editorPath.mac+"\" "+dir_path+"");
-					}
-				}else if (type == "creator")
-				{
-					// 打开项目从新creator
-					if (Editor.isWin32){
-						let appPath = Editor.appPath.substr(0,Editor.appPath.lastIndexOf(path.sep)) 
-						appPath = appPath.substr(0,appPath.lastIndexOf(path.sep))
-						appPath = '"'+ appPath + path.sep+'CocosCreator.exe"'+ ' --path '
-						exec( appPath+dir_path)
-					}else{
-						// Mac
-						let appPath = Editor.appPath.substr(0,Editor.appPath.lastIndexOf(path.sep)) 
-						appPath.substr(0,appPath.lastIndexOf(path.sep))
-						exec("nohup "+appPath+" "+dir_path+" >/dev/null 2>&1 &")
-					}
-				}
-				Editor.log("正在执行打开操作:"+dir_path)
-			}
-
-			// 获得总项目目录位置: 当前项目上级目录
-			let root_path 	= Editor.url("db://assets/")
-			root_path 		= root_path.substr(0,root_path.lastIndexOf(path.sep))
-			root_path 		= root_path.substr(0,root_path.lastIndexOf(path.sep))
-
-
-			// 所有项目的列表
-			let dirList 	= fe.getDirList(root_path,[]);
-			let list 		= []
-			dirList.forEach((dir_path)=>
-			{
-				list.push( this.parent.getItem( dir_path.substr(dir_path.lastIndexOf(path.sep)+1) ,dir_path,0) )
-			})
-			// 打开搜索框: 文件定位转跳
-			this.parent.ace.openSearchBox("",list,(data)=>onSearchAccept(data));
+		'openProjectDir'(){
+			this.openProject('dir')
+		},
+		
+		'openProjectEditor'(){
+			this.openProject('editor')
+		},
+		
+		'openProjectCreator'(){
+			this.openProject('creator')
 		},
 
 

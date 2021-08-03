@@ -2,9 +2,9 @@
  * 1.管理文件资源逻辑部分
  */
 
-const ace = Editor.require('packages://simple-code/panel/vs-panel/ace/ace.js');
-const settings_menu = Editor.require('packages://simple-code/panel/vs-panel/ace/ext-settings_menu.js');
-const prompt_ex = Editor.require('packages://simple-code/panel/vs-panel/ace/ext-prompt.js');
+const ace = Editor2D.require('packages://simple-code/panel/vs-panel/ace/ace.js');
+const settings_menu = Editor2D.require('packages://simple-code/panel/vs-panel/ace/ext-settings_menu.js');
+const prompt_ex = Editor2D.require('packages://simple-code/panel/vs-panel/ace/ext-prompt.js');
 
 const prsPath = Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
 
@@ -17,7 +17,7 @@ class AcePanel{
 
 	initAce() {
 		// 副级编辑器
-		ace.config.set("basePath", Editor.url('packages://simple-code/ace/', 'utf8'));
+		ace.config.set("basePath", Editor2D.url('packages://simple-code/ace/', 'utf8'));
 		var editor = ace.edit(this.parent.$editorA);
 		editor.setOptions({
 			// 默认:false
@@ -95,20 +95,31 @@ class AcePanel{
 		input.cmdLine.resize()
 	}
 	
-	/* 
-		打开下拉框, 例子: this.openSearchBox("",fileList,(data)=>{console.log(data.item)});
-		onAccept:处理完成调
-		onCompletionsFunc:修改搜索框时，通过该函数读取显示的实时显示的列表
-	*/
-	openSearchBox(msg = "", itemList, onAccept, onCompletionsFunc) {
+	/**
+	 * 打开下拉框, 例子: this.openSearchBox("",fileList,(data)=>{console.log(data.item)});
+	 * @param {string} msg 默认显示内容
+	 * @param {Function} itemList 搜索列表
+	 * @param {Function} onAccept 用户确认
+	 * @param {Function} onCompletionsFunc 修改搜索框时，通过该函数读取显示的实时显示的列表
+	 * @param {Function} onDone 窗口关闭，完成
+	 */
+	openSearchBox(msg = "", itemList, onAccept, onCompletionsFunc,onDone) {
 		let _this = this
+		let activeElement = Editor2D.Panel.getFocusedPanel();
 		// 打开个自定义 下拉 选项 
 		this.ace_editor.prompt(msg, {
 			// 名字
 			name: "searchFile",
 			selection: [0, Number.MAX_VALUE],
 			maxHistoryCount: 20,
-
+			
+			// 取消
+			onDone:function(cmdLine){
+				// 恢复面板焦点
+				if(activeElement) activeElement.focus();
+				if(onDone) onDone(cmdLine)
+			},
+			
 			onAccept: function (data, label) {
 				if (data.item && !onCompletionsFunc) this.addToHistory(data.item);
 				onAccept(data, label);
@@ -256,12 +267,11 @@ class AcePanel{
 		});
 	}
 
-
 	// 打开设置菜单
 	openMenu() {
 		// 打开配置面板
 		if (!this.ace_editor.showSettingsMenu) {
-			Editor.require('packages://simple-code/panel/vs-panel/ace/ext-settings_menu.js').init();
+			Editor2D.require('packages://simple-code/panel/vs-panel/ace/ext-settings_menu.js').init();
 		}
 		this.ace_editor.showSettingsMenu(this.parent.cfg);
 	}

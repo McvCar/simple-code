@@ -20,8 +20,8 @@
 }
 
 #manualCompile{height: 15px;width:40;}
-#gotoFileBtn{height: 15px;width:40;}
-#settingBtn {height: 15px;width:40;}
+#gotoFileBtn{height: 15px;width:40;background:#018585}
+#settingBtn {height: 15px;width:40;background:#434857}
 #resetBtn {height: 15px;width:40;}
 #editorA {width: 0%;height: 0%;}
 #editorB {overflow:hidden;flex: 1 1 auto;}

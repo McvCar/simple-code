@@ -29,33 +29,28 @@ module.exports = {
 	messages:
 	{
 		
-		'addNodeComp'(){
-			Editor.Panel.open('simple-code');
-			Editor.Ipc.sendToPanel('simple-code', 'addNodeComp');
-		},
+		// 'addNodeComp'(){
+		// 	Editor2D.Ipc.sendToPanel('simple-code', 'addNodeComp');
+		// },
 
-		'addPrefab'(){
-			Editor.Panel.open('simple-code');
-			Editor.Ipc.sendToPanel('simple-code', 'addPrefab');
-		},
+		// 'addPrefab'(){
+		// 	Editor2D.Ipc.sendToPanel('simple-code', 'addPrefab');
+		// },
 
-		'openProjectDir'(event){
-			Editor.Panel.open('simple-code');
-			Editor.Ipc.sendToPanel('simple-code', 'openProject',"dir");
-		},
+		// 'openProjectDir'(event){
+		// 	Editor2D.Ipc.sendToPanel('simple-code', 'openProject',"dir");
+		// },
 		
-		'openProjectEditor'(event){
-			Editor.Panel.open('simple-code');
-			Editor.Ipc.sendToPanel('simple-code', 'openProject',"editor");
-		},
+		// 'openProjectEditor'(event){
+		// 	Editor2D.Ipc.sendToPanel('simple-code', 'openProject',"editor");
+		// },
 
-		'openProjectCreator'(event){
-			Editor.Panel.open('simple-code');
-			Editor.Ipc.sendToPanel('simple-code', 'openProject',"creator");
-		},
+		// 'openProjectCreator'(event){
+		// 	Editor2D.Ipc.sendToPanel('simple-code', 'openProject',"creator");
+		// },
 
-		'scene:saved'(){
-			// Editor.log("to save")
-		}
+		// 'scene:saved'(){
+		// 	// Editor.log("to save")
+		// }
 	}
 };

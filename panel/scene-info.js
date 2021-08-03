@@ -23,7 +23,7 @@ var eventFuncs =
 	getActiveUuid()
 	{
 	   let activeInfo  = Editor.Selection.curGlobalActivate() // 检测面板焦点在资源管理器还是层级管理器
-	   if (activeInfo && activeInfo.type == "asset")
+	   if (activeInfo && activeInfo.type == "asset" && activeInfo.id && activeInfo.id.indexOf('db:') == -1)
 	   {
 			return [activeInfo.id];
 	   }else{

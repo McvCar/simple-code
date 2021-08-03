@@ -7,10 +7,12 @@ let fs 			= require("fs");
 // 加载编辑器里的 node_modules,有些公共库需要用的如：md5
 module.paths.push(path.join(Editor.App.path, 'node_modules'));
 const compatibleApi = require('./tools/compatibleApi');
+const tools  = require('./tools/tools');
 
-
+const extensionPath = path.resolve(__dirname,'.','extensions');
 let _lastUuid ;//最后打开的预制节点,记录当前打开层的uuid
 
+let scripts = [];
 let methods = { 
 
 	load () {
@@ -23,7 +25,7 @@ let methods = {
 		}
 	
 		// 执行扩展逻辑
-		this.initExtend();
+		// this.initExtend();
 		this.runExtendFunc("onLoad",this);
 		global._simpleCodeMain = this;
 	},
@@ -31,12 +33,12 @@ let methods = {
 	// 2.4.4 发现保存后不会刷新
 	unload () {
 		delete global._simpleCodeMain
-		this.scripts.forEach((obj)=>
+		scripts.forEach((obj)=>
 		{ 
-			for(let name in obj.messages)
-			{
-				let state = electron.ipcMain.removeListener( name.indexOf(':') == -1 ? "simple-code:"+name : name,obj.messages[name] ) ; 
-			}
+			// for(let name in obj.messages)
+			// {
+			// 	let state = electron.ipcMain.removeListener( name.indexOf(':') == -1 ? "simple-code:"+name : name,obj.messages[name] ) ; 
+			// }
 
 			try {
 				if(obj.onDestroy){
@@ -51,20 +53,29 @@ let methods = {
 	// 读取扩展逻辑文件
 	initExtend()
 	{
-		const fe     = require('./tools/tools');
-
-		this.scripts = [];
-		let fileList = fe.getDirAllFiles(Editor.url("packages://simple-code/extensions"),[]);
+		scripts = [];
+		let fileList = tools.getDirAllFiles(extensionPath,[]);
 		fileList.forEach((v)=>
 		{
 			if(v.substr(v.lastIndexOf(path.sep)+1) == "main_ex.js")
 			{ 
 				let obj = require(v);
-				this.scripts.push(obj);
-				for(let name in obj.messages)
-				{
-					obj.messages[name] = obj.messages[name].bind(obj)
-					electron.ipcMain.on(name.indexOf(':') == -1 ? "simple-code:"+name : name,obj.messages[name]); 
+				scripts.push(obj);
+				
+				for(let name in obj.messages){
+					if (this[name])
+					{
+						let old_func = this[name]
+						let now_func = obj.messages[name].bind(obj)
+						this[name] = function(...args){
+							old_func(...args,this);
+							return now_func(...args,this);
+						}
+					}else{
+						let now_func = obj.messages[name].bind(obj)
+						this[name] = function(...args){ return now_func(...args,this)}
+					}
+					// electron.ipcMain.on(name.indexOf(':') == -1 ? "simple-code:"+name : name,obj.messages[name]); 
 				}
 			}
 		})
@@ -72,7 +83,7 @@ let methods = {
 
 	// 运行扩展文件的方法
 	runExtendFunc(funcName,...args){
-		this.scripts.forEach((obj)=>{
+		scripts.forEach((obj)=>{
 		if (obj[funcName])
 		{
 			obj[funcName](...args);
@@ -99,27 +110,6 @@ let methods = {
 
 	  } );
 	},
-	
-	'openNodeFile' () {
-	  // send ipc message to panel
-	  Editor.Panel.open('simple-code.vsEditor');
-	  Editor.Ipc.sendToPanel('simple-code', 'custom-cmd',{cmd:"openFile"});
-	},
-
-	'findFileAndOpen' () {
-		Editor.Panel.open('simple-code.vsEditor');
-		Editor.Ipc.sendToPanel('simple-code', 'custom-cmd',{cmd:"findFileAndOpen"});
-	},
-
-	'findFileGoto' () {
-		Editor.Panel.open('simple-code.vsEditor');
-		Editor.Ipc.sendToPanel('simple-code', 'custom-cmd',{cmd:"findFileGoto"});
-	},
-
-	'simple-code:selectNode'(){
-
-		Editor.Scene.callSceneScript('simple-code', 'select-node' ,{});
-	},
 
 	'uuidToUrl'(event,a){
 		if (event.reply) { 
@@ -139,27 +129,6 @@ let methods = {
 		if (event.reply) {
 			event.reply(null, _lastUuid);
 		}
-	},
-	
-	'setting'(){
-		Editor.Panel.open('simple-code.vsEditor');
-		Editor.Ipc.sendToPanel('simple-code', 'custom-cmd',{cmd:"setting"});
-	},
-	
-	'openConfig'(){
-		// 打开配置
-		const config 	= Editor.require('packages://simple-code/config.js');
-		Editor.Ipc.sendToPanel('simple-code', 'open-code-file',config.getUserConfigPath(Editor.url('packages://simple-code/editor_config.js')));
-	},
-	
-	'openKeyMap'(){
-		// 打开配置
-		Editor.Ipc.sendToPanel('simple-code', 'open-code-file',Editor.url("packages://simple-code/keyMap.js"));
-	},
-
-	'openConfigHitn'(){
-		// 打开目录
-		Editor.Ipc.sendToPanel('simple-code', 'open-code-file',Editor.url("packages://simple-code/template/hint_text.txt"));
 	},
 
 	'openConfigExtendDir'(){
@@ -181,8 +150,9 @@ let methods = {
 	'refresh-preview'(){
 		Editor.Ipc.sendToPanel('simple-code.preview','refresh-preview');
 	},
-
 }
+
+methods.initExtend();
 
 module.exports = 
 {
