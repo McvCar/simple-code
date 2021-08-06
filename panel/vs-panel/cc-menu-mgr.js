@@ -7,7 +7,7 @@ const path 			= require('path');
 const fs 			= require('fs');
 const md5			= require('md5');
 const prsPath 		= Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
-const MENU_PANEL_TYPE = {"创建节点":"layerMenu","Create":"layerMenu","新建":"assetMenu","New":"assetMenu"};
+const MENU_PANEL_TYPE = {"create-node":"layerMenu","create-node":"layerMenu","文件夹":"assetMenu","Folder":"assetMenu"};
 
 let is_lock			= false;
 class ccMenuMgr {
@@ -48,7 +48,7 @@ class ccMenuMgr {
 		return popup;
 	}
 
-	applyItem(item,parnetPaths,args){
+	applyItem(item,parnetPaths){
 		if(item.submenu){
 			//子菜单
 			for (let n = 0; n < item.submenu.length; n++) 
@@ -67,7 +67,7 @@ class ccMenuMgr {
 				// };
 			}else{
 				let paths = JSON.parse( JSON.stringify(parnetPaths) )
-				item.params = item.params || {label:item.label,paths,args:args||{}}
+				item.params = item.params || {label:item.label,paths}
 			}
 		}
 	}
@@ -75,8 +75,14 @@ class ccMenuMgr {
 	// 处理菜单
 	hookMenuFunc(template) 
 	{
-        const firstMenu = template[0];
-		let menuType = MENU_PANEL_TYPE[firstMenu.label];
+		if(!template.menu){
+			return;
+		}
+        const firstMenu = template.menu[0];
+		if(!firstMenu || !firstMenu.submenu || !firstMenu.submenu.length){
+			return
+		}
+		let menuType = MENU_PANEL_TYPE[firstMenu.submenu[0].label || firstMenu.submenu[0].template];
 		this.parent.onCCMenuPopup(menuType);
 		for (const id in this.menuCfgs) 
 		{
@@ -88,9 +94,9 @@ class ccMenuMgr {
 			{
 				const item = list[i];
 				if(item.type != 'separator'){
-					this.applyItem(item,[item.label],firstMenu.params);
+					this.applyItem(item,[item.label]);
 				}
-				template.push(item);
+				template.menu.push(item);
 			}
 		}
         
@@ -106,7 +112,7 @@ class ccMenuMgr {
 	}
 	
 	// 设置右击菜单选项
-	setMenuConfig(e,args){
+	setMenuConfig(args){
 		this.menuCfgs[args.id] = args.menuCfg;
 	}
 

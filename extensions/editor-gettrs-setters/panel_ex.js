@@ -4,7 +4,7 @@
 文档: https://github.com/WilsonGodoi/generate-getters-setters
 */
 'use strict';
-const fe = Editor.require('packages://simple-code/tools/tools.js');
+const fe = Editor2D.require('packages://simple-code/tools/tools.js');
 
 module.exports = {
 	/** @type import('../../panel/vs-panel/vs-panel-base') */
@@ -63,7 +63,7 @@ module.exports = {
 
 		// 少于一定值则不执行
 		if (code.length < 1) {
-			Editor.info('No selected properties.');
+			Editor.log('No selected properties.');
 			return;
 		}
 		
@@ -71,7 +71,7 @@ module.exports = {
 			// 创建代码
 			var getterAndSetter = this.createGetterAndSetter(code);
 			if(getterAndSetter == ''){
-				Editor.info('Something went wrong! Try that the properties are in this format: "private name: string;"');
+				Editor.log('Something went wrong! Try that the properties are in this format: "private name: string;"');
 				return;
 			}
 			// 插入代码到后面
@@ -88,7 +88,7 @@ module.exports = {
 			model.pushStackElement();
 		}
 		catch (error) {
-			Editor.info('Something went wrong! Try that the properties are in this format: "private name: string;"');
+			Editor.log('Something went wrong! Try that the properties are in this format: "private name: string;"');
 		}
 	},
 
@@ -165,7 +165,7 @@ module.exports = {
 				Attribute = this.toCamelCase(attribute);
 				create = type;
 			} else {
-				Editor.info('Something went wrong! Try that the properties are in this format: "private name: string;"')
+				Editor.log('Something went wrong! Try that the properties are in this format: "private name: string;"')
 				generatedCode = ``;
 				break;
 			}

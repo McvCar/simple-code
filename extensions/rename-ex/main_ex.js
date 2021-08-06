@@ -6,7 +6,6 @@
 'use strict';
 var path 	= require('path');
 var fs 		= require('fs');
-var md5     = require('md5');
 
 
 
@@ -31,10 +30,10 @@ module.exports = {
 
 	messages:
 	{
-		'rename'(){
-			Editor.Panel.open('simple-code');
-			// Editor.Ipc.sendToPanel('simple-code', 'rename');
-		},
+		// 'rename'(){
+		// 	Editor.Panel.open('simple-code');
+		// 	// Editor.Ipc.sendToPanel('simple-code', 'rename');
+		// },
 		
 	}
 };

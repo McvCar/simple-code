@@ -4,8 +4,6 @@
 */
 'use strict';
 const path 		= require('path');
-const md5     	= require('md5');
-const fs 		= require('fs');
 const fe 		= Editor2D.require('packages://simple-code/tools/tools.js');
 const cfg 		= Editor2D.require('packages://simple-code/config.js');
 const exec 		= require('child_process').exec
@@ -23,8 +21,18 @@ module.exports = {
 		// 键盘事件：添加节点组件
 		this.parent.addKeybodyEventByName('addCompToScene',(e)=>
 		{
-			if ( Editor2D.Selection.curSelection("node").length> 0){
+			if (!this.parent.is_mouse_down && Editor2D.Selection.curSelection("node").length> 0){
 				this.openodeCompList();
+				e.preventDefault();// 吞噬捕获事件
+			}
+		},0)
+
+		// 键盘事件：批量插入预制节点
+		this.parent.addKeybodyEventByName('insertPrefab',(e)=>
+		{
+			if(this.parent.is_mouse_down) return;
+			if ( !this.inputTypeChk(e) && Editor2D.Selection.curSelection("node").length> 0){
+				this.openPrefabList();
 				e.preventDefault();// 吞噬捕获事件
 			}
 		},0)
@@ -36,20 +44,10 @@ module.exports = {
 			e.preventDefault();// 吞噬捕获事件
 		},1)
 
-
-		// 键盘事件：批量插入预制节点
-		this.parent.addKeybodyEventByName('insertPrefab',(e)=>
-		{
-			if ( !this.inputTypeChk(e) && Editor2D.Selection.curSelection("node").length> 0){
-				this.openPrefabList();
-				e.preventDefault();// 吞噬捕获事件
-			}
-		},0)
-
-
 		// 键盘事件：切换场景
 		this.parent.addKeybodyEventByName('gotoAnything',(e)=>
 		{
+			if(this.parent.is_mouse_down) return;
 			if ( !this.inputTypeChk(e)){
 				this.searchCmd("findFileAndOpen");
 				e.preventDefault();// 吞噬捕获事件
@@ -59,6 +57,7 @@ module.exports = {
 		// 绑定页面全局快捷键事件,注意: 区分大小写 Control = ctrl
 		this.parent.addKeybodyEventByName('gotoScriptFile',(e)=>
 		{
+			if(this.parent.is_mouse_down) return;
 			// 搜索转跳
 			this.searchCmd("findJsFileAndOpen");
 			e.preventDefault();// 吞噬捕获事件
@@ -68,6 +67,7 @@ module.exports = {
 		// 绑定页面全局快捷键事件,注意: 区分大小写 Control = ctrl
 		this.parent.addKeybodyEventByName('findFileGoto',(e)=>
 		{
+			if(this.parent.is_mouse_down) return;
 			// 搜索转跳
 			this.searchCmd("findFileGoto");
 			e.preventDefault();// 吞噬捕获事件
@@ -77,12 +77,18 @@ module.exports = {
 		// 键盘事件：搜索节点
 		this.parent.addKeybodyEventByName('findNodes',(e)=>
 		{
+			if(this.parent.is_mouse_down) return;
 			if ( !this.inputTypeChk(e)){
 				setTimeout(()=>{
 					this.openFindNode()
 				},1)
 			}
 		},0);
+	},
+
+	isScenePanelFocus(){
+		let panel = Editor2D.Panel.getFocusedPanel()
+		return panel && panel.name == 'scene';
 	},
 
 	// 不是输入状态是时
@@ -226,7 +232,7 @@ module.exports = {
 			// 获得选中的节点
 			Editor2D.Scene.callSceneScript('simple-code', 'set-node-comp' ,data.item.value);
 		}
-
+		
 		Editor2D.Scene.callSceneScript('simple-code', 'get-comps' ,"", (err, args)=>
 		{
 			// 打开搜索框: 文件定位转跳

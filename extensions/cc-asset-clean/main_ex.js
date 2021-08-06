@@ -28,9 +28,8 @@ module.exports = {
 
 	messages:
 	{
-		'cleanFile'(){
-			Editor.Ipc.sendToPanel('simple-code', 'cleanFile');
-		},
+		// 'cleanFile'(){
+		// },
 
 	}
 };

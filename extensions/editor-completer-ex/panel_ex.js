@@ -20,6 +20,11 @@ module.exports = {
 
 		let EditorCompletion = require('./editor-completion');
 		this.completor = new EditorCompletion.default(this.parent);
+		
+		// 进入编辑器时刷新下nodeTree信息
+		this.parent.panel.addEventListener('focus', () => {
+			this.upCurrSceneChildrenInfo();
+		},false);
 	},
 
 	// 编辑器启动完成
@@ -38,7 +43,7 @@ module.exports = {
 	loadCompleter(){
 		
 		// 载入自定义提示
-		let text = fs.readFileSync(Editor.url('packages://simple-code/template/hint_text.txt', 'utf8')).toString()
+		let text = fs.readFileSync(Editor2D.url('packages://simple-code/template/hint_text.txt', 'utf8')).toString()
 		// 提示列表格式 : arrWord = ["cat", "this.node.runAction( cc.MoveTo(0,cc.p(0,0) ))",...]
 		let arrWord = text.split(" ");
 		this.completor.addCustomCompleters(arrWord)
@@ -75,16 +80,23 @@ module.exports = {
 		this.completor.upAllSymSuggests()
 	},
 	
-	// 刷新场景内节点信息
-	onCurrSceneChildrenInfo(currSceneChildrenInfo)
-	{
-		if(!this.parent) return;
-		// 写入提示
-		currSceneChildrenInfo.forEach((info)=>
-		{
-			// 动态添加当前场景所有节点的name输入提示
-			// 名字，名字，节点路径深度描述，类型图标，是否覆盖
-			this.completor.addCustomCompleter(info.name,info.name,info.path,this.parent.monaco.languages.CompletionItemKind.Unit,true)
+	// 刷新场景所有的子节点信息缓存
+	upCurrSceneChildrenInfo() {
+		// 从场景获得nodeTree数据
+		Editor2D.Scene.callSceneScript('simple-code', 'scene-children-info', (err, currSceneChildrenInfo) => {
+			if (!currSceneChildrenInfo) return;
+
+			if(!this.parent) return;
+			this.completor.cleanCustomCompleterByGroup('nodeTree')
+			// 写入提示
+			currSceneChildrenInfo.forEach((info)=>
+			{
+				// 动态添加当前场景所有节点的name输入提示
+				// 名字，名字，节点路径深度描述，类型图标，是否覆盖
+				if(!info.name.match(/[\W\s]/)){
+					this.completor.addCustomCompleter(info.name,info.name,info.path,this.parent.monaco.languages.CompletionItemKind.Unit,true,'nodeTree')
+				}
+			})
 		})
 	},
 
@@ -119,13 +131,11 @@ module.exports = {
 
 	messages:{
 
-		// 快捷键打开当前选中文件/节点进入编辑
-		'custom-cmd' (event,info) {
-		},
-
-		'scene:saved'(){
-			// Editor.log("事件 save")
-		}
+		// 场景加载完
+		// 'scene:ready'(event) {
+		// 	if(!this.parent.is_init_finish) return;
+		// 	this.upCurrSceneChildrenInfo();
+		// },
 	},
 	
 };

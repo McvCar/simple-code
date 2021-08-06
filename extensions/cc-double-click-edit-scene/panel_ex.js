@@ -6,8 +6,8 @@
 const path 		= require('path');
 const md5     	= require('md5');
 const fs 		= require('fs');
-const fe 		= Editor.require('packages://simple-code/tools/tools.js');
-const cfg 		= Editor.require('packages://simple-code/config.js');
+const fe 		= Editor2D.require('packages://simple-code/tools/tools.js');
+const cfg 		= Editor2D.require('packages://simple-code/config.js');
 
 module.exports = {
 	/** @type import('../../panel/vs-panel/vs-panel-base') */
@@ -30,17 +30,17 @@ module.exports = {
 	},
 
 	openEditBox(){
-		let div = Editor.Panel.getFocusedPanel()
-		if(div && div.id == 'scene'){
+		let div = Editor2D.Panel.getFocusedPanel()
+		if(div && div.name == 'scene'){
 
-			Editor.Scene.callSceneScript('simple-code', 'getCurrNodeLabelInfo', (err, labelInfo) => 
+			Editor2D.Scene.callSceneScript('simple-code', 'getCurrNodeLabelInfo',{},(err, labelInfo) => 
 			{ 
 				if(!labelInfo){
 					return
 				}
 				this.editString((string)=>{
 					labelInfo.string = string;
-					Editor.Scene.callSceneScript('simple-code', 'setCurrNodeLabelInfo',labelInfo)
+					Editor2D.Scene.callSceneScript('simple-code', 'setCurrNodeLabelInfo',labelInfo)
 				},labelInfo.string)
 			})
 			return true
@@ -90,9 +90,9 @@ module.exports = {
 		}
 		this.parent.ace.openSearchBox(defineName,[],(data,cmdLine)=>onSearchAccept(data,cmdLine),(cmdLine)=>onCompletionsFunc(cmdLine))
 		reSize(this.parent.mouse_pos);
+		// 场景快照
+		Editor.Message.send('scene','snapshot')
 
-		// 记录撤销
-		Editor.Ipc.sendToAll('scene:undo-commit')
 	},
 
 

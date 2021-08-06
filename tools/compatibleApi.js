@@ -142,6 +142,7 @@ let Editor2D =
 	assetdb:{
 		assetBackupPath : path.join(prsPath,'temp','BackupAssets'),
 
+
 		async urlToUuid(url){
 			return await Editor.Message.request("asset-db",'query-uuid',url);
 		},
@@ -158,9 +159,12 @@ let Editor2D =
 			return await Editor.Message.request("asset-db",'query-path',uuidOrUrl);
 		},
 
+		async fspathToUrl(fsPath){
+			return await Editor.Message.request("asset-db",'query-url',fsPath);
+		},
+
 		async fspathToUuid(fsPath){
-			let url = "db://" + fsPath.replace(/\\/g,'/').replace(prsPath,'').substr(6);
-			return await Editor.Message.request("asset-db",'query-uuid',url);
+			return await Editor.Message.request("asset-db",'query-uuid',fsPath);
 		},
 
 		async existsByUuid(urlOrUUID){
@@ -207,6 +211,22 @@ let Editor2D =
 				if(callback) callback()
 			},()=>{
 				if(callback) callback('save error')
+			});
+		},
+
+		loadMetaByUuid(uuidOrUrl,callback){
+			let promise = Editor.Message.request("asset-db",'query-asset-meta',uuidOrUrl).then((info)=>{
+				if(callback) callback(null,info)
+			},()=>{
+				if(callback) callback('query-asset-meta error')
+			});
+		},
+
+		loadMetaByUrl(uuidOrUrl,callback){
+			let promise = Editor.Message.request("asset-db",'query-asset-meta',uuidOrUrl).then((info)=>{
+				if(callback) callback(null,info)
+			},()=>{
+				if(callback) callback('query-asset-meta error')
 			});
 		},
 

@@ -69,12 +69,12 @@ module.exports = {
 	messages:{
 
 		// 快捷键打开当前选中文件/节点进入编辑
-		'custom-cmd' (event,info) {
-		},
+		// 'custom-cmd' (event,info) {
+		// },
 
-		'scene:saved'(){
-			// Editor.log("事件 save")
-		}
+		// 'scene:saved'(){
+		// 	// Editor.log("事件 save")
+		// }
 	},
 	
 };

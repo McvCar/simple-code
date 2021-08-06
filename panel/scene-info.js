@@ -14,7 +14,7 @@ var eventFuncs =
  {
 	// 加载
 	load(){
-		Editor.log("场景加载")
+		// Editor.log("场景加载")
 	},
 	unload(){
 	},
@@ -115,21 +115,20 @@ var eventFuncs =
 	},
 
  	// 获得当前打开的场景文件路径 	
- 	getCurrSceneUrl(callFunc){
+ 	async getCurrSceneUrl(){
  		let scene 	 	= cc.director.getScene();
- 		if(!scene) return callFunc();
+ 		if(!scene) return ;
+		let uuid = cc.director.getScene().uuid
+		if(uuid && uuid.indexOf('-') != -1){
+			return await Editor2D.assetdb.uuidToUrl( uuid )
+		}
 
-		// 获得scene路径
-		let url = Editor.remote.assetdb.uuidToUrl(scene.uuid);
-		if (url) return callFunc(url,true,scene.uuid);
-
-		// 当前打开的预制节点路径
-		Editor.Ipc.sendToMain('simple-code:getPrefabUuid',{}, function (error, uuid) 
-		{
-			if (uuid != null){
-				callFunc( Editor.remote.assetdb.uuidToUrl(uuid),false,uuid)
-			}
-		});
+		let name = cc.director.getScene().name
+		if(name.endsWith('prefab')){
+			let s_i = name.indexOf('*');
+			uuid = name.substr(0,s_i);
+			return await Editor2D.assetdb.uuidToUrl( uuid );
+		}
  	},
 
  	uuidToUrl(uuids,callback){
@@ -138,23 +137,6 @@ var eventFuncs =
  		{
  			if (answer && answer.urls && answer.urls[0]) return callFunc( answer.urls)
  		});
- 	},
-
- 	// 获得场景下所有节点信息
- 	getSceneChildrensInfo(){
-		var canvas      = cc.director.getScene();
-		if(!canvas) return [];
-
-		let list = []
- 		this.getNodeChildren(canvas,(node)=>{
- 			list.push({
- 				name:node.name+"",
- 				uuid:node.uuid,
- 				path:node._path_str || node.name+"",
- 			})
- 		})
-
- 		return list;
  	},
 
 	// 调用原生JS的定时器
@@ -272,6 +254,89 @@ var eventFuncs =
 		})
 	},
 
+	// 设置组件属性
+	setCompProperty(node,valueName,value,valueType,compName='cc.Node'){
+		valueType = valueType || typeof value;
+		let path = ''
+		let uuid = node.uuid;
+		if(compName == 'cc.Node'){
+			path = valueName
+		}else{
+			let ind ;
+			for (let i = 0; i < node._components.length; i++) {
+				const comp = node._components[i];
+				if(comp.__classname__ == compName){
+					ind = i;
+					break;
+				}
+			}
+			path = `__comps__.${ind}.${valueName}`
+		}
+		
+		// 数组类型额外加工
+		let isArray = value instanceof Array;
+		if(isArray){
+			for (let i = 0; i < value.length; i++) {
+				const element = value[i];
+				element.path = `${path}.${i}`;
+				element.type = valueType;
+			}
+
+			// 设置拖拽变量数组大小
+			Editor.Message.send('scene', 'set-property',{
+				uuid: uuid,
+				path: `${path}.length`,
+				dump: {
+				  type: "Array",
+				  value: value.length
+				}
+			  });
+		}
+
+		// 使用该方法才能记录撤销动作与标记需要保存
+		Editor.Message.send('scene', 'set-property',{
+			uuid: uuid,
+			path: path,//要修改的属性
+			dump: {
+				type: valueType, // "cc.Node",
+				isArray: isArray,//是否数组
+				value: value // uuid
+			}
+		});
+	},
+
+	// 获得组件位置
+	getComponentIndex (node,name){
+		for (let i = 0; i < node._components.length; i++) {
+			const comp = node._components[i];
+			if(comp.__classname__ == name){
+				return i;
+			}
+		}
+	},
+
+	// 获得当前编辑的脚本绑定的节点
+	getEditFileBindNodes(fileUuid){
+		var canvas = cc.director.getScene();
+		var bindNodeList = [];
+		if (canvas && fileUuid) {
+			this.getNodeChildren(canvas, (node) => {
+				// 检测该node是否绑定了该脚本
+				let code_comp_list = this.getJsFileList(node);
+				code_comp_list.forEach((code_comp, i) => {
+					if (code_comp.__scriptUuid == fileUuid) {
+						bindNodeList.push({ 
+							node_uuid: node.uuid, 
+							comp_name: code_comp.__classname__ 
+						});
+					}
+				});
+			})
+		}
+		return bindNodeList;
+	},
+
+
 	'hint-node'(event,name){
 		var canvas      = cc.director.getScene();
 		if (canvas) {
@@ -284,12 +349,12 @@ var eventFuncs =
 		}
 	},
 	
-	'select-node'(event,args)
+	'select-node'()
 	{
 		let is_file_self = false;
 		let ret_node  = null;
 		let name_list = {};
-		let uuid_list = Editor.Selection.curSelection('node');
+		let uuid_list = Editor2D.Selection.curSelection('node');
 		for (var i = 0; i < uuid_list.length; i++) 
 		{
 			let node = this.findNode(uuid_list[i]);
@@ -297,7 +362,7 @@ var eventFuncs =
 		}
 
 		if (uuid_list.length==0){
-			Editor.info("请您先选中节点后再操作");
+			Editor.log("请您先选中节点后再操作");
 			return;
 		}
 
@@ -312,8 +377,8 @@ var eventFuncs =
 						{
 							ret_node = node;
 							uuid_list.push(ret_node.uuid)
-							Editor.Selection.select('node', uuid_list);
-							Editor.Ipc.sendToAll('hint', uuid_list)
+							Editor2D.Selection.select('node', uuid_list);
+							Editor2D.Ipc.sendToAll('hint', uuid_list)
 							return ret_node;
 						}
 					}else{
@@ -330,7 +395,7 @@ var eventFuncs =
 		}
 	},
 
-	'select-node-by-name'(event,args)
+	'select-node-by-name'(args)
 	{
 		let uuid_list = [];
 		let scene = this.findNode(args.parent_uuid)
@@ -351,7 +416,7 @@ var eventFuncs =
 	},
 
 	// 获得选中的节点信息
-	'get-select-node-info': function (event) {
+	'get-select-node-info': function () {
 		// 获得当前选中的节点信息
 		let nodes = this.getSelectdNodes()
 		let arrInfo  = []
@@ -418,11 +483,6 @@ var eventFuncs =
 		}
 	},
 
-	// 获取场景内所有子节点信息
-	'scene-children-info': function (event) {
-		// event.reply(null,JSON.stringify(this.getSceneChildrensInfo()))	
-		return JSON.stringify(this.getSceneChildrensInfo());
-	},
 
 	// 控制動畫定時器
 	'cc-engine-animatin-mode': function (event,is_cmd_mode) {

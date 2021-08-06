@@ -6,10 +6,14 @@
 const path 		= require('path');
 const md5     	= require('md5');
 const fs 		= require('fs');
-const cfg 		= Editor.require('packages://simple-code/config.js');
-const tools  	= Editor.require('packages://simple-code/tools/tools.js');
+const cfg 		= Editor2D.require('packages://simple-code/config.js');
+const tools  	= Editor2D.require('packages://simple-code/tools/tools.js');
 
 module.exports = {
+
+	/** @type import('../../panel/vs-panel/vs-panel-base') */
+	parent : null,
+
 
 	// 面板初始化
 	onLoad(parent){
@@ -19,8 +23,8 @@ module.exports = {
 		// 键盘事件：重名
 		this.parent.addKeybodyEventByName('renameNodeOrFile',(e)=>
 		{
-			// 不是输入状态是时
-			if ( this.openRename()){
+			if (!this.parent.is_mouse_down ){
+				this.openRename()
 				e.preventDefault();// 吞噬捕获事件
 			}
 		},0)
@@ -72,7 +76,6 @@ module.exports = {
 					list[i].value = name;
 				}
 			}
-			
 		}
 
 		// 修改搜索框时，通过该函数读取显示的实时显示下拉列表内容, cmdLine为输入文本框对象
@@ -94,20 +97,22 @@ module.exports = {
 				// 重命名资源
 				list.forEach((info)=>{
 					let to_path = info.args.dir_path+info.value+info.args.suffix;
-					Editor.remote.assetdb.move(info.args.url,to_path);
+					Editor2D.assetdb.move(info.args.url,to_path);
 				})
 			}else if(type == "node")
 			{
 				// 重命名节点
 				list.forEach((info)=>{
 					let rename = info.value;
-					Editor.Ipc.sendToPanel('scene', 'scene:set-property',{
-						id: info.args.uuid,
-						path: "name",//要修改的属性
-						type: "String",
-						value: rename,
-						isSubProp: false,
-					});
+					let args = {
+						uuid: info.args.uuid,
+						path: 'name',//要修改的属性
+						dump: {
+							type: "string",
+							value: rename
+						}
+					};
+					Editor.Message.request('scene', 'set-property',args);
 				})
 			}
 			
@@ -140,10 +145,10 @@ module.exports = {
 	},
 
 	// 重命名
-	openRename(type,reType = 'sort'){
+	async openRename(type,reType = 'sort'){
 
 		let isOpen 		= false
-		let activeInfo  = Editor.Selection.curGlobalActivate() // 检测面板焦点在资源管理器还是层级管理器
+		let activeInfo  = Editor2D.Selection.curGlobalActivate() // 检测面板焦点在资源管理器还是层级管理器
 		if (!activeInfo) return;
 
 		type = type || activeInfo.type;
@@ -152,10 +157,11 @@ module.exports = {
 		if (type == "asset")
 		{
 			// 获得选中的资源
-			let asset_list = Editor.Selection.curSelection("asset");
-			asset_list.forEach((uuid)=>
-			{
-				let info = Editor.remote.assetdb.assetInfoByUuid(uuid);
+			let asset_list = Editor2D.Selection.curSelection("asset");
+			for (let i = 0; i < asset_list.length; i++) {
+				const uuid = asset_list[i];
+				
+				let info = await Editor2D.assetdb.assetInfoByUuid(uuid);
 				if (!info) return;
 				
 				let file = this.getFileName(info.url);
@@ -164,14 +170,14 @@ module.exports = {
 				info.dir_path   = file.dir_path
 				// 加载资源列表
 				list.push( this.parent.getItem(file.name,file.name,0,info) );
-			})
+			}
 			this.showRenameBox(type,reType,list)
 			isOpen = list.length > 0
 		}
 		else if(type == "node")
 		{
 			// 获得选中的节点
-			Editor.Scene.callSceneScript('simple-code', 'get-select-node-info' ,"", (err, args)=>
+			Editor2D.Scene.callSceneScript('simple-code', 'get-select-node-info' ,"", (err, args)=>
 			{
 				// 加载节点列表
 				args.forEach((info)=>{
@@ -179,10 +185,45 @@ module.exports = {
 				})
 				this.showRenameBox(type,reType,list)
 			});
-			isOpen = Editor.Selection.curSelection("node").length> 0
+			isOpen = Editor2D.Selection.curSelection("node").length> 0
 		}
 
 		return isOpen;
+	},
+
+	
+	/**
+	 * creator菜单即将弹出
+	 * @param {string} type = 'assetMenu' | 'layerMenu'
+	 * @param {Object} selectInfo 
+	 * @param {String} selectInfo.uuid
+	 * @param {String} selectInfo.type = 'asset' | 'node'
+	 */
+	 onCCMenuPopup(_,selectInfo){
+		
+		let asset_list = Editor.Selection.curSelection(selectInfo.type);
+		if(asset_list.length && selectInfo && selectInfo.uuid){
+			let type = selectInfo.type;
+
+			let submenu = [
+				{ label: '数字序列 (D)', enabled: true,click:()=>this.openRename(type,'sort')},
+				{ label: '加前缀', enabled: true,click:()=>this.openRename(type,'prefix')},
+				{ label: '加后缀', enabled: true,click:()=>this.openRename(type,'suffix')},
+				{ label: '正则匹配删除命名', enabled: true,click:()=>this.openRename(type,'remove_name')},
+				{ label: '常规重命名', enabled: true, click:()=>this.openRename(type,'com') },
+			];
+			let menuCfg = {
+				layerMenu : [
+					{ label : "✎ 批量重命名", enabled:true, submenu:submenu,},
+				],
+				assetMenu : [
+					{ label : "✎ 批量重命名", enabled:true, submenu:submenu,},
+				],
+			}
+			this.parent.ccMenuMgr.setMenuConfig({id:"rename-ex",menuCfg:menuCfg});
+		}else{
+			this.parent.ccMenuMgr.setMenuConfig({id:"rename-ex",menuCfg:undefined});
+		}
 	},
 
 	/*************  事件 *************/  
@@ -197,28 +238,6 @@ module.exports = {
 		},
 		
 		'selection:activated'(e,type){
-			let asset_list = Editor.Selection.curSelection(type);
-			if(asset_list && asset_list.length >1)
-			{
-				let submenu = [
-					{ label: '重命名', enabled: true, cmd:'applyRename'},
-					{ label: '数字序列', enabled: true, cmd:'applyRename'},
-					{ label: '加前缀', enabled: true, cmd:'applyRename'},
-					{ label: '加后缀', enabled: true, cmd:'applyRename'},
-					{ label: '正则匹配删除命名', enabled: true, cmd:'applyRename'},
-				];
-				let menuCfg = {
-					layerMenu : [
-						{ label : "节点批量重命名", enabled:true, enabled:true, submenu:submenu,},
-					],
-					assetMenu : [
-						{ label : "资源批量重命名", enabled:true, enabled:true, submenu:submenu,},
-					],
-				}
-				Editor.Ipc.sendToMain('simple-code:setMenuConfig',{id:"rename-ex",menuCfg:menuCfg});
-			}else{
-				Editor.Ipc.sendToMain('simple-code:setMenuConfig',{id:"rename-ex",menuCfg:undefined});
-			}
 		},
 
 		// 下拉框批量重命名

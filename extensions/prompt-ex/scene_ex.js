@@ -13,49 +13,47 @@ module.exports = {
 	messages: 
 	{
 		// 批量添加组件
-		'set-node-comp'(event,comp_name,parent){
+		'set-node-comp'(comp_name,parent){
 			if(comp_name == null && comp_name == "") return cc.log("未选中绑定的组件");
 			let arrNode = parent.getSelectdNodes()
 			arrNode.forEach((node)=>
 			{
-				node.addComponent(comp_name)
-			})
-			parent['scene-need-save']();
+				Editor2D.Ipc.sendToPanel("scene","create-component",{
+					"component":comp_name,
+					"uuid": node.uuid,
+				  });
+			});
 		},
 		
-		// 批量插入组件
-		'add-prefab'(event,info,parent){
+		// 批量插入节点
+		'add-prefab'(info,parent){
 
 		 	let arrNode = parent.getSelectdNodes()
 		 	arrNode.forEach((parentNode)=>
 		 	{
 		 		// 插入个预制节点
-		 		Editor2D.Ipc.sendToPanel("scene","scene:create-nodes-by-uuids",[info.uuid],parentNode.uuid,{unlinkPrefab:undefined});
+		 		Editor2D.Ipc.sendToPanel("scene","create-node",{
+					"parent": parentNode.uuid,
+					"assetUuid": info.uuid,
+					"unlinkPrefab": true,
+					"name": info.value,
+					"type": "cc.Prefab"
+				  });
 		 	});
 		},
 
 		 // 获得组件
-		'get-comps'(event){
+		 async 'get-comps'(){
 
 			// 获得组件名
 			let list = []
-			cc._componentMenuItems.forEach((obj)=>
+			let comps = await Editor.Message.request('scene','query-components')
+			comps.forEach((obj)=>
 			{
-				let name = obj["menuPath"]
-				let comp_node = name.substr(name.lastIndexOf("/")+1)
-
-				// 非用户脚本
-				if( name.lastIndexOf('component.scripts') == -1){
-					comp_node = comp_node.replace("_",".")
-					comp_node = comp_node.replace(" ","")
-					if(comp_node.indexOf(".") == -1){
-						comp_node ="cc."+comp_node
-					}
-				}
-
+				let name = obj["name"]
 				let item_cfg   = {
-					value: comp_node , // 命令
-					meta: comp_node, // 描述
+					value: name , // 命令
+					meta: name, // 描述
 					score: 0,//搜索优先级
 					matchMask: 0,
 					exactMatch: 1,

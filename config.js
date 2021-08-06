@@ -759,10 +759,7 @@ module.exports = {
 				type: "buttonBar",
 				defaultValue: "ts",
 				items: [
-					{ caption: ".js", value: "js" },
 					{ caption: ".ts", value: "ts" },
-					{ caption: ".coffe", value: "coffee" },
-					{ caption: ".lua", value: "lua" }
 				]
 			},
 			"fontSize": {
@@ -968,7 +965,7 @@ module.exports = {
 			"enabledFormatFromPrettier": {
 				// prettire 插件
 				path: "enabledFormatFromPrettier",
-				defaultValue: Symbol.asyncIterator ? false : false, // 旧版js解析器不支持该库,则不开启
+				defaultValue: false, 
 			},
 		},
 		More: {
@@ -976,7 +973,7 @@ module.exports = {
 				// 自动窗口最小高度占比%
 				path: "autoLayoutMin",
 				type: "number",
-				defaultValue: 10,
+				defaultValue: 20,
 				defaults: [
 					{ caption: "disable", value: 0 },
 					{ caption: "60%", value: 60 },

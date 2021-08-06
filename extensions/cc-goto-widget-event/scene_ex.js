@@ -13,12 +13,11 @@ module.exports = {
 	/*************  事件 *************/
 	messages:
 	{
-		'getWidgetBindEvents':(event,args,parent)=>
+		'getWidgetBindEvents':(args,parent)=>
 		{
 			let node = args.uuid && parent.findNode(args.uuid);
 			if (!node) {
-				event.reply(null);
-				return
+				return [];
 			}
 			
 			let list = [];      
@@ -54,7 +53,7 @@ module.exports = {
 				}
 			});
 	
-			event.reply(null,list);
+			return list;
 		},
 	}
 };

@@ -58,8 +58,8 @@ module.exports = {
 	},
 
 	initRainbow(){
-		let rainbow = Editor.require('packages://simple-code/extensions/editor-rainbow-decorator/rainbow-decorator/dist/index.js');
 		let args  = {colours:COLOR,debounce:200}
+		let rainbow 		= require('./rainbow-decorator');
 		this.rainbowObj = rainbow.rainbowDecorate(this.parent.vs_editor,args);;
 	},
 

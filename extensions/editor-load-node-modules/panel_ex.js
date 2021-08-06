@@ -143,9 +143,15 @@ module.exports = {
 		}
 	},
 
-	// 系统文件保存修改内容
+	/**
+	 *  系统文件保存修改内容
+	 * @param {Object} file
+	 * @param {String} file.url
+	 * @param {String} file.uuid
+	 * @param {String} file.file
+	 */ 
 	onAssetsChangedEvent(file){
-		let fspath = file.uuid == 'outside' ? file.url : Editor.remote.assetdb.uuidToFspath(file.uuid);
+		let fspath = file.uuid == 'outside' ? file.url : file.file;
 		if(fspath.match(REG_EXP_JSON_CONFIG)){
 			let vs_model = this.parent.fileMgr.getModelByFsPath(fspath);
 			if(vs_model && this.isDependencie(vs_model.uri.toString())){
@@ -202,40 +208,39 @@ module.exports = {
 	},
 
 	addNodeModuleFiles(files){
-		let c_files = []
 		for (let k in files) {
 			let filePath = files[k]
 			if(!this.isMultilayerNodeModuleDir(filePath) && !filePath.endsWith('.DS_Store')){
 				filePath = filePath.replace(/\\/g,'/');
 				if(!this.parent.file_list_map[filePath]){
-					c_files.push({
+					// 修改文件系统
+					let file = {
 						url : filePath,
+						file : filePath,
 						uuid: 'outside'
-					})
+					};
+					this.parent.messages['asset-add'].bind(this.parent)(0,file)
 				}
 			}
 		}
-		this.parent.messages['asset-db:assets-created'].bind(this.parent)(0,c_files)
 	},
 
 	// 改变文件
 	changeNodeModuleFiles(files){
-		let c_files = []
 		for (let k in files) {
 			let filePath = files[k];
 			if(!this.isMultilayerNodeModuleDir(filePath) && !filePath.endsWith('.DS_Store')){
 				filePath = filePath.replace(/\\/g,'/');
 				if(!this.parent.file_list_map[filePath]){
-					c_files.push({
+					// 修改文件系统
+					let file = {
 						url : filePath,
+						file : filePath,
 						uuid: 'outside'
-					})
+					};
+					this.parent.messages['asset-change'].bind(this.parent)(0,file)
 				}
 			}
-		}
-		for (let i = 0; i < c_files.length; i++) {
-			const element = c_files[i];
-			this.parent.messages['asset-db:asset-changed'].bind(this.parent)(0,element)
 		}
 	},
 
@@ -247,17 +252,18 @@ module.exports = {
 			if(!this.isMultilayerNodeModuleDir(filePath) && !filePath.endsWith('.DS_Store')){
 				filePath = filePath.replace(/\\/g,'/');
 				if(this.parent.file_list_map[filePath]){
-					removeFiles.push({
+					// 修改文件系统
+					let file = {
 						url : filePath,
-						path : filePath,
+						file : filePath,
 						uuid: 'outside'
-					})
+					};
+					this.parent.messages['asset-delete'].bind(this.parent)(0,file)
 				}
 			}
 		}
 
 		// console.log('移除文件夹：',removeFiles)
-		this.parent.messages['asset-db:assets-deleted'].bind(this.parent)(0,removeFiles)
 	},
 
 

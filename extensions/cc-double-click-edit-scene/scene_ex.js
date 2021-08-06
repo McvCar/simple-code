@@ -9,33 +9,46 @@ var md5     = require('md5');
 
 
 let setValue = (comp_uuid,key,value)=>{
-	Editor.Ipc.sendToPanel('scene', 'scene:set-property',{
-		id: comp_uuid,
+	Editor.Message.send('scene', 'set-property',{
+		uuid: comp_uuid,
 		path: key,//要修改的属性
-		type: "String",
-		value: value,
-		isSubProp: false,
+		dump: {
+			type: "String",
+			value: value
+		}
 	});
+}
+
+let getComponentIndex = (node,name)=>{
+	for (let i = 0; i < node._components.length; i++) {
+		const comp = node._components[i];
+		if(comp.__classname__ == name){
+			return i;
+		}
+	}
 }
 
 let SetInfoFuncs = {
 	
 	'cc.Label'(node,args){
-		let comp = node.getComponent('cc.Label')
-		if(comp){
-			setValue(comp.uuid,'string',args.string)
+		let ind = getComponentIndex(node,'cc.Label');
+		if(ind != null){
+			let path = `__comps__.${ind}.string`;
+			setValue(node.uuid,path,args.string);
 		}
 	},
 	'cc.RichText'(node,args){
-		let comp = node.getComponent('cc.RichText')
-		if(comp){
-			setValue(comp.uuid,'string',args.string)
+		let ind = getComponentIndex(node,'cc.RichText');
+		if(ind != null){
+			let path = `__comps__.${ind}.string`;
+			setValue(node.uuid,path,args.string)
 		}
 	},
 	'cc.EditBox'(node,args){
-		let comp = node.getComponent('cc.EditBox')
-		if(comp){
-			setValue(comp.uuid,args.isPlaceholder ? 'placeholder' : 'string',args.string)
+		let ind = getComponentIndex(node,'cc.EditBox');
+		if(ind != null){
+			let path = `__comps__.${ind}.${args.isPlaceholder ? 'placeholder' : 'string'}`;
+			setValue(node.uuid,path,args.string)
 		}
 	},
 }
@@ -67,13 +80,12 @@ module.exports = {
 	messages: 
 	{
 		// 当前Node的Label组件信息
-		'getCurrNodeLabelInfo'(event)
+		'getCurrNodeLabelInfo'(args,parent)
 		{
-			let uuids = Editor.Selection.curSelection('node');
-			let args;
+			let uuids = Editor2D.Selection.curSelection('node');
 			if(uuids && uuids[0])
 			{
-				let node = cc.engine.getInstanceById(uuids[0])
+				let node = parent.findNode(uuids[0])
 				for (const key in GetInfoFuncs) 
 				{
 					const func = GetInfoFuncs[key];
@@ -85,13 +97,13 @@ module.exports = {
 					}
 				}
 			}
-			event.reply(null,args);
+			return args;
 		},
 
 		// 当前Node的Label组件信息
-		'setCurrNodeLabelInfo'(event,args)
+		'setCurrNodeLabelInfo'(args,parent)
 		{
-			let node = cc.engine.getInstanceById(args.uuid)
+			let node = parent.findNode(args.uuid)
 			if(node){
 				let func = SetInfoFuncs[args.type];
 				if(func) func(node,args)

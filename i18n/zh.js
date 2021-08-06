@@ -141,5 +141,5 @@ module.exports = {
     'new-script-bind':'创建脚本绑定',
     'new-script-templet':'创建脚本',
 
-    'cc-goto-widget-event' : '跳转组件事件函数'
+    'cc-goto-widget-event' : '转到组件绑定函数'
 };

@@ -22,7 +22,7 @@ let layer =
 	// 主题文件位置
 	THEME_DIR 	   : Editor2D.url("packages://simple-code/panel/vs-panel/monaco-editor/custom_thems"),
 	// .d.ts 通用代码提示文件引入位置
-	TS_API_LIB_PATHS : [prsPath,Editor2D.url('packages://simple-code/template/api_doc')],
+	TS_API_LIB_PATHS : [prsPath,path.join(prsPath,'temp','declarations'),Editor2D.url('packages://simple-code/template/api_doc')],
 	// 备忘录位置
 	MEMO_FILE_PATH : prsPath + path.sep + "temp" + path.sep + (fe.getLanguage() == 'zh' ? "备忘录.md" : "Memo.md"),
 	CMD_FILE_PATH : prsPath + path.sep + "temp" + path.sep + "commandLine.js",
@@ -41,6 +41,8 @@ let layer =
 	monaco:null,
 	/** @type fileMgr */
 	fileMgr:null,
+	/** @type import("./cc-menu-mgr") */
+	ccMenuMgr:null,
 
 	// 启动事件
 	initVsEditor(callback) 
@@ -68,8 +70,6 @@ let layer =
 		this.enableUpdateTs 	= false;
 		this.menu  				= null;
 		this.fileMgr 			= new fileMgr(this);
-		/** @type  import("./cc-menu-mgr")  */
-		this.ccMenuMgr 			= this.ccMenuMgr || null;
 	},
 
 	// 初始化事件
@@ -858,29 +858,34 @@ let layer =
 
 	// *.d.ts文件里读取自定义代码輸入提示，提供精准代码提示;
 	async loadVsModel(filePath, extname, isUrlType,isReadText=true) {
-		let file_type = this.FILE_OPEN_TYPES[extname.substr(1).toLowerCase()];
-		if(file_type)
+		let fileType = this.FILE_OPEN_TYPES[extname.substr(1).toLowerCase()];
+		if(fileType){
+			let fsPath = isUrlType ? await Editor2D.assetdb.urlToFspath(filePath) : filePath;
+			return this.loadVsModelWorker(filePath,fsPath,extname, isUrlType,isReadText)
+		}
+	},
+
+	loadVsModelWorker(url,fsPath,extname,isUrlType,isReadText=true) {
+		let fileType = this.FILE_OPEN_TYPES[extname.substr(1).toLowerCase()];
+		if(fileType)
 		{
-			let fsPath = fe.normPath(  isUrlType ? await Editor.assetdb.urlToFspath(filePath) : filePath );
 			if (isReadText && !fe.isFileExit(fsPath)) return;
 			let js_text = isReadText ? fs.readFileSync(fsPath).toString() : "";
 			let str_uri   = this.fileMgr.fsPathToModelUrl(fsPath)
 
 			// 生成vs model缓存
-			let model = this.monaco.editor.getModel(this.monaco.Uri.parse(str_uri)) ;
+			let model =  this.monaco.editor.getModel(this.monaco.Uri.parse(str_uri)) ;
 			if(!model){
 				this.tsWr.setEnableUpdateScript(true);
-				model = this.monaco.editor.createModel('',file_type,this.monaco.Uri.parse(str_uri))
+				model = this.monaco.editor.createModel('',fileType,this.monaco.Uri.parse(str_uri))
 				model.onDidChangeContent((e) => this.onVsDidChangeContent(e,model));
 				model.fsPath = fsPath;
-				model.dbUrl  = isUrlType ? filePath : undefined;
+				model.dbUrl  = isUrlType ? url : undefined;
 			}
 			if(isReadText) model.setValue(js_text);
 			return model
 		}
 	},
-
-	
 
 	// tab页左移
 	tabToLeft() {
@@ -1260,7 +1265,7 @@ let layer =
 		let file_info = this.edit_list[id];
 		if (tabBg == null || !file_info.enabled_close) return;//Editor.info("不存在页面:"+id);
 
-		if (file_info.is_need_save && !confirm(file_info.path + " 文件被修改是否丢弃修改?")) return;
+		if (!file_info.can_remove_model && file_info.is_need_save && !confirm(file_info.path + " 文件被修改是否丢弃修改?")) return;
 
 		// 记录本次打开位置
 		let file_name = this.edit_list[id].path

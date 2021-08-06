@@ -11,10 +11,7 @@ const exec = require('child_process').exec;
 
 let TEMPLE_PATH = path.join(path.resolve(__dirname, './'), 'new_file_temple');
 let USER_TEMPLE_PATH = path.join(config.cacheDir, 'new_file_temple');
-let NEW_FILE_RULE = path.join(
-    path.resolve(__dirname, './'),
-    'new_script_rule.js'
-);
+let NEW_FILE_RULE = path.join(path.resolve(__dirname, './'),'new_script_rule.js');
 let USER_NEW_FILE_RULE = path.join(config.cacheDir, 'new_script_rule.js');
 
 module.exports = {
@@ -79,7 +76,7 @@ module.exports = {
             return;
         }
 
-        Editor.Scene.callSceneScript('simple-code','get-curr-scene-url-and-node',{type,uuid},(err, args)=> {
+        Editor2D.Scene.callSceneScript('simple-code','get-curr-scene-url-and-node',{type,uuid},async (err, args)=> {
             if (args == null) {
                 return;
             }
@@ -95,19 +92,14 @@ module.exports = {
                     return;
                 }
 
-                let saveFspath = Editor.remote.assetdb.urlToFspath(saveUrl);
+                let saveFspath = await Editor.assetdb.urlToFspath(saveUrl);
                 tools.createDir(saveFspath);
                 args = { templePath, saveUrl, saveFspath };
                 args.type = type;
                 args.uuid = uuid;
 
-                Editor.Scene.callSceneScript('simple-code','new-js-file',args,(err, event) => {
-                    Editor.Ipc.sendToPanel(
-                        'simple-code',
-                        'custom-cmd',
-                        { cmd: 'openFile' }
-                    );
-                    
+                Editor2D.Scene.callSceneScript('simple-code','new-js-file',args,(err, event) => {
+                    this.parent.openActiveFile(true,false);
                 });
 
             } catch (error) {
@@ -123,18 +115,21 @@ module.exports = {
     },
 
 
-	/** 需要刷新creator右键菜单
-	 * @param type = node | asset 
-	 * */ 
-     onRefreshCreatorMenu(type,uuid){
-		this.updateMenu(type,uuid)
+	/**
+	 * creator菜单即将弹出
+	 * @param {string} type = 'assetMenu' | 'layerMenu'
+	 * @param {Object} selectInfo 
+	 * @param {String} selectInfo.uuid
+	 * @param {String} selectInfo.type = 'asset' | 'node'
+	 */
+    onCCMenuPopup(type,selectInfo = {}){
+        this.updateMenu(selectInfo.type,selectInfo.uuid)
 	},
-
 	updateMenu(type,uuid){
 
         if (uuid == null) {
             // 清除菜单
-            Editor.Ipc.sendToMain('simple-code:setMenuConfig', {
+            this.parent.ccMenuMgr.setMenuConfig({
                 id: 'cc-new-file',
                 menuCfg: undefined,
             });
@@ -144,7 +139,7 @@ module.exports = {
         let submenu = [];
 
         for (const key in this.temples) {
-            let item = { label: key, enabled: true, cmd: 'new-script-templet' };
+            let item = { label: key, enabled: true, click: this.messages['new-script-templet'].bind(this,key), };
             submenu.push(item);
         }
 
@@ -152,12 +147,12 @@ module.exports = {
         submenu.push({
             label: tools.translateZhAndEn('刷新模板', 'Refresh Templates'),
             enabled: true,
-            cmd: 'refresh-template',
+            click: this.messages['refresh-template'].bind(this),
         });
         submenu.push({
             label: tools.translateZhAndEn('自定义模板', 'Custom Template'),
             enabled: true,
-            cmd: 'custom-template',
+            click: this.messages['custom-template'].bind(this),
         });
         submenu.push({
             label: tools.translateZhAndEn(
@@ -165,7 +160,7 @@ module.exports = {
                 'Custom Build Rules'
             ),
             enabled: true,
-            cmd: 'custom-build-templet-rules',
+            click: this.messages['custom-build-templet-rules'].bind(this),
         });
 
         let menuCfg = {
@@ -187,7 +182,7 @@ module.exports = {
             ],
         };
         this.menuCfg = menuCfg;
-        Editor.Ipc.sendToMain('simple-code:setMenuConfig', {
+        this.parent.ccMenuMgr.setMenuConfig({
             id: 'cc-new-file',
             menuCfg: menuCfg,
         });
@@ -199,28 +194,28 @@ module.exports = {
     messages: {
         'new-js-file'() {
             let filePath = this.temples['define.' + this.parent.cfg.newFileType];
-            let info = Editor.Selection.curGlobalActivate()
+            let info = Editor2D.Selection.curGlobalActivate()
             this.newFileAndBindNode(filePath,info.type,info.id);
         },
 
         // 刷新模板
-        'refresh-template'(e, args) {
+        'refresh-template'() {
             this.upTempletList();
             let selectInfo = this.parent.currCreatorEditorSelectInfo;
             this.updateMenu(selectInfo.type,selectInfo.uuid);
         },
 
         // 自定模板
-        'custom-template'(e, args) {
-            exec((Editor.isWin32 ? 'start ' : 'open ') + USER_TEMPLE_PATH);
+        'custom-template'() {
+            exec((Editor2D.isWin32 ? 'start ' : 'open ') + USER_TEMPLE_PATH);
         },
 
         // 自定规则
-        'custom-build-templet-rules'(e, args) {
+        'custom-build-templet-rules'() {
             this.parent.openOutSideFile(USER_NEW_FILE_RULE, true);
         },
 
-        'new-script-templet'(e, args) {
+        async 'new-script-templet'(fileName) {
             let selectInfo = this.parent.currCreatorEditorSelectInfo;
             if (selectInfo.uuid == null) {
                 return;
@@ -228,10 +223,8 @@ module.exports = {
 
             // 在资源管理中创建
             if (selectInfo.type == 'asset') {
-                let templePath = this.temples[args.label];
-                let filePath = Editor.remote.assetdb.uuidToFspath(
-                    selectInfo.uuid
-                );
+                let templePath = this.temples[fileName];
+                let filePath = await Editor2D.assetdb.uuidToFspath(selectInfo.uuid);
 
                 let fspath = tools.isDirectory(filePath)
                     ? filePath
@@ -255,13 +248,13 @@ module.exports = {
                 }
 
                 let data = fs.readFileSync(templePath);
-                fspath = path.join(fspath, args.label);
+                fspath = path.join(fspath, fileName);
 
-                let saveUrl = Editor.remote.assetdb.fspathToUrl(fspath);
-                Editor.assetdb.create(saveUrl, data);
+                let saveUrl = await Editor2D.assetdb.fspathToUrl(fspath);
+                Editor2D.assetdb.create(saveUrl, data);
             } else {
                 // 节点上创建
-                let templePath = this.temples[args.label];
+                let templePath = this.temples[fileName];
                 this.newFileAndBindNode(templePath,this.parent.currCreatorEditorSelectInfo.type,this.parent.currCreatorEditorSelectInfo.uuid);
             }
         },

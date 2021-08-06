@@ -18,14 +18,14 @@ class ImportCompletion
         this.all_sym_sugges = []
 		// 编辑代码提示 配置
 		this.comp_cfg_map = {};
-		this.comp_cfg = [
-		// {
+		this.cus_comp_group = {
+		// group:[{
 		// 	label: "forEach", //显示的名称，‘奖金’
 		// 	insertText: "forEach((v,k)=>{})", //插入的值，‘100’
 		// 	kind: 0, //提示的图标
 		// 	detail: "遍历" //描述，‘我的常量
-		// }
-		];
+		// }]
+        };
         this.command = {
             title: 'AI: Autocomplete',
             id: exports.IMPORT_COMMAND,
@@ -58,20 +58,21 @@ class ImportCompletion
 	}
 
 	// 添加自定义代码提示,例子: this.addCustomCompleter("forEach","forEach((v,k)=>{})","遍历数组")
-	addCustomCompleter(word, value, meta, kind, isCover = false) {
+	addCustomCompleter(word, value, meta, kind, isCover = false, groupKey="default") {
 		if(word.length <2 || !isNaN(Number(word[0])) ) return;
-
+        let compInfo = this.cus_comp_group[groupKey] = this.cus_comp_group[groupKey] || {map:{},list:[]};
+        
 		// 覆盖信息
-		if (isCover && this.comp_cfg_map[word]) {
-			let list = this.comp_cfg_map[word];
+		if (isCover && compInfo.map[word]) {
+			let list = compInfo.map[word];
 			list.label = word;
 			list.insertText = (value || word);
 			list.detail = meta;
 			list.kind = kind != null ? kind : this.parent.monaco.languages.CompletionItemKind.Text;
 			return list;
 		}else{
-			if (!this.comp_cfg_map[word] || isCover) {
-				this.comp_cfg_map[word] = {
+			if (!compInfo.map[word] || isCover) {
+				compInfo.map[word] = {
 					label: word,
 					insertText: (value || word),
 					kind: kind != null ? kind : this.parent.monaco.languages.CompletionItemKind.Text,
@@ -79,11 +80,16 @@ class ImportCompletion
 					// preselect:true,
 					detail: meta || ''
 				};
-				this.comp_cfg.push(this.comp_cfg_map[word]);
-				return this.comp_cfg_map[word];
+				compInfo.list.push(compInfo.map[word]);
+				return compInfo.map[word];
 			}
 		}
 	}
+
+    // 清除自定义代码提示
+    cleanCustomCompleterByGroup(groupKey="default"){
+        delete this.cus_comp_group[groupKey];
+    }
 
     provideCompletionItems(model,position,context,token) 
     {
@@ -108,11 +114,9 @@ class ImportCompletion
             // 2.isHasSym 检测是否存在精准的内置代码提示
             this.parent.tsWr.hasCompletionsAtPosition(m_path,offset).then((isHasSym)=>
             {	
-                !isHasSym ? this.getCommonItems(model,text,suggestions,isHasSym) : 0;
-                
                 let retSuggesFunc = (isUseGlobal)=>
                 {
-                    isUseGlobal ? suggestions.push.apply(suggestions,this.all_sym_sugges) : 0;
+                    isUseGlobal ? suggestions.push.apply(suggestions,this.all_sym_sugges) : 0; // 全局变量提示
                     for (let i = 0; i < suggestions.length; i++) {
                         const v = suggestions[i];
                         delete v.range;
@@ -121,6 +125,8 @@ class ImportCompletion
                     }
                     resolve( {suggestions,incomplete:false});
                 }
+
+                !isHasSym ? this.getCommonItems(model,text,suggestions,isHasSym) : 0; // 自定义提示信息
                 
                 // 3.全部代码文件的代码提示合集
                 let isJs = 	this.parent.fileMgr.getUriInfo(m_path).extname == '.js'
@@ -150,16 +156,20 @@ class ImportCompletion
         return p;
     }
 
+    // 其它代码提示列表
     getCommonItems(model,text,suggestions){
         let is_has_string = text.indexOf('"') != -1 || text.indexOf("'") !=-1;
-        for (let i = 0; i < this.comp_cfg.length; i++) 
-        {
-            const v = this.comp_cfg[i];
-            if(!is_has_string && 
-                v.kind == this.parent.monaco.languages.CompletionItemKind.Folder ){ // 只在字符串中提示文件路径
-                continue;
+        for (const key in this.cus_comp_group) {
+            const compInfo = this.cus_comp_group[key];
+            for (let i = 0; i < compInfo.list.length; i++) 
+            {
+                const v = compInfo.list[i];
+                if(!is_has_string && 
+                    v.kind == this.parent.monaco.languages.CompletionItemKind.Folder ){ // 只在字符串中提示文件路径
+                    continue;
+                }
+                suggestions.push(v)
             }
-            suggestions.push(v)
         }
         return suggestions;
     }
@@ -299,7 +309,10 @@ class ImportCompletion
             let useItem;
             for (let i = 0; i < list.length; i++) {
                 const fixInfo = list[i];
-                if(useItem == null && fixInfo.modulePath == fileName || fixInfo.isAddExisting){
+                if(fixInfo.modulePath == fileName){
+                    useItem = fixInfo;
+                    break
+                }else if(fixInfo.isAddExisting){
                     useItem = fixInfo;
                 }
             }

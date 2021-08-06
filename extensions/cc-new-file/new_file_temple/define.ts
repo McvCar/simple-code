@@ -1,31 +1,38 @@
-// Learn TypeScript:
-//  - [Chinese] http://docs.cocos.com/creator/manual/zh/scripting/typescript.html
-//  - [English] http://www.cocos2d-x.org/docs/creator/manual/en/scripting/typescript.html
-// Learn Attribute:
-//  - [Chinese] http://docs.cocos.com/creator/manual/zh/scripting/reference/attributes.html
-//  - [English] http://www.cocos2d-x.org/docs/creator/manual/en/scripting/reference/attributes.html
-// Learn life-cycle callbacks:
-//  - [Chinese] http://docs.cocos.com/creator/manual/zh/scripting/life-cycle-callbacks.html
-//  - [English] http://www.cocos2d-x.org/docs/creator/manual/en/scripting/life-cycle-callbacks.html
+/**
+ * @Description 描述
+ * @Author 作者
+ * @Date 
+ * @Version 1.0
+ */
 
-const {ccclass, property} = cc._decorator;
+import { _decorator, Component, Node } from 'cc';
+const { ccclass, property } = _decorator;
 
-@ccclass
-export default class NewClass extends cc.Component {
+@ccclass('Typescript')
+export class Typescript extends Component {
+	// [1]
+	// dummy = '';
 
-    @property(cc.Label)
-    label: cc.Label = null;
+	// [2]
+	// @property
+	// serializableDummy = 0;
 
-    @property
-    text: string = 'hello';
+	start() {
+		// [3]
+	}
 
-    // LIFE-CYCLE CALLBACKS:
-
-    // onLoad () {}
-
-    start () {
-
-    }
-
-    // update (dt) {}
+	// update (deltaTime: number) {
+	//     // [4]
+	// }
 }
+
+/**
+ * [1] Class member could be defined like this.
+ * [2] Use `property` decorator if your want the member to be serializable.
+ * [3] Your initialization goes here.
+ * [4] Your update function goes here.
+ *
+ * Learn more about scripting: https://docs.cocos.com/creator/3.0/manual/en/scripting/
+ * Learn more about CCClass: https://docs.cocos.com/creator/3.0/manual/en/scripting/ccclass.html
+ * Learn more about life-cycle callbacks: https://docs.cocos.com/creator/3.0/manual/en/scripting/life-cycle-callbacks.html
+ */

@@ -56,8 +56,8 @@ module.exports = {
 
 		this.vimStatusBar = document.createElement('div')
 		this.vimStatusBar.id = 'vimStatusBar'
-		const parent 	= document.getElementsByClassName('group console flex-1  style-scope app-status-bar')[0] || document.getElementsByClassName('content')[0] || this.parent.$box; // 确定插入位置
-		parent != this.parent.$box && parent.children[0] ?  parent.insertBefore(this.vimStatusBar,parent.children[0]) : parent.appendChild(this.vimStatusBar);
+		const parent 	= document.getElementsByClassName('group console flex-1  style-scope app-status-bar')[0] || document.getElementsByClassName('content')[0] || this.parent.$.box; // 确定插入位置
+		parent != this.parent.$.box && parent.children[0] ?  parent.insertBefore(this.vimStatusBar,parent.children[0]) : parent.appendChild(this.vimStatusBar);
 
 
 		vsVim 		= vsVim || Editor2D.require('packages://simple-code/extensions/editor-vim-model/vim/lib/index.js');;
@@ -159,9 +159,9 @@ module.exports = {
 
 	messages:{
 
-		'cleanFile'()
-		{
-		},
+		// 'cleanFile'()
+		// {
+		// },
 	},
 	
 };

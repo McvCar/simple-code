@@ -1,11 +1,8 @@
 /* 
 面板扩展
-功能: cc.Color 颜色显示
-例子: https://microsoft.github.io/monaco-editor/playground.html#interacting-with-the-editor-listening-to-mouse-events
+功能: 运行选中的代码
 */
 'use strict';
-const path 			= require('path');
-const fs 			= require('fs');
 const tools = require('../../tools/tools');
 let id 				= 'editor-run-code'
 

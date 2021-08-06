@@ -15,7 +15,7 @@ module.exports = {
 		// index.js 对象
 		// 读取自动布局信息
 		this.parent = parent;
-		this.parent_dom 		= Editor2D.Panel.find('simple-code');
+		this.parent_dom 		= this.parent.panel;
 		this.layout_dom_flex 	= this.getLayoutDomFlex()
 		this.self_flex_per 		= this.parent.cfg.self_flex_per || this.getSelfFlexPercent();
 	},
@@ -23,7 +23,7 @@ module.exports = {
 	onLoad(){
 		
 		// 监听焦点
-		let focusPanels = [this.parent.$editorB,this.parent.$tabList];
+		let focusPanels = [this.parent.$.editorB,this.parent.$.tabList];
 		for (let i = 0; i < focusPanels.length; i++) {
 			const dom = focusPanels[i];
 			dom.addEventListener('focus',(e)=>{
@@ -40,7 +40,7 @@ module.exports = {
 				}
 			},10)
 		},false);
-
+		
 		this.setAutoLayout(Editor.Panel.getFocusedPanel() == this.parent_dom);
 	},
 
@@ -78,7 +78,7 @@ module.exports = {
 		
 		// 伸缩窗口
 		let panel = Editor.Panel.getFocusedPanel() 
-		let is_self = panel == this && !this.comparisonParentDom(this.parent.$toolsPanel,this.parent_dom._focusedElement);
+		let is_self = panel == this && !this.comparisonParentDom(this.parent.$.toolsPanel,this.parent_dom._focusedElement);
 		let is_need_close = this.isSameGroupPanel(panel);
 		if(is_self || is_need_close){
 			this.setAutoLayout(is_self)
@@ -90,7 +90,7 @@ module.exports = {
 	{
 		if(this.parent.cfg.is_lock_window) 
 			return;
-		this.getLayoutDomFlex();
+		this.layout_dom_flex = this.getLayoutDomFlex();
 		let now_flex = this.layout_dom_flex && this.layout_dom_flex.style.flex;
 		if(!this.parent.cfg.autoLayoutMin || now_flex == null || (this.old_focused_state != null && this.old_focused_state == is_focused)){
 			return;
@@ -136,22 +136,33 @@ module.exports = {
 				const flexInfo = flexs[i];
 				flexInfo.dom.style['-webkit-transition'] = '';//清除过渡动画
 			}
-			this.parent.$overlay.style.display = "none";
+			this.parent.$.overlay.style.display = "none";
 			this.parent.upLayout();
-			// 场景刷新下，有时会出黑边
-			for (let i = 0; i < Editor.Panel.panels.length; i++) {
-				const panel = Editor.Panel.panels[i];
-				if(panel && panel._onPanelResize) panel._onPanelResize()
-			}
+			// 刷新场景布局
+			this.upScene()
 		}
 		
 		if(this.parent.cfg.autoLayoutDt)
 		{
-			this.parent.$overlay.style.display = this.layout_dom_flex.parentElement.children[0] == this.layout_dom_flex ? "" : "inline"; // 自己在最顶层就不必显示蒙版
+			this.parent.$.overlay.style.display = this.layout_dom_flex.parentElement.children[0] == this.layout_dom_flex ? "" : "inline"; // 自己在最顶层就不必显示蒙版
 			this.layout_dom_flex.addEventListener('transitionend',actEnd,false);
 		}else{
 			actEnd();
 		}
+	},
+
+	// 刷新场景布局
+	async upScene(){
+		let scenePanel = Editor2D.Panel.find('scene')
+		let layout_dom_flex = this.getLayoutDomFlexByPanel(scenePanel);
+		if(layout_dom_flex){
+			layout_dom_flex.style["minHeight"] = '200px' // 场景最小高度由300改成200 
+		}
+		let is2D = !(await Editor.Message.request('scene','query-is-ready')) ? true : await Editor.Message.request('scene','query-is2D');
+		
+		Editor.Message.send('scene','change-is2D',is2D)
+		setTimeout(async ()=>{Editor.Message.send('scene','change-is2D',await Editor.Message.request('scene','query-is2D',is2D))},5)
+		setTimeout(async ()=>{Editor.Message.send('scene','change-is2D',await Editor.Message.request('scene','query-is2D',is2D))},50)
 	},
 
 	// 是否父节点的子子级
@@ -202,7 +213,7 @@ module.exports = {
 	// 本窗口当前占用空间百分比
 	getSelfFlexPercent()
 	{
-		this.getLayoutDomFlex();
+		this.layout_dom_flex = this.getLayoutDomFlex();
 		let flexs = this.getFlexs();
 		let max_height = 0
 		let self_flex 
@@ -220,26 +231,35 @@ module.exports = {
 		return 0
 	},
 
+	// 获得竖板布局层
 	getLayoutDomFlex(){
-		if(this.parent_dom && this.parent_dom.parentElement)
+		return this.getLayoutDomFlexByPanel(this.parent_dom);
+	},
+
+
+	getLayoutDomFlexByPanel(panel){
+		let layout_dom_flex;
+		if(panel && panel.parentElement)
 		{
-			this.layout_dom_flex = this.parent_dom.parentElement;
+			layout_dom_flex = panel.parentElement.parentElement.parentElement;
+			if(!layout_dom_flex.parentElement) return;
 			let isHorizontal = true;
-			for (let i = 0; i < this.layout_dom_flex.parentElement.children.length; i++) {
-				const dom = this.layout_dom_flex.parentElement.children[i];
-				if(dom.scrollHeight != this.layout_dom_flex.scrollHeight){
+			for (let i = 0; i < layout_dom_flex.parentElement.children.length; i++) {
+				const dom = layout_dom_flex.parentElement.children[i];
+				if(Math.abs(dom.scrollHeight - layout_dom_flex.scrollHeight)>50){
 					isHorizontal = false;
 				}
 			}
 			// 这里水平布局了两排以上
 			if(isHorizontal){
-				this.layout_dom_flex = this.layout_dom_flex.parentElement || this.layout_dom_flex; //再找一层
+				layout_dom_flex = layout_dom_flex.parentElement || layout_dom_flex; //再找一层
 			}
 		}else{
-			this.layout_dom_flex = undefined;
+			layout_dom_flex = undefined;
 		}
-		return this.layout_dom_flex;
+		return layout_dom_flex;
 	},
+
 
 	// 面板销毁
 	onDestroy(){
@@ -248,9 +268,9 @@ module.exports = {
 
 
 	messages:{
-
-		// 'cleanFile'()
+		// 'scene:ready'()
 		// {
+		// 	this.setAutoLayout(Editor.Panel.getFocusedPanel() == this.parent_dom);
 		// },
 	},
 	

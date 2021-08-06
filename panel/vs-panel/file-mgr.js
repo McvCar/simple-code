@@ -251,7 +251,6 @@ class FileMgr{
 			}
 
 			if(!fileItem){
-				// console.log("尝试import失败:",tryPath)
 				if(isFromSystemRead && await fe.isFileExitAsync(tryPath))
 				{
 					// 3.最后尝试从系统api读取
@@ -288,7 +287,7 @@ class FileMgr{
 		{
 			// 告诉解析器已经处理此路径
 			this.parent.tsWr.removeNeedImportPath(importPath)
-			// console.log('尝试加载:',importPath,tryPaths.length)
+			// console.log('尝试加载:',importPath)
 			if(this.importPathBuffer[importPath]){
 				continue ;// 已经尝试加载过
 			}
@@ -316,16 +315,14 @@ class FileMgr{
 			// 2.正常路径方式找不到文件时切换为只对比文件名的方式加载
 			if( tryPaths.length ){
 				let retState = await loadFunc(tryPaths[0],true)
-				if(retState == 1){
-					continue;
-				}else if(retState == 0){
+				if(retState == 0){
 					isImport = true;
-					break;
+					continue;
 				}
 			}
 
 			// 3.从系统加载
-			for (let i = 1; i < tryPaths.length; i++) 
+			for (let i = (tryPaths.length > 1 ? 1 : 0); i < tryPaths.length; i++) 
 			{
 				// 1.从硬盘上找出路径文件是否存在
 				let tryPath = tryPaths[i];
@@ -361,6 +358,10 @@ class FileMgr{
 			this.parent.file_list_buffer.push(item);
 			this.parent.file_list_map[fsPath] = item;
 			if(!isOutside) this.parent.file_list_uuid[file.uuid] = item;
+			let edit_id = this.parent.getTabIdByPath(fsPath);
+			if(edit_id != null){
+				this.parent.closeTab(edit_id); // 被删的文件重新添加
+			}
 			await this.parent.loadAssetAndCompleter(item.meta, item.extname,!isOutside);
 
 			// 刷新编译
@@ -489,7 +490,7 @@ class FileMgr{
 			if(!editInfo || !editInfo.is_need_save)
 			{
 				// 刷新文件/代码提示,只有未被编辑情况下才刷新
-				let model = isOutside ? this.getModelByFsPath(url) : await this.getModelByUrlAsync(url) 
+				let model = this.getModelByFsPath(file.file);
 				if(model){
 					model.setValue(fs.readFileSync(file.file).toString());
 					if(this.parent.file_list_map[model.fsPath]){
@@ -512,7 +513,7 @@ class FileMgr{
 	 * @param {String} file.srcPath
 	 * @param {String} file.destPath
 	 */ 
-	 async assetsMovedEvent(file)
+	 assetsMovedEvent(file)
 	{
 		let urlI = this.getUriInfo(file.url)
 		file.extname = urlI.extname;
@@ -536,12 +537,12 @@ class FileMgr{
 			}
 		}
 		
-		await this.onMoveFile(file);
+		this.onMoveFile(file);
 		this.parent.onAssetsMovedEvent(file)
 	}
 
 	// 移动 ts/js代码文件
-	async onMoveFile(file)
+	onMoveFile(file)
 	{
 		// 刷新编辑信息
 		let urlI = this.getUriInfo(file.url)
@@ -559,7 +560,7 @@ class FileMgr{
 					// 刷新 model 信息，不然函数转跳不正确
 					let text  = editInfo.vs_model.getValue();
 					editInfo.vs_model.dispose()
-					let model = await this.parent.loadVsModel(editInfo.path,urlI.extname,true,false)
+					let model = this.parent.loadVsModelWorker(file.url,file.destPath,urlI.extname,true,false)
 					if(model)
 					{
 						let is_show = this.parent.vs_editor.getModel() == null;
@@ -580,7 +581,7 @@ class FileMgr{
 			if(vs_model) {
 				let text = vs_model.getValue();
 				vs_model.dispose()
-				let model = await this.parent.loadVsModel(file.url,urlI.extname,true,false)
+				let model = this.parent.loadVsModelWorker(file.url,file.destPath,urlI.extname,true,false)
 				model.setValue(text);
 				hasMoveCodeFile = true;
 			}

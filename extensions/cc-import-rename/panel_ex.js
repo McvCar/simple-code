@@ -13,7 +13,6 @@ module.exports = {
 	/** @type import('../../panel/vs-panel/vs-panel-base') */
 	parent : null,
 
-
 	// 
 	ready(parent){
 		// index.js 对象
@@ -23,34 +22,41 @@ module.exports = {
 	// 编辑器启动完成
 	onLoad(parent){
 		this.move_files = []
+		this.oldSelect = false;
 	},
 
-	// 文件被移动
-	onAssetsMovedEvent(files){
+
+	/**
+	 *  移动资源文件
+	 * @param {Object} file
+	 * @param {String} file.url
+	 * @param {String} file.uuid
+	 * @param {String} file.file
+	 * @param {String} file.srcPath
+	 * @param {String} file.destPath
+	 */ 
+	onAssetsMovedEvent(file){
 		if(!this.parent.cfg.renameConverImportPath){
 			return;
 		}
 
-		files.forEach((v, i) => 
+		let extname = path.extname(file.url)
+		// 重命名后检测引用路径
+		if(extname == '.js' || extname == '.ts')
 		{
-			let extname = path.extname(v.url)
-			// 重命名后检测引用路径
-			if(extname == '.js' || extname == '.ts')
-			{
-				this.move_files.push(v); // 200毫秒内记录下被移动的文件
-			}
-		});
+			this.move_files.push(file); // 500毫秒内记录下被移动的文件
+		}
 
-		
-		// 多次调用200毫秒内只执行一次
+		// 多次调用500毫秒内只执行一次
 		if(this.move_files.length){
-			this.parent.setTimeoutById(this.tryLoadRenameFile.bind(this),200,'renameCheck');
+			this.parent.setTimeoutById(this.tryLoadRenameFile.bind(this),500,'renameCheck');
 		}
 	},
 
 	// 开始修改import路径
 	async tryLoadRenameFile()
 	{
+		// console.log('移动的文件数量:',this.move_files.length)
 		if(!this.move_files.length){
 			return
 		}
@@ -73,7 +79,7 @@ module.exports = {
 			let model = this.parent.fileMgr.getModelByFsPath(file.destPath)  
 			if(model == null){
 				// 加载路径的代码文件到缓存
-				model = await this.parent.loadVsModel(file.url,path.extname(file.url),true);
+				model = this.parent.loadVsModelWorker(file.url,file.destPath,path.extname(file.url),true);
 			}
 			usedPaths[file.destPath] = model;
 		}
@@ -92,7 +98,7 @@ module.exports = {
 				let model = this.parent.fileMgr.getModelByFsPath(fsPath); 
 				if(!model){
 					// 加载旧路径的代码文件到缓存
-					model = await this.parent.loadVsModel(item.meta,item.extname,true,false);
+					model = this.parent.loadVsModelWorker(item.url,item.fsPath,item.extname,true,false);
 					model.setValue(item.data);
 				}
 				usedPaths[fsPath] = model;
@@ -100,12 +106,10 @@ module.exports = {
 				list.new_path = fsPath;
 			}
 		}
-		this.move_files = []
 
-		setTimeout(()=>{
-			// console.log("rename列表:",usedPaths)
-			this.updatedImports(usedPaths,usedList);
-		},10)
+		// console.log("rename列表:",this.move_files.length,usedPaths)
+		this.move_files = []
+		this.updatedImports(usedPaths,usedList);
 	},
 
 	// 应用修改import路径
@@ -113,6 +117,7 @@ module.exports = {
 	{
 		let saveList = []
 		let hintText = '是否同步以下脚本文件的 import、require路径:\n';
+		let logText  = '修正import路径完成,如果组件丢失脚本请重启creator,修改如下:'
 		for (const m_path in usedPaths) 
 		{
 			const model = usedPaths[m_path];
@@ -143,6 +148,7 @@ module.exports = {
 				if(importItem.path != newImportPath){
 					hasUpdate = true;
 					// console.log('转换import:',info.new_path,importItem.path,'to',newImportPath)
+					logText += '\n'+(model.dbUrl || "") + ":旧路径 "+ importItem.path + " 改为" + newImportPath;
 					text = text.substr(0,importItem.start) + newImportPath + text.substr(importItem.start+importItem.length)
 				}
 			}
@@ -152,23 +158,40 @@ module.exports = {
 			}
 		}
 
+		if(saveList.length == 0){
+			return;
+		}
+		// console.log('修正,',logText)
 		// 应用提示
-		let isApply = saveList.length>0 && confirm(hintText);
+		let startTime = new Date().getTime()
+		let isApply = confirm(hintText); // electron.remote.dialog.showMessageBoxSync({message:hintText,buttons:['Cancel',"Ok"]})// 
+		let endTime = new Date().getTime()
+		if(endTime - startTime < 100){
+			// 没有经过用户判断，默认使用上次选择结果
+			isApply = this.oldSelect;
+		}
+		this.oldSelect = isApply;
 		if(isApply){
 			for (let i = 0; i < saveList.length; i++) 
 			{
 				let info = saveList[i];
 				info.model.setValue(info.text);
-				let id = this.parent.getTabIdByModel(info.model);
-				if(id == null)
-				{
-					// 没有打开的文件则自动保存
-					this.parent.saveFileByUrl(info.model.dbUrl,info.text); 
-				}else{
-					// 已经打开的文件等用户手动保存
-					this.parent.onVsDidChangeContent({},info.model)
+
+				let isFileExit = true
+				try {fs.accessSync(info.model.fsPath)} catch (error) { isFileExit = false }
+				if(isFileExit){
+					let id = this.parent.getTabIdByModel(info.model);
+					if(id == null){
+						// 没有打开的文件则自动保存
+						this.parent.saveFileByUrl(info.model.dbUrl,info.text); 
+					}else{
+						// 已经打开的文件等用户手动保存
+						// this.parent.onVsDidChangeContent({},info.model)
+						this.parent.saveFile(true,false,id); 
+					}
 				}
 			}
+			setTimeout(()=>Editor.log(logText),10)
 		}
 	},
 

@@ -1,11 +1,12 @@
 /* 
 面板扩展
 功能: 书签🔖
+点击左边行数栏标记
 */
 'use strict';
 const path 			= require('path');
 const fs 			= require('fs');
-const config 		= Editor.require('packages://simple-code/config.js');
+const config 		= Editor2D.require('packages://simple-code/config.js');
 
 let id 				= 'editor-book-mark'
 
@@ -124,7 +125,7 @@ module.exports = {
 		// 跳到编辑器标签
 		for (let i = 0; i < 10; i++) {
 			// 绑定页面全局快捷键事件,注意: 区分大小写 Ctrl = ctrl
-			this.parent.addKeybodyEvent([[Editor.isWin32 ? "Alt" : "Meta",String(i)]],async (e)=>
+			this.parent.addKeybodyEvent([[Editor2D.isWin32 ? "Alt" : "Meta",String(i)]],async (e)=>
 			{
 				if(this.parent.file_info == null) return;
 
@@ -147,7 +148,7 @@ module.exports = {
 		// 绑定编辑器标签
 		for (let i = 0; i < 10; i++) {
 			// 绑定页面全局快捷键事件,注意: 区分大小写 Ctrl = ctrl
-			this.parent.addKeybodyEvent([[Editor.isWin32 ? "Ctrl" : "Alt",String(i)]],(e)=>
+			this.parent.addKeybodyEvent([[Editor2D.isWin32 ? "Ctrl" : "Alt",String(i)]],(e)=>
 			{
 				if(this.parent.file_info == null || this.parent.file_info.vs_model == null) return;
 

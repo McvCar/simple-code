@@ -3,10 +3,6 @@
 */
 
 'use strict';
-var path 	= require('path');
-var fs 		= require('fs');
-var md5     = require('md5');
-
 
 module.exports = {
 

@@ -43,7 +43,7 @@ module.exports = {
 	},
 
 	initBracketColor(){
-		let bracketPair = Editor.require('packages://simple-code/extensions/editor-bracket-pair-colorizer/bracket-pair-colorizer/src/index.js');
+		let bracketPair = Editor2D.require('packages://simple-code/extensions/editor-bracket-pair-colorizer/bracket-pair-colorizer/src/index.js');
 		let args  = {colours:COLOR,debounce:200}
 		this.bracketColorObj = bracketPair.bracketColorDecorate(this.parent.vs_editor,Editor.monaco,args);
 		

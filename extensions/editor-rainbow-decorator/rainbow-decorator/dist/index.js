@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 
-const vsLoader = Editor.require('packages://simple-code/panel/vs-panel/monaco-editor/dev/vs/loader.js');
+const vsLoader = Editor2D.require('packages://simple-code/panel/vs-panel/monaco-editor/dev/vs/loader.js');
 var monaco = vsLoader.require("vs/editor/editor.main");
 var monaco_editor_1 = monaco;
 var RainbowDecorator = /** @class */ (function () {
@@ -175,4 +175,3 @@ function rainbowDecorate(editor, options) {
 }
 exports.default = rainbowDecorate;
 exports.rainbowDecorate = rainbowDecorate;
-//# sourceMappingURL=index.js.map

@@ -6,8 +6,8 @@
 'use strict';
 const path 			= require('path');
 const fs 			= require('fs');
-const config 		= Editor.require('packages://simple-code/config');
-const eruda 		= Editor.require('packages://simple-code/extensions/editor-console/eruda/eruda.js');
+const config 		= Editor2D.require('packages://simple-code/config');
+const eruda 		= Editor2D.require('packages://simple-code/extensions/editor-console/eruda/eruda.js');
 
 module.exports = {
 	/** @type import('../../panel/vs-panel/vs-panel-base') */
@@ -33,7 +33,7 @@ module.exports = {
 	onLoad()
 	{
 		let el = document.createElement('div');
-		this.parent.$box.appendChild(el)
+		this.parent.$.box.appendChild(el)
 		eruda.init({
 			container: el,
 			tool: ['console'],
@@ -46,17 +46,17 @@ module.exports = {
 			}
 		});
 
-		eruda._devTools._window_height = this.parent.$box.clientHeight
+		eruda._devTools._window_height = this.parent.$.box.clientHeight
 		let shadowRoot = eruda._devTools._tools.console._$inputBox.shadowRoot || eruda._devTools._tools.console._$inputBox.attachShadow({mode: 'open'});
 		this.editorBox = document.createElement('div');
 		this.editorBox.style['width'] = '100%'
 		this.editorBox.style['height'] = '100%'
 		let sty = document.createElement('style');
-		sty.innerHTML = fs.readFileSync(Editor.url("packages://simple-code/panel/vs-panel/monaco-editor/dev/vs/editor/editor.main.css"), "utf-8");//ace.editorCss;
+		sty.innerHTML = fs.readFileSync(Editor2D.url("packages://simple-code/panel/vs-panel/monaco-editor/dev/vs/editor/editor.main.css"), "utf-8");//ace.editorCss;
 		shadowRoot.appendChild(sty)
 		shadowRoot.appendChild(this.editorBox)
 		this.loadEditor()
-		eruda._entryBtn.setPos({x:this.parent.$box.offsetWidth-40,y:25})
+		eruda._entryBtn.setPos({x:this.parent.$.box.offsetWidth-40,y:25})
 
 
 		eruda._entryBtn.on('click', () => this.cmd_editor.layout());
@@ -94,7 +94,7 @@ module.exports = {
 
 	loadEditor()
 	{
-		const vsLoader = Editor.require('packages://simple-code/panel/vs-panel/monaco-editor/dev/vs/loader.js');
+		const vsLoader = Editor2D.require('packages://simple-code/panel/vs-panel/monaco-editor/dev/vs/loader.js');
 		// 创建vs编辑器，api参考 monaco.d.ts文件
 		vsLoader.require(['vs/editor/editor.main'], () => 
 		{
@@ -111,17 +111,16 @@ module.exports = {
 			monaco.editor.setTheme(this.parent.cfg.theme);
 			editor.onKeyDown(this.handleKeyDown.bind(this));
 			editor.onDidChangeModelContent(this.handleInput.bind(this));
-			// this.editorBox.addEventListener("keydown", (e)=> this.handleKeyDown.bind(this), false);
-			//获得焦点
-			editor.onDidFocusEditorText((e) => {
-				// 关闭cocosCreator 默认的tab键盘事件,不然会冲突
-				require(Editor.appPath + "/editor-framework/lib/renderer/ui/utils/focus-mgr.js").disabled = true;
-			});
+			// //获得焦点
+			// editor.onDidFocusEditorText((e) => {
+			// 	// 关闭cocosCreator 默认的tab键盘事件,不然会冲突
+			// 	require(Editor.appPath + "/editor-framework/lib/renderer/ui/utils/focus-mgr.js").disabled = true;
+			// });
 
-			// 失去焦点
-			editor.onDidBlurEditorText((e) => {
-				require(Editor.appPath + "/editor-framework/lib/renderer/ui/utils/focus-mgr.js").disabled = false;
-			});
+			// // 失去焦点
+			// editor.onDidBlurEditorText((e) => {
+			// 	require(Editor.appPath + "/editor-framework/lib/renderer/ui/utils/focus-mgr.js").disabled = false;
+			// });
 			this.initCompletion();
 		});
 	},

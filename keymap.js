@@ -43,7 +43,7 @@ module.exports = {
 	// 搜索并转跳到资源
 	'findFileGoto' : { win32:[] , mac:[["Ctrl",'f']] }, 
 	// 搜索节点
-	'findNodes' : { win32:[["f"]] , mac:[["f"]] },  
+	'findNodes' : { win32:[["l"]] , mac:[["l"]] },  
 	// 全局搜索
 	'openGlobalSearch' : { win32:[["Ctrl","Shift",'f']] , mac:[["Meta","Shift",'f']] }, 
 	

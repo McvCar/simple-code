@@ -28,12 +28,7 @@ module.exports = {
 
 	messages:
 	{
-		'openNodeFile'(){
-			// Editor.Ipc.sendToPanel('simple-code', 'custom-cmd',{cmd:"findFileGoto"});
-			// Editor.log("openNodeFile")
-		},
-		'scene:saved'(){
-			// Editor.log("scene save")
-		},
+		// 'openNodeFile'(){
+		// },
 	}
 };

@@ -11,9 +11,13 @@ const tools 		= require('../../tools/tools');
 const prsPath 		= Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
 
 let is_lock			= false;
-let ASSETS_TYPE_MAP = {'sprite-atlas':"cc.SpriteAtlas",'sprite-frame':"cc.SpriteFrame",'texture':"cc.SpriteFrame",'prefab':"cc.Prefab",
-	'audio-clip':'cc.AudioClip','raw-asset':'cc.RawAsset','dragonbones':'dragonBones.DragonBonesAsset','dragonbones-atlas':'dragonBones.DragonBonesAtlasAsset',
-	'spine':'sp.SkeletonData',"particle":"cc.ParticleAsset",'asset':'cc.Asset','material':'cc.Material','mesh':'cc.Mesh','skeleton-animation-clip':'cc.SkeletonAnimationClip'};
+// 资源类型对应组件关系映射
+let ASSETS_TYPE_MAP = {
+	'sprite-atlas':"cc.SpriteAtlas",'sprite-frame':"cc.SpriteFrame",'texture':"cc.SpriteFrame",'image':"cc.SpriteFrame",
+	'prefab':"cc.Prefab",'audio-clip':'cc.AudioClip','raw-asset':'cc.RawAsset','dragonbones':'dragonBones.DragonBonesAsset',
+	'dragonbones-atlas':'dragonBones.DragonBonesAtlasAsset','spine':'sp.SkeletonData',"particle":"cc.ParticleAsset",
+	'asset':'cc.Asset','material':'cc.Material','mesh':'cc.Mesh','skeleton-animation-clip':'cc.SkeletonAnimationClip'
+};
 
 let IS_URL_TYPE 	= ['cc.AudioClip','cc.RawAsset','cc.Asset']
 // 拖拽加入组件优先顺序
@@ -25,7 +29,7 @@ let USER_NEW_VAR_RULE 	=  path.join(config.cacheDir,"drag_var_rule.js");
 module.exports = {
 	/** @type import('../../panel/vs-panel/vs-panel-base') */
 	parent : null,
-
+	USER_NEW_VAR_RULE,
 
 	// 面板初始化
 	onLoad(parent){
@@ -43,7 +47,7 @@ module.exports = {
 	// 插入组件入口
 	insertWidgetAction(isQuick,widgetType,insertUuids)
 	{
-		let nodes = insertUuids || Editor.Selection.curSelection('node') || [];
+		let nodes = insertUuids || Editor2D.Selection.curSelection('node') || [];
 		isQuick = isQuick || nodes.length >1
 		Editor.Scene.callSceneScript('simple-code', 'getNodesInfo',nodes, (err, nodeInfos) => 
 		{ 
@@ -89,24 +93,24 @@ module.exports = {
 	// 插入资源入口
 	insertAssets(isQuick,insertUuids)
 	{
-		insertUuids = insertUuids || Editor.Selection.curSelection('asset');
+		insertUuids = insertUuids || Editor2D.Selection.curSelection('asset');
 		//1.读取选中的资源
 		//2.解析资源类型 == cc.SpriteFrame ? || xxxx
 		//3.接下来流程和加载组件一样
 		if(insertUuids == null || insertUuids.length == 0){
-			Editor.info("生成失败,由于Creator API限制,请点击一下需要拖动的资源然后再拖入")
+			Editor.log("生成绑定资源失败")
 			return
 		}
-		
+		// let meta = await Editor.Message.request("asset-db",'query-asset-meta',uuid)
 		Editor.assetdb.queryInfoByUuid(insertUuids[0],(_,fileInfo)=>
 		{
 			if(fileInfo==null){
 				return;
 			}
 
-			let widgetType = ASSETS_TYPE_MAP[fileInfo.type];
+			let widgetType = fileInfo.redirect && fileInfo.redirect.type ? fileInfo.redirect.type : fileInfo.type //ASSETS_TYPE_MAP[fileInfo.importer];
 			if(widgetType==null){
-				Editor.info('不支持插入的资源类型:',fileInfo.type,fileInfo)
+				Editor.info('不支持插入的资源类型:',fileInfo.importer,fileInfo)
 				return;
 			}
 
@@ -138,12 +142,12 @@ module.exports = {
 		if(this.parent.file_info == null || this.parent.file_info.uuid != codeInfo.editInfo.uuid ){
 			return;
 		}
-		let info = Editor.Selection.curGlobalActivate();
+		let info = Editor2D.Selection.curGlobalActivate();
 
 		let rootNodeUuid = info.type == 'node' && info.id ? info.id : null;
 
 		//1.获得生成组件规则
-		Editor.Scene.callSceneScript('simple-code', 'getCustomWidgetRule',{rootNodeUuid,fileUuid: codeInfo.editInfo.uuid,url: codeInfo.editInfo.url}, (err, args) => { 
+		Editor2D.Scene.callSceneScript('simple-code', 'getCustomWidgetRule',{rootNodeUuid,fileUuid: codeInfo.editInfo.uuid,url: codeInfo.editInfo.url}, (err, args) => { 
 			
 			// rules = [{symbolName:'',widgetType:'',componentUuid:''}]
 			let rules = args.rules;
@@ -167,8 +171,8 @@ module.exports = {
 				let nodeUuids  = [ rule.nodeUuid ];
 				if(!rule || !rule.disableGenerated)
 				{
-					if(symbolName.match(/[a-zA-Z_$][\w$]*/) == null){
-						Editor.info('生成拖拽组件:变量命名不符合规范:',symbolName);
+					if(symbolName[0].match(/[0-9]/)){
+						Editor.log('生成拖拽组件:变量命名不符合规范:',symbolName);
 						continue;
 					}
 					// 2.插入成员变量文本
@@ -258,7 +262,7 @@ module.exports = {
 			if(this.parent.file_info.uuid != codeInfo.editInfo.uuid) {
 				return;
 			}
-			let isArray = (insertUuids || Editor.Selection.curSelection(isAssets ? 'asset':'node') ).length>1 ;
+			let isArray = (insertUuids || Editor2D.Selection.curSelection(isAssets ? 'asset':'node') ).length>1 ;
 
 			// 提供撤销
 			codeInfo.editInfo.vs_model.pushStackElement();
@@ -277,22 +281,19 @@ module.exports = {
 
 	// 变量名是否正常
 	isNormalSymbolName(symbolName){
-		if(symbolName.match(/[a-zA-Z_$][\w$]*/) == null || symbolName.match(/[\[\]\`\!\#\%\^\&\*\(\)\+\=\{\}\?\<\>\-]+/)){
-			return false
-		}
-		return true;
+		return !symbolName[0].match(/[0-9]/);
 	},
 
 	insertWidgetInfo(bindNodeList,widgetType,symbolName,isArray,insertUuids,isAssets,rule){
 		let args = {bindNodeList,widgetType,symbolName,isArray,insertUuids,isAssets,rule}
-		Editor.Scene.callSceneScript('simple-code', 'insertWidgetInfo',args, (err, isEnd) => { 
+		Editor2D.Scene.callSceneScript('simple-code', 'insertWidgetInfo',args, (err, isEnd) => { 
 			// console.log('生成完成.',isEnd)
 		});
 	},
 
 	getCurrEditorFileBindNodes(uuid,calback){
 		let args = {code_uuid:uuid}
-		Editor.Scene.callSceneScript('simple-code', 'getCurrEditorFileBindNodes',args, (err, bindNodeList) => { 
+		Editor2D.Scene.callSceneScript('simple-code', 'getCurrEditorFileBindNodes',args, (err, bindNodeList) => { 
 			calback(bindNodeList);
 		});
 	},
@@ -310,14 +311,31 @@ module.exports = {
 		// 1.保存刷新creator生成变量拖拽组件
 		if(oldCodeText === null || oldCodeText != codeText){
 			this.parent.saveFile(true,true);
-			// 标记场景切换时需要保存
-			Editor.Scene.callSceneScript('simple-code', 'scene-need-save')
 		}
+		// 场景快照
+		Editor.Message.send('scene','snapshot')
 	},
 
 	// 面板销毁
 	onDestroy(){
 
+	},
+
+	// 判断类型相等
+	isWidgetTypeEqual(fileWidgetType,addWidgetType){
+		// Node == cc.Node || Node == 'cc.Node'.split('.')[1]
+		// sp.SpineSocket == sp.SpineSocket
+		return (fileWidgetType == addWidgetType || fileWidgetType == addWidgetType.split('.')[1])
+	},
+
+	// 获得插入文本名, widgetType = 'cc.Node' -> Node
+	getWidgetTypeImportName(widgetType){
+		let temp = widgetType.split('.');
+		if(temp.length == 2 && temp[0] == 'cc'){
+			return temp[1];
+		}else{
+			return widgetType
+		}
 	},
 	
 	//3.往脚本添加组件类型字段
@@ -342,16 +360,18 @@ module.exports = {
 			let startPos = findObj.index + findObj[0].length;
 			let symbols  = this.upSymbolInfoByName(text,codeInfo);
 			let symbolInfo = this.getSymbolInfoByName(symbols,symbolName);
+			let ccModelue = symbols.ccModelue;
 			let isUrl = IS_URL_TYPE.indexOf(widgetType) != -1;
+			let importName = this.getWidgetTypeImportName(widgetType);
 
-			if(symbolInfo && symbolInfo.symbolName == symbolName && symbolInfo.widgetType == widgetType && !isArray == !symbolInfo.isArray){
+			if(symbolInfo && !isArray == !symbolInfo.isArray && symbolInfo.symbolName == symbolName && symbolInfo.widgetType == importName){
 				// 代码内已存在同名同类型变量，不再覆盖
 				return symbolName;
 			}
 			
 			try {
 				let oldText = symbolInfo && symbolInfo.text;
-				let insertText = require(USER_NEW_VAR_RULE).getInsertText(widgetType,symbolName,oldText,rule,isArray,codeInfo.isTs,isUrl);
+				let insertText = require(USER_NEW_VAR_RULE).getInsertText(importName,symbolName,oldText,rule,isArray,codeInfo.isTs,isUrl);
 				// 2.检测变量是否已经存在，若存在则需要替换旧的变量字符串
 				if(symbolInfo){
 					text = text.substr(0,symbolInfo.startPos)+insertText+text.substr(symbolInfo.endPos)
@@ -359,7 +379,8 @@ module.exports = {
 					text = text.substr(0,startPos)+insertText+text.substr(startPos)
 				}
 
-				text = this.getInsertScriptImportPath(text,vs_model.dbUrl,widgetType,codeInfo.isTs);
+				// 如果不存在 import widgetType from 'xxx' 路径，则生成一个
+				text = this.insertScriptImportPath(text,vs_model.dbUrl,widgetType,codeInfo.isTs,ccModelue);
 				vs_model.setValue(text);
 			} catch (error) {
 				Editor.error('生成自定义绑定规则配置出错: ',error)
@@ -368,11 +389,35 @@ module.exports = {
 
 		return symbolName;
 	},
+	
+	// 插入 cocos 组件import路径
+	insertCcImportPath(text,currPath,widgetType,isTs,ccModelue){
+		if(ccModelue.regObj == null){
+			return text;
+		}
+		// widgetType == cc.Node
+		let arr = widgetType.split('.');
+		let importName = arr[0] == 'cc' ? arr[1] : arr[0]; // cc.Node变量 : sp.SpineSocket 或其它cc模块
+		
+		if(ccModelue.modules.includes(importName)){
+			return text;// 已存在
+		}
+
+		// 生成变量文本准备插入
+		// 搜索插入文本位置
+		let startPos = ccModelue.regObj.index+ccModelue.regObj[1].length+ccModelue.regObj[2].length;
+		text = text.substr(0,startPos) + ', ' + importName + text.substr(startPos);
+		return text;
+	},
 
 	// 插入自定义脚本的import路径
-	getInsertScriptImportPath(text,currPath,widgetType,isTs){
-		if(!text || !currPath || widgetType.indexOf('.') != -1) {
+	insertScriptImportPath(text,currPath,widgetType,isTs,ccModelue){
+		if(!text || !currPath) {
 			return text;
+		}
+
+		if(widgetType.indexOf('.') != -1){
+			return this.insertCcImportPath(text,currPath,widgetType,isTs,ccModelue)
 		}
 
 		// 1.搜索脚本
@@ -403,7 +448,7 @@ module.exports = {
 		}
 		
 		// 找出import的最后一行，将代码插入这一行下面
-		let importText = isTs ? `import ${widgetType} from "${importPath}";` : `\nlet ${widgetType} = require("${importPath}");`
+		let importText = isTs ? `import { ${widgetType} } from "${importPath}";` : `\nlet ${widgetType} = require("${importPath}");`
 		let regImport = /import .+?from.+[\r\n]/g
 		let temp 
 		let lastImort 
@@ -512,7 +557,7 @@ module.exports = {
 		}else
 		{
 			// JS 解析代码格式是否正常的,
-			let esprima = Editor.require('packages://simple-code/node_modules/esprima/esprima')
+			let esprima = Editor2D.require('packages://simple-code/node_modules/esprima/esprima')
 			try {
 			    esprima.parse(text)
 			} catch (error) {
@@ -522,7 +567,7 @@ module.exports = {
 			// 变量 properties 对象位置
 			let findObj = text.match(/properties[	 ]{0,5}:[	 ]{0,5}[\n]{0,5}[	 ]{0,15}{[	 ]{0,5}/)
 			if(!findObj){
-				Editor.info('JS脚本缺少 properties:{}, 对象，无法自动拖拽组件')
+				Editor.log('JS脚本缺少 properties:{}, 对象，无法自动拖拽组件')
 				return;
 			}
 			let start_ind = findObj.index + findObj[0].length;
@@ -584,7 +629,18 @@ module.exports = {
 				}
 			}
 		}
+		symbols.ccModelue = isTs ? this.getCodeCcImports(text) : {modules:[]};
 		return symbols;
+	},
+
+	getCodeCcImports(code){
+		let regObj = code.match(/(import\s*?\{)(.*?)[ ]*?\}\s*?from\s*['"]cc['"]/s);
+		if(!regObj){
+			return [];
+		}
+		let temp = regObj[2].replace(/\s/g,'');
+		let modules = temp.split(',')
+		return {modules,regObj};
 	},
 
 	loadSymbolName(callback,defineName='',result=[])
@@ -616,24 +672,24 @@ module.exports = {
 	},
 
 
-	onDrag(e,dragArgs){
-		let panel = Editor.Panel.getFocusedPanel()
+	/**
+	 * 拖入事件
+	 * @param {evnt} e 
+	 * @param {object} dragsArgs - 拖拽的资源信息们 {type:'node',items:[{value:'uuidxx',name:'',type:"cc.Node"}]} || {}
+	 * @param {object} mouseDownItem - 点击时鼠标悬停位置资源的信息 {type:'node',uuid:'xxxx'} || {}
+	 */
+	onDrag(e,dragArgs,mouseDownItem){
+		let panel = Editor2D.Panel.getFocusedPanel()
 		if(!panel) return;
 
 		// 获得拖拽的组件资源uuid
-		let uuids;
-		if(dragArgs.items){
-			uuids = []
-			for (let i = 0; i < dragArgs.items.length; i++) {
-				const item = dragArgs.items[i];
-				uuids.push(item.id);
-			}
-		}
 		let type = dragArgs.type || panel.id
 
 		if(type == 'asset' || type == 'assets'){
+			let uuids = this.getSelections('asset',mouseDownItem);
 			this.insertAssets(this.parent.cfg.isQuickDrag,uuids)
 		}if(type == 'node' || type == 'hierarchy'){
+			let uuids = this.getSelections('node',mouseDownItem);
 			this.insertWidgetAction(this.parent.cfg.isQuickDrag,null,uuids);
 		}
 	},
@@ -641,7 +697,7 @@ module.exports = {
 	/** 需要刷新creator右键菜单
 	 * @param type = node | asset 
 	 * */ 
-     onRefreshCreatorMenu(type,uuid){
+    onRefreshCreatorMenu(type,uuid){
 		this.updateMenu(type,uuid)
 	},
 
@@ -656,57 +712,57 @@ module.exports = {
 			if(type == 'asset'){
 
 				// 资源菜单
-				if(!uuid || !bindNodeList){
-					Editor.Ipc.sendToMain('simple-code:setMenuConfig',{id:"cc-widget-assets-to-code",menuCfg:undefined})
+				if(!uuid || !bindNodeList || !bindNodeList.length){
+					this.parent.ccMenuMgr.setMenuConfig({id:"cc-widget-assets-to-code",menuCfg:undefined})
 				}else{
 					
 					let menuCfg = {
 						assetMenu : [
 							{ type: 'separator' },
-							{ label : tools.translate('quickly-drop-asset'), enabled:true, cmd: "quickInsertAssets"}, // 快速生成拖拽资源
-							{ label : tools.translate('drop-asset'), enabled:true, cmd: "insertAssets"},// 生成拖拽资源
+							{ label : tools.translate('quickly-drop-asset'), enabled:true, click: this.messages["quickInsertAssets"].bind(this)}, // 快速生成拖拽资源
+							{ label : tools.translate('drop-asset'), enabled:true, click: this.messages["insertAssets"].bind(this)},// 生成拖拽资源
 						],
 					}
-					Editor.Ipc.sendToMain('simple-code:setMenuConfig',{id:"cc-widget-assets-to-code",menuCfg:menuCfg})
+					this.parent.ccMenuMgr.setMenuConfig({id:"cc-widget-assets-to-code",menuCfg:menuCfg})
 				}
 			}else if(type == 'node'){
 
 				// nodeTree菜单
-				if(!uuid || !bindNodeList){
+				if(!uuid || !bindNodeList || !bindNodeList.length){
 					// 清除菜单
-					Editor.Ipc.sendToMain('simple-code:setMenuConfig',{id:"cc-widget-comp-to-code",menuCfg:undefined})
+					this.parent.ccMenuMgr.setMenuConfig({id:"cc-widget-comp-to-code",menuCfg:undefined})
 				}else
 				{
-					Editor.Scene.callSceneScript('simple-code', 'getNodeCompNames',uuid, (err, compNames) => { 
+					Editor2D.Scene.callSceneScript('simple-code', 'getNodeCompNames',uuid, (err, compNames) => { 
 
-						let submenu = [{ label: 'cc.Node', enabled: true, cmd:'insertWidgetByName'},];
+						let submenu = [{ label: 'cc.Node', enabled: true, click: this.messages['insertWidgetByName'].bind(this,'cc.Node')},];
 		
 						for (let i = 0; i < compNames.length; i++) {
 							const name = compNames[i];
-							let item = { label: name, enabled: true, cmd: "insertWidgetByName"};
+							let item = { label: name, enabled: true, click: this.messages["insertWidgetByName"].bind(this,name)};
 							submenu.push(item);
 						}
 		
 						let menuCfg = {
 							layerMenu : [
 								{ type: 'separator' },
-								{ label : tools.translate('quickly-drop-component'), enabled:true, cmd: "quickInsertWidget", }, // 快速生成拖拽组件
+								{ label : tools.translate('quickly-drop-component'), enabled:true, click: this.messages["quickInsertWidget"].bind(this), }, // 快速生成拖拽组件
 								{ label : tools.translate('drop-component'), enabled:true, submenu:submenu, }, // 生成拖拽组件
 							],
 						}
-						Editor.Ipc.sendToMain('simple-code:setMenuConfig',{id:"cc-widget-comp-to-code",menuCfg:menuCfg})
+						this.parent.ccMenuMgr.setMenuConfig({id:"cc-widget-comp-to-code",menuCfg:menuCfg})
 					});
 				}
 			}
 		})
 	},
 
-	getSelections(type){
-		if(this.currSelectInfo.type != type || !this.currSelectInfo.uuid){
+	getSelections(type,currSelectInfo){
+		if(currSelectInfo.type != type || !currSelectInfo.uuid){
 			return [];
 		}
 		// 判断当前选中资源中有无当前鼠标所在位置的资源
-		let uuids = Editor.Selection.curSelection(type) || [];
+		let uuids = Editor2D.Selection.curSelection(type) || [];
 		if(uuids.indexOf(this.currSelectInfo.uuid) != -1){
 			return uuids;
 		}else{
@@ -732,43 +788,37 @@ module.exports = {
 		},
 		
 		// 添加组件
-		'insertWidgetByName'(e,args)
+		'insertWidgetByName'(name)
 		{
 			if(this.parent == null) return;
 			
-			let uuids = this.getSelections('node');
-			this.insertWidgetAction(false,args.label,uuids);
+			let uuids = this.getSelections('node',this.currSelectInfo);
+			this.insertWidgetAction(false,name,uuids);
 		},
 
 		// 快速添加组件
-		'quickInsertWidget'(e,args)
+		'quickInsertWidget'(args)
 		{
 			if(this.parent == null) return;
-			let uuids = this.getSelections('node');
+			let uuids = this.getSelections('node',this.currSelectInfo);
 			this.insertWidgetAction(true,null,uuids);
 		},
 
-
 		// 添加资源
-		'insertAssets'(e,args){
+		'insertAssets'(args){
 			if(this.parent == null) return;
 
-			let uuids = this.getSelections('asset');
+			let uuids = this.getSelections('asset',this.currSelectInfo);
 			this.insertAssets(false,uuids)
 		},
 
 		// 快速添加资源
-		'quickInsertAssets'(e,args){
+		'quickInsertAssets'(args){
 			if(this.parent == null) return;
-			let uuids = this.getSelections('asset');
+			let uuids = this.getSelections('asset',this.currSelectInfo);
 			this.insertAssets(true,uuids)
 		},
 		 
-		'selection:activated'(){
-			if(this.parent == null) return;
-
-			
-		},
 	},
 	
 	// 拖动文件到inspector面板

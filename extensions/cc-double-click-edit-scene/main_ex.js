@@ -31,10 +31,10 @@ module.exports = {
 
 	messages:
 	{
-		'rename'(){
-			Editor.Panel.open('simple-code');
-			// Editor.Ipc.sendToPanel('simple-code', 'rename');
-		},
+		// 'rename'(){
+		// 	Editor.Panel.open('simple-code');
+		// 	// Editor.Ipc.sendToPanel('simple-code', 'rename');
+		// },
 		
 	}
 };

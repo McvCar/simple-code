@@ -78,6 +78,13 @@ let layer = {
 		toolsPanel: '#toolsPanel',
 	},
 
+	/** @type monaco */
+	monaco:null,
+	/** @type import("./file-mgr") */
+	fileMgr:null,
+	/** @type import("./cc-menu-mgr") */
+	ccMenuMgr:null,
+
 	// 启动事件
 	ready(args) 
 	{
@@ -85,14 +92,13 @@ let layer = {
 		this.$ = args.$;
 		this.initStartData()
 		this.initCSS()
-		this.initCocosCreatorBroadcastEvent()
 		this.runExtendFunc("ready",this);
 		this.initVsEditor(()=>{
 			this.initData();
 			this.initBindEvent();
 			this.initKeybody();
 			this.setWaitIconActive(false);
-			this.upCurrSceneChildrenInfo();
+			this.initCocosCreatorBroadcastEvent();
 			this.is_init_finish = true;
 			this.runExtendFunc("onLoad",this);
 			this.setOptions(this.cfg,true);
@@ -100,7 +106,7 @@ let layer = {
 		});
 	},
 
-	// 绑定creator事件
+	// 绑定creator事件,启动阶段绑定会失效
 	initCocosCreatorBroadcastEvent(){
 		for (const key in this.messages) {
 			if(key.indexOf(':') != -1){
@@ -202,8 +208,10 @@ let layer = {
 
 	// 加载数据
 	initData() {
+		// 鼠标状态
 		this.mouse_pos;
-		this.mouse_selection_hover_item;
+		this.mouseDownItem;
+		this.is_mouse_down; 
 		
 		this.is_init_finish = false;
 		this.waitSaveIntervals = {}
@@ -261,6 +269,14 @@ let layer = {
 		this.$.gotoFileBtn.addEventListener('confirm', () => {
 			if (this.file_info) {
 				Editor2D.Ipc.sendToAll('assets:hint', this.file_info.uuid);
+				Editor2D.Scene.callSceneScript('simple-code', 'getEditFileBindNodes',this.file_info.uuid, (err, bindNodeList) => 
+				{ 
+					if(err) return;
+					for (let i = 0; i < bindNodeList.length; i++) {
+						const info = bindNodeList[i];
+						Editor2D.Ipc.sendToAll('assets:hint', info.node_uuid);
+					}
+				});
 			}
 		});
 
@@ -275,12 +291,47 @@ let layer = {
 			this.saveOptionsByDelayTime()
 		});
 		
-		
+		// 鼠标进过nodeTree或assets item
+		let oldPathDom;
+		let oldItem;
+		let onSelectionHoverin = (e,isMouseDown)=>{
+			if(!isMouseDown && e.path[0] == oldPathDom){
+				return;
+			}
+			oldPathDom = e.path[0];
+			// 读取当前鼠标所在位置的资源或Node列表信息
+			for (let i = 0; i < Math.min(5,e.path.length); i++) {
+				let vueObj = e.path[i].__vue__;
+				if(vueObj)
+				{
+					let itemInfo;
+					if(vueObj.asset){
+						itemInfo = {type:'asset',uuid:vueObj.asset.uuid}
+					}else if(vueObj.node){
+						itemInfo = {type:'node',uuid:vueObj.node.uuid}
+					}
+					// 鼠标移动经过节点树或资源目录时触发
+					if(itemInfo){
+						if(!isMouseDown && oldItem && oldItem.uuid == itemInfo.uuid){
+							return;
+						}
+						oldItem = itemInfo;
+						if(isMouseDown) this.mouseDownItem = itemInfo; // 记录鼠标所在位置资源信息
+						this.onEditorSelectionHoverin(itemInfo.type,itemInfo.uuid);
+						return;
+					}	
+				}
+			}
+			if(oldItem != null){
+				oldItem = undefined;
+				this.onEditorSelectionHoverin();
+			}
+		}
 		
 		// 记录鼠标位置,用于菜单位置
 		let mousemove = (e)=>{
+			onSelectionHoverin(e);
 			this.mouse_pos = {y:e.clientY,x:e.clientX}
-
 		}
 		this.addWindowEventListener('mousemove',mousemove,true)
 
@@ -299,36 +350,13 @@ let layer = {
 				this._isMoveDown = true
 				this.setTimeoutById(()=>this._isMoveDown = false,2000,'mousedow')
 			}
-			
-			// 读取当前鼠标所在位置的资源或Node列表信息
-			for (let i = 0; i < Math.min(5,e.path.length); i++) {
-				let vueObj = e.path[i].__vue__;
-				if(vueObj)
-				{
-					let itemInfo;
-					if(vueObj.asset){
-						itemInfo = {type:'asset',uuid:vueObj.asset.uuid}
-					}else if(vueObj.node){
-						itemInfo = {type:'node',uuid:vueObj.node.uuid}
-					}
-					// 鼠标移动经过节点树或资源目录时触发
-					if(itemInfo){
-						let oldItem = this.mouse_selection_hover_item;
-						// 不是同一条的信息才刷新
-						if(oldItem == null || itemInfo.uuid != oldItem.uuid){
-							this.mouse_selection_hover_item = itemInfo; // 记录鼠标所在位置资源信息
-							this.onRefreshCreatorMenu(itemInfo.type,itemInfo.uuid);
-						}
-						return;
-					}	
-				}
-			}
-			if(this.mouse_selection_hover_item != null){
-				delete this.mouse_selection_hover_item;
-				this.onRefreshCreatorMenu();
-			}
+			onSelectionHoverin(e,true);
+			this.is_mouse_down = true;
 		}
 		this.addWindowEventListener('mousedown',mousedown,true)
+		this.addWindowEventListener('mouseup',()=>{
+			this.is_mouse_down = false;
+		},true)
 
 
 
@@ -342,12 +370,16 @@ let layer = {
 				e.stopPropagation();
 			// }
 		},false)
+
+		this.$.editorB.addEventListener('dragleave',(e)=>{
+			this.$.dropBg.style.display = "none";
+		},false);
 		
 		// 读取拖入的文件
 		this.$.editorB.addEventListener('drop',(e)=>{
 			this.$.dropBg.style.display = "none";
 			
-			let dragsArgs = {};
+			let dragsArgs = {items:[]};
 			let args = e.dataTransfer.getData('additional');
 			if(args){
 				args = JSON.parse(args)
@@ -364,13 +396,9 @@ let layer = {
 					dragsArgs.items = args;
 				}
 			}
-			this.onDrag(e,dragsArgs,this.mouse_selection_hover_item);
+			this.onDrag(e,dragsArgs,this.mouseDownItem);
 		},false);
 
-		
-		this.$.editorB.addEventListener('dragleave',(e)=>{
-			this.$.dropBg.style.display = "none";
-		},false);
 		
 		// 检测窗口改变大小调整
 		this.schFunc = this.setTimeoutToJS(() => 
@@ -393,7 +421,8 @@ let layer = {
 
 	// creator事件广播监听
 	addBroadcastListener(name,callback){
-		let _callback = function(...args){ return callback(...args)} // 修复未知警告
+		
+		let _callback = callback;//async(...args)=>{ console.log("监听:",name,await Editor.Message.request('asset-db','query-ready'))} // 修复未知警告
 		this.listenBroadcastList.push({name,_callback});
 		Editor.Message.addBroadcastListener(name,_callback)
 	},
@@ -499,10 +528,10 @@ let layer = {
 		this.addWindowEventListener("focus", () => pressedKeys = {},true)
 		
 		// 阻挡冒泡creator的快捷键
-		this.$.box.addEventListener("keydown", (e)=> {
-			let className = e.path[0] && e.path[0].className || ''
-			if (className.indexOf('monaco') != -1 && (e.key == "w" || e.key == "e" || e.key == "r" || e.key == "t")) e.preventDefault()
-		}, false);
+		// this.$.box.addEventListener("keydown", (e)=> {
+		// 	let className = e.path[0] && e.path[0].className || ''
+		// 	if (className.indexOf('monaco') != -1 && (e.key == "w" || e.key == "e" || e.key == "r" || e.key == "t")) e.preventDefault()
+		// }, false);
 
 		this.addKeybodyEvent([["Ctrl", "s"], ["Meta", "s"]], (e) => 
 		{
@@ -604,23 +633,8 @@ let layer = {
 		}
 	},
 
-	// 刷新场景所有的子节点信息缓存
-	upCurrSceneChildrenInfo() {
-		// 从场景获得代码数据
-		Editor2D.Scene.callSceneScript('simple-code', 'scene-children-info', "", (err, data) => {
-			if (!data || data == "") return;
-
-			this.currSceneChildrenInfo = JSON.parse(data);
-			this.onCurrSceneChildrenInfo(this.currSceneChildrenInfo);
-		})
-	},
-
 	onCheckLayout(isUpLayout){
 		this.runExtendFunc("onCheckLayout", isUpLayout);
-	},
-
-	onCurrSceneChildrenInfo(currSceneChildrenInfo) {
-		this.runExtendFunc("onCurrSceneChildrenInfo", currSceneChildrenInfo);
 	},
 
 	onMouseDoubleClick(mousePos){
@@ -646,6 +660,7 @@ let layer = {
 	// 页面关闭
 	onDestroy() 
 	{ 
+		console.log("释放")
 		if(this._is_destroy || this.edit_list == null) return;
 		this._is_destroy = true;
 		this._super();
@@ -756,7 +771,7 @@ let layer = {
 		this.runExtendFunc('onEditorSelectionHoverin',type,uuid)
 	},
 
-	/** 需要刷新creator右键菜单
+	/** 需要刷新creator右键菜单,鼠标经过资源item时触发,菜单配置生成步骤需要使用到异步方法时才需要使用该事件
 	 * @param type = node | asset 
 	 * */ 
 	onRefreshCreatorMenu(type,uuid){
@@ -782,9 +797,9 @@ let layer = {
 	 * 拖入事件
 	 * @param {evnt} e 
 	 * @param {object} dragsArgs - 拖拽的资源信息们 {type:'node',items:[{value:'uuidxx',name:'',type:"cc.Node"}]} || {}
-	 * @param {object} selectionHoverInItem - 点击时鼠标悬停位置资源的信息 {type:'node',uuid:'xxxx'} || {}
+	 * @param {object} mouseDownItem - 鼠标点击位置资源的信息 {type:'node',uuid:'xxxx'} || {}
 	 */
-	onDrag(e,dragsArgs,selectionHoverInItem){
+	onDrag(e,dragsArgs,mouseDownItem){
 		e.preventDefault();
 		var fileObj = e.dataTransfer.files[0];
 		let item = dragsArgs.items[0];
@@ -796,7 +811,7 @@ let layer = {
 			this.openFileByUuid(item.value,true)
 		}
 		// 分发事件给插件使用
-		this.runExtendFunc('onDrag',e,dragsArgs,selectionHoverInItem)
+		this.runExtendFunc('onDrag',e,dragsArgs,mouseDownItem)
 	},
 
 	/**
@@ -816,6 +831,16 @@ let layer = {
 		this._super(file);
 		this.runExtendFunc('onAssetsChangedEvent',file)
 	},
+
+	/**
+	 *  移动资源文件
+	 * @param {Object} file
+	 * @param {String} file.url
+	 * @param {String} file.uuid
+	 * @param {String} file.file
+	 * @param {String} file.srcPath
+	 * @param {String} file.destPath
+	 */ 
 	onAssetsMovedEvent(file){
 		this.runExtendFunc('onAssetsMovedEvent',file)
 	},
@@ -839,13 +864,11 @@ let layer = {
 		'scene:save'(event) {
 			if(!this.is_init_finish) return;
 			this.saveFileFromDelayTime();
-			this.upCurrSceneChildrenInfo();
 		},
 
 		// 场景加载完
 		'scene:ready'(event) {
 			if(!this.is_init_finish) return;
-			this.upCurrSceneChildrenInfo();
 		},
 
 		// 选择改变
@@ -858,7 +881,7 @@ let layer = {
 		},
 
 		// 项目资源创建
-		'asset-db:asset-add'(event, file) {
+		'asset-add'(event, file) {
 			if(!this.is_init_finish) return;
 			if (!file && this.file_list_buffer) return;
 
@@ -866,7 +889,7 @@ let layer = {
 		},
 
 		// 项目文件被删除
-		'asset-db:asset-delete'(event, file) {
+		'asset-delete'(event, file) {
 			if(!this.is_init_finish) return;
 			if (!file && this.file_list_buffer) return;
 
@@ -875,7 +898,7 @@ let layer = {
 		},
 
 		// 项目资源文件发生改变、移动、重命名、
-		'asset-db:asset-change'(event, file) {
+		'asset-change'(event, file) {
 			if(!this.is_init_finish || this.is_not_select_active || file.isDirectory) return;
 
 			this.fileMgr.assetsChangedEvent(file);

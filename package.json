@@ -314,6 +314,10 @@
 			}
 		],
 		"messages": {
+			"asset-db:asset-change":{"methods":["vsEditor.asset-change"]},
+			"asset-db:asset-add":{"methods":["vsEditor.asset-add"]},
+			"asset-db:asset-delete":{"methods":["vsEditor.asset-delete"]},
+
 			"open": {
 				"methods": [
 					"open"
@@ -411,7 +415,7 @@
 			},
 			"newFile": {
 				"methods": [
-					"vsEditor.newFile"
+					"vsEditor.new-js-file"
 				]
 			},
 			"openNodeFile": {
