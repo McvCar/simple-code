@@ -7,6 +7,7 @@
 var path 	= require('path');
 var fs 		= require('fs');
 var md5     = require('md5');
+const Editor2D = require('../../tools/editor2D');
 
 
 
@@ -33,7 +34,7 @@ module.exports = {
 	{
 		'openPrettierConfig'(){
 
-			Editor.Ipc.sendToPanel('simple-code', 'openPrettierConfig');
+			Editor2D.Ipc.sendToPanel('simple-code', 'openPrettierConfig');
 			// Editor.Ipc.sendToPanel('simple-code', 'rename');
 		},
 		

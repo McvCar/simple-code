@@ -1,6 +1,6 @@
 'use strict';
-const compatibleApi = require('../tools/compatibleApi.js');
-compatibleApi.analogApi();
+const Editor2D = require('../tools/Editor2D.js');
+Editor2D.analogApi();
 
 const path 		= require('path');
 const fs 		= require('fs');
@@ -22,12 +22,12 @@ var eventFuncs =
  	// 获得活动面板
 	getActiveUuid()
 	{
-	   let activeInfo  = Editor.Selection.curGlobalActivate() // 检测面板焦点在资源管理器还是层级管理器
+	   let activeInfo  = Editor2D.Selection.curGlobalActivate() // 检测面板焦点在资源管理器还是层级管理器
 	   if (activeInfo && activeInfo.type == "asset" && activeInfo.id && activeInfo.id.indexOf('db:') == -1)
 	   {
 			return [activeInfo.id];
 	   }else{
-			let ls      = this.getJsFileList( this.findNode( Editor.Selection.curSelection('node')[0]) );
+			let ls      = this.getJsFileList( this.findNode( Editor2D.Selection.curSelection('node')[0]) );
 			let uuidList = [];
 			ls.forEach((v,i)=>uuidList.push(v.__scriptUuid));
 			return uuidList;
@@ -37,7 +37,7 @@ var eventFuncs =
 	// 获得当前所有选中的节点
 	getSelectdNodes()
 	{
-		let selects = Editor.Selection.curSelection('node')
+		let selects = Editor2D.Selection.curSelection('node')
 		let arrNode = []
 		selects.forEach((uuid)=>{
 			let node = this.findNode(uuid)
@@ -133,7 +133,7 @@ var eventFuncs =
 
  	uuidToUrl(uuids,callback){
  		// 当前打开的预制节点路径
- 		Editor.Ipc.sendToMain('simple-code:uuidToUrl',{uuids:uuids}, function (error, answer) 
+ 		Editor2D.Ipc.sendToMain('simple-code:uuidToUrl',{uuids:uuids}, function (error, answer) 
  		{
  			if (answer && answer.urls && answer.urls[0]) return callFunc( answer.urls)
  		});
@@ -196,13 +196,13 @@ var eventFuncs =
 	    // if (this.isNewScene()){
 	    //     call(1)
 	    // }else{
-	        Editor.Ipc.sendToPanel('scene', 'scene:new-scene');
+	        Editor2D.Ipc.sendToPanel('scene', 'scene:new-scene');
 	        setTimeout(()=>
 	        {
 	            if (this.isNewScene())
 	            {
 	                call(1)
-	                Editor.info("成功切换到新场景")
+	                Editor.log("成功切换到新场景")
 	            }else
 	            {
 	                call(0)
@@ -218,7 +218,7 @@ var eventFuncs =
 		{
 			if(!is_new){ 
 				call(0)
-				return Editor.info("请保存场景后再运行调试")
+				return Editor.log("请保存场景后再运行调试")
 			}
 
 			if(isScene){
@@ -231,7 +231,7 @@ var eventFuncs =
 					}
 
 					setTimeout(()=>{
-						Editor.info("成功加载模拟场景")
+						Editor.log("成功加载模拟场景")
 						scene.name = "New Node";
 						call(1);
 					},100)
@@ -243,7 +243,7 @@ var eventFuncs =
 				let canvas = scene.getChildByName("Canvas")
 				if (canvas){
 					canvas.removeAllChildren(true)
-					Editor.Ipc.sendToPanel("scene","scene:create-nodes-by-uuids",[uuid],canvas.uuid,{unlinkPrefab:null},(err,e)=>{
+					Editor2D.Ipc.sendToPanel("scene","scene:create-nodes-by-uuids",[uuid],canvas.uuid,{unlinkPrefab:null},(err,e)=>{
 						call(1)
 					});
 				}else{
@@ -342,7 +342,7 @@ var eventFuncs =
 		if (canvas) {
 			this.getNodeChildren(canvas,(node)=>{
 				if (node.name == name){
-					Editor.Selection.select('node', [node.uuid]);
+					Editor2D.Selection.select('node', [node.uuid]);
 					return node;
 				}
 			})
@@ -400,7 +400,7 @@ var eventFuncs =
 		let uuid_list = [];
 		let scene = this.findNode(args.parent_uuid)
 		if (!scene){
-			Editor.info("请您先选中节点后再操作..");
+			Editor.log("请您先选中节点后再操作..");
 			return;
 		}
 
@@ -411,8 +411,8 @@ var eventFuncs =
 			}
 		});
 
-		Editor.Selection.select('node', uuid_list);
-		Editor.Ipc.sendToAll('hint', uuid_list)
+		Editor2D.Selection.select('node', uuid_list);
+		Editor2D.Ipc.sendToAll('hint', uuid_list)
 	},
 
 	// 获得选中的节点信息
@@ -438,7 +438,7 @@ var eventFuncs =
 			let list = []
 			let max = uuids.length;
 			uuids.forEach((uuid)=>{
-				Editor.assetdb.queryInfoByUuid(uuid,(e,a)=>
+				Editor2D.assetdb.queryInfoByUuid(uuid,(e,a)=>
 				{
 					if(!e && a && a.path){
 						let name        = a.path.substr(a.path.lastIndexOf(path.sep)+1) 
@@ -477,58 +477,17 @@ var eventFuncs =
 	'open-file-by-outside': function (event) {
 		let id = this.getActiveUuid()[0]
 		if (id){
-			Editor.Ipc.sendToMain('assets:open-text-file',id);
+			Editor2D.Ipc.sendToMain('assets:open-text-file',id);
 		}else{
-			Editor.info("当前活动面板没有发现可打开的资源")
+			Editor.log("当前活动面板没有发现可打开的资源")
 		}
-	},
-
-
-	// 控制動畫定時器
-	'cc-engine-animatin-mode': function (event,is_cmd_mode) {
-		cc.engine.animatingInEditMode = is_cmd_mode //引擎需要开放这个才有动画效果
-		cc.engine._animatingInEditMode = is_cmd_mode
-	},
-
-	// 标记场景切换时需要保存
-	'scene-need-save'(){
-		let node = cc.director.getScene().children[0];
-		if(!node){
-			return;
-		}
-		let uuid = node.uuid;
-		let opacity = node.opacity;
-		// Editor.Ipc.sendToPanel('scene', 'scene:undo-commit'); 
-		// Editor.Ipc.sendToAll('scene:undo-record',uuid,{id:uuid});
-		// Editor.Ipc.sendToPanel('scene', 'scene:set-property',{
-		// 	id: uuid,
-		// 	path: "opacity",//要修改的属性
-		// 	type: "number",
-		// 	value: 2555,
-		// 	isSubProp: false,
-		// });
-		Editor.Ipc.sendToPanel('scene', 'scene:set-property',{
-			id: uuid,
-			path: "opacity",//要修改的属性
-			type: "number",
-			value: opacity,
-			isSubProp: false,
-		});
-		// 撤销
-		Editor.Ipc.sendToPanel('scene', 'scene:undo');
-		// 重做
-		Editor.Ipc.sendToPanel('scene', 'scene:redo')
-		Editor.Ipc.sendToPanel('scene', 'scene:undo-commit'); 
-		// 恢复 nodeTree 选择状态
-		let list = Editor.Selection.curSelection('node');
-		setTimeout(()=>Editor.Selection.select('node', list),1)
 	},
 
 	// 运行命令
 	'run-command-code': function (event,args) {
 		let require = cc.require;
 		var scene  = cc.director.getScene();
-		var node   = this.findNode( Editor.Selection.curSelection('node')[0])
+		var node   = this.findNode( Editor2D.Selection.curSelection('node')[0])
 		var ui 	   = {}
 		this.getNodeChildren(scene,(node)=>{
 			ui[node.name] = node;
@@ -555,7 +514,7 @@ var eventFuncs =
 						let head = t.stack.substr(0,t.stack.indexOf("\n"))
 						let endd = t.stack.substr(t.stack.indexOf(">")+1)
 						endd = endd.substr(0,endd.indexOf(")"))
-						Editor.info("调试命令 ERROR:",head+endd)
+						Editor.log("调试命令 ERROR:",head+endd)
 					}
 				}
 
@@ -615,8 +574,8 @@ var eventFuncs =
 };
 
 // 合并事件函数,分发
-let info 		=  Editor.require('packages://simple-code/tools/eventMerge').eventMerge(eventFuncs,"scene_ex.js")
-let fileList 	= fe.getDirAllFiles(Editor.url("packages://simple-code/extensions"),[])
+let info 		=  Editor2D.require('packages://simple-code/tools/eventMerge').eventMerge(eventFuncs,"scene_ex.js")
+let fileList 	= fe.getDirAllFiles(Editor2D.url("packages://simple-code/extensions"),[])
 eventFuncs 		= info.messages
 
 // 模块加载的时候触发的函数

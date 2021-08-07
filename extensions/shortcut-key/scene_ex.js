@@ -16,7 +16,7 @@ module.exports = {
 	messages: 
 	{
 		// 删除选中的节点以及节点所绑定的脚本
-		async 'removeNodeAndScript'(event,args,parent)
+		async 'removeNodeAndScript'(args,parent)
 		{
 
 			let hitnText = ""
@@ -42,8 +42,10 @@ module.exports = {
 			if (!confirm("确定删除选中的节点以及节点所绑定的脚本? 该删除操作不可撤销或重做!删除的脚本将备份到:"+ Editor.Project.tmpDir+"\n将删除以下脚本:\n"+hitnText)){
 				return	
 			}
-			// 删除节点s
-			Editor2D.Ipc.sendToPanel('scene', 'scene:delete-nodes', nodeUuids);
+			
+			Editor.Message.send('scene','remove-node',{
+				"uuid": nodeUuids,
+			})
 
 			// 备份文件
 			let files = []
@@ -56,27 +58,27 @@ module.exports = {
 
 				// 备份
 				fe.createDir(move_to_path)
-				fe.copyFile(info.path,move_to_path+"_"+(new Date).getTime());
-				Editor.log("移除文件到备份目录:",info.path,move_to_path)
+				fe.copyFile(info.file,move_to_path+"_"+(new Date).getTime());
+				Editor.log("移除文件到备份目录:",info.file,move_to_path)
 			}
 
 			// 删除文件
 			Editor2D.assetdb.delete(files);
 		},
 
-		'active-curr-node'(event,args,parent){
+		'active-curr-node'(args,parent){
 			let nodes = Editor2D.Selection.curSelection('node');
 		    if (nodes && nodes.length != 0)
 		    {
-				let active = cc.engine.getInstanceById(nodes[0]).active;
-				for (let i = 0; i < nodes.length; i++) 
-				{
-					const id = nodes[i];
-					let node = cc.engine.getInstanceById(id)
-					if(node){
-						node.active = !active;
-					}
-				}
+				let node = parent.findNode(nodes[0]);
+				let active = parent.findNode(nodes[0]).active;
+				parent.setCompProperty(node,'active',!active);
+				// for (let i = 0; i < nodes.length; i++) 
+				// {
+				// 	const id = nodes[i];
+				// 	let node = parent.findNode(id)
+					
+				// }
 			}
 		}
 	}

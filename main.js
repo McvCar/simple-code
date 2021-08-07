@@ -6,7 +6,7 @@ let fs 			= require("fs");
 
 // 加载编辑器里的 node_modules,有些公共库需要用的如：md5
 module.paths.push(path.join(Editor.App.path, 'node_modules'));
-const compatibleApi = require('./tools/compatibleApi');
+const Editor2D = require('./tools/editor2D');
 const tools  = require('./tools/tools');
 
 const extensionPath = path.resolve(__dirname,'.','extensions');
@@ -21,7 +21,7 @@ let methods = {
 			this.unload.bind(global._simpleCodeMain)()
 		}else{
 			// 兼容creator2dApi
-			compatibleApi.analogApi();
+			Editor2D.analogApi();
 		}
 	
 		// 执行扩展逻辑
@@ -92,37 +92,16 @@ let methods = {
 	},
 
 	'loadWidgetToCode'(){
-		Editor.Ipc.sendToPanel('simple-code', 'loadWidgetToCode');
+		Editor2D.Ipc.sendToPanel('simple-code', 'loadWidgetToCode');
 	},
 	'open' () {
 	  // open entry panel registered in package.json
-	  Editor.Panel.open('simple-code.vsEditor');
+	  Editor2D.Panel.open('simple-code.vsEditor');
 	},
 
 	'openPreview' () {
 	  // open entry panel registered in package.json
-	  Editor.Panel.open('simple-code.preview');
-	},
-
-	'openNodeFileByOutside' () {
-	  // send ipc message to panel
-	  Editor.Scene.callSceneScript('simple-code', 'open-file-by-outside' ,"", (err, event)=>{
-
-	  } );
-	},
-
-	'uuidToUrl'(event,a){
-		if (event.reply) { 
-			//if no error, the first argument should be null
-			if(a.uuids)
-			{
-				let arrUrl = []
-				a.uuids.forEach((uuid,i)=>{
-					arrUrl.push(Editor.assetdb.uuidToUrl(uuid))
-				})
-				event.reply(null, {urls:arrUrl});
-			}
-		}
+	  Editor2D.Panel.open('simple-code.preview');
 	},
 
 	'getPrefabUuid'(event,a){
@@ -133,13 +112,13 @@ let methods = {
 
 	'openConfigExtendDir'(){
 		// 打开目录
-		exec( (Editor.isWin32 ? "start " : "open ")+Editor.url("packages://simple-code/extensions") )
+		exec( (Editor2D.isWin32 ? "start " : "open ")+Editor2D.url("packages://simple-code/extensions") )
 	},
 
 	// 联系作者
 	'contactAuthor'(){
 		let url = 'https://qm.qq.com/cgi-bin/qm/qr?k=uha480KkJZa0P0rh_Pmrt8OkzQ6QIBqX&jump_from=webapi';
-		exec(Editor.isWin32 ? "cmd /c start "+url : "open "+url);
+		exec(Editor2D.isWin32 ? "cmd /c start "+url : "open "+url);
 	},
 
 	 
@@ -148,7 +127,7 @@ let methods = {
 	},
 
 	'refresh-preview'(){
-		Editor.Ipc.sendToPanel('simple-code.preview','refresh-preview');
+		Editor2D.Ipc.sendToPanel('simple-code.preview','refresh-preview');
 	},
 }
 

@@ -20,6 +20,7 @@ module.exports = {
 	 * @returns 
 	 */
 	 setComponentVar(scriptComp,widgetType,symbolName,isArray,insertUuids,isAssets,rule){
+		// scene环境运行,打印日志请用 console.warn('打印') ;
 		// 使用例子 :
 
 		// if(isAssets || isArray || !insertUuids || !scriptComp.hasOwnProperty(symbolName)){
@@ -101,6 +102,7 @@ module.exports = {
 	 * @returns {Array} 返回生成 成员变量规则 = {symbolName:'',widgetType:'',nodeUuid:'',args:['@','Sprite','name']}
 	 */
 	 getNodeWidgetRule(node){
+		// scene环境运行,打印日志请用 console.warn('打印') ;
 
 		// 1. 通过名字解析规则, name = '@-Sprite-name'
 		let name = node.name;
@@ -117,7 +119,7 @@ module.exports = {
 
 		// 4.解析组件类型 widgetType = 'Sprite'
 		let widgetType = splitSymbol[1];
-		if(cc[widgetType]){
+		if(cc[widgetType+'Component']){
 			widgetType = 'cc.'+widgetType;
 		}
 		
@@ -157,6 +159,7 @@ module.exports = {
 	 * @returns {Array} - 返回生成变量规则 compRuleList = [{symbolName:'',widgetType:'',nodeUuid:'',args:['@','Sprite','name']}]
 	 */
 	getCustomWidgetRule(fileUrl,bindNodeList,rootNode){
+		// scene环境运行,打印日志请用 console.warn('打印') ;
 
 		// 遍历整个场景的 node
 		let compRuleList = []
@@ -188,7 +191,7 @@ function getNodeChildren(node,callFunc)
 {
 	if (!node) return;
 
-	let nodes = node.getChildren();
+	let nodes = node.children;
 	nodes.forEach((v)=>{
 		getNodeChildren(v,callFunc)
 	});

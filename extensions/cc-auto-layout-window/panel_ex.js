@@ -5,6 +5,7 @@
 'use strict';
 const path 			= require('path');
 const fs 			= require('fs');
+const Editor2D = require('../../tools/editor2D');
 
 module.exports = {
 	/** @type import('../../panel/vs-panel/vs-panel-base') */
@@ -18,20 +19,24 @@ module.exports = {
 		this.parent_dom 		= this.parent.panel;
 		this.layout_dom_flex 	= this.getLayoutDomFlex()
 		this.self_flex_per 		= this.parent.cfg.self_flex_per || this.getSelfFlexPercent();
+
 	},
 
 	onLoad(){
 		
+
 		// 监听焦点
 		let focusPanels = [this.parent.$.editorB,this.parent.$.tabList];
 		for (let i = 0; i < focusPanels.length; i++) {
 			const dom = focusPanels[i];
 			dom.addEventListener('focus',(e)=>{
+				if(this.parent.cfg.is_lock_window) return;
 				this.setAutoLayout(true)
 			},true);
 		}
 
 		this.parent_dom.addEventListener('blur',(e)=>{
+			if(this.parent.cfg.is_lock_window) return;
 			setTimeout(()=>{
 				let panel = Editor2D.Panel.getFocusedPanel()
 				let is_need_close = this.isSameGroupPanel(panel);
@@ -41,7 +46,20 @@ module.exports = {
 			},10)
 		},false);
 		
-		this.setAutoLayout(Editor.Panel.getFocusedPanel() == this.parent_dom);
+		// 伸缩快捷键
+		this.parent.addKeybodyEventByName('switchEditorWindow',(e)=>
+		{
+			if (!this.parent.is_mouse_down){
+				let isOpen = !this.old_focused_state;
+				this.setAutoLayout(isOpen)
+				isOpen ? this.parent_dom.focus() : this.parent_dom.blur()
+				e.preventDefault();
+			}
+		},0)
+
+		if(!this.parent.cfg.is_lock_window) {
+			this.setAutoLayout(Editor2D.Panel.getFocusedPanel() == this.parent_dom);
+		};
 	},
 
 	// 设置选项
@@ -49,6 +67,9 @@ module.exports = {
 	{
 		if(!isInit)
 		{
+			if(this.parent.cfg.is_lock_window) {
+				return;
+			}
 			if (cfg.autoLayoutMin != null) {
 				this.setAutoLayout(true);
 				this.setAutoLayout(false);
@@ -77,10 +98,10 @@ module.exports = {
 		}
 		
 		// 伸缩窗口
-		let panel = Editor.Panel.getFocusedPanel() 
+		let panel = Editor2D.Panel.getFocusedPanel() 
 		let is_self = panel == this && !this.comparisonParentDom(this.parent.$.toolsPanel,this.parent_dom._focusedElement);
 		let is_need_close = this.isSameGroupPanel(panel);
-		if(is_self || is_need_close){
+		if(!this.parent.cfg.is_lock_window && (is_self || is_need_close)){
 			this.setAutoLayout(is_self)
 		}
 	},
@@ -88,8 +109,6 @@ module.exports = {
 	// 设置展开面板或收起来
 	setAutoLayout(is_focused)
 	{
-		if(this.parent.cfg.is_lock_window) 
-			return;
 		this.layout_dom_flex = this.getLayoutDomFlex();
 		let now_flex = this.layout_dom_flex && this.layout_dom_flex.style.flex;
 		if(!this.parent.cfg.autoLayoutMin || now_flex == null || (this.old_focused_state != null && this.old_focused_state == is_focused)){
@@ -121,10 +140,11 @@ module.exports = {
 			if(flexInfo.dom != this.layout_dom_flex)
 			{
 				let per = Number(flexInfo.flex[0])/ohter_height;//占用空间百分比
-				let oth_per = per*sub_per;
-				flexInfo.dom.style.flex = oth_per+' '+ oth_per+' '+' 0px'
+				let oth_per = isNaN(per) ? sub_per : per*sub_per; // 临时修复布局异常bug;
+				
+				flexInfo.dom.style.flex = oth_per+' 1 0%'
 			}else{
-				flexInfo.dom.style.flex = my_per+' '+ my_per+' '+' 0px'
+				flexInfo.dom.style.flex = my_per+' 1 0%'
 			}
 		}
 		
@@ -156,10 +176,19 @@ module.exports = {
 		let scenePanel = Editor2D.Panel.find('scene')
 		let layout_dom_flex = this.getLayoutDomFlexByPanel(scenePanel);
 		if(layout_dom_flex){
-			layout_dom_flex.style["minHeight"] = '200px' // 场景最小高度由300改成200 
+			layout_dom_flex.style["minHeight"] = '100px' // 场景最小高度由300改成200 
 		}
-		let is2D = !(await Editor.Message.request('scene','query-is-ready')) ? true : await Editor.Message.request('scene','query-is2D');
+		let is2D;
 		
+		if(!this._isReady || !(await Editor.Message.request('scene','query-is-ready'))){
+			let info = await Editor.Profile.getConfig("scene", "gizmos-infos")
+			if(info.is2D != null){
+				is2D = info.is2D;
+			}
+		}else{
+			this._isReady = true;
+			is2D = await Editor.Message.request('scene','query-is2D');
+		}
 		Editor.Message.send('scene','change-is2D',is2D)
 		setTimeout(async ()=>{Editor.Message.send('scene','change-is2D',await Editor.Message.request('scene','query-is2D',is2D))},5)
 		setTimeout(async ()=>{Editor.Message.send('scene','change-is2D',await Editor.Message.request('scene','query-is2D',is2D))},50)
@@ -263,15 +292,22 @@ module.exports = {
 
 	// 面板销毁
 	onDestroy(){
-		this.setAutoLayout(false);
+		if(!this.parent.cfg.is_lock_window) {
+			this.setAutoLayout(false);
+		}
 	},
 
 
 	messages:{
-		// 'scene:ready'()
-		// {
-		// 	this.setAutoLayout(Editor.Panel.getFocusedPanel() == this.parent_dom);
-		// },
+		'switchEditorWindow'()
+		{
+			if(!this.parent.is_init_finish){
+				return;
+			}
+			let isOpen = !this.old_focused_state;
+			this.setAutoLayout(isOpen)
+			isOpen ? this.parent_dom.focus() : this.parent_dom.blur()
+		},
 	},
 	
 };

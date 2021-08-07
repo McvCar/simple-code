@@ -11,13 +11,9 @@ module.exports = {
 	
 	// 项目目录
 	prsPath : Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath,
-	
-	// 外部编辑器路径配置，win路径分隔符注意使用 ‘\\’
-	editorPath: {
-		win: "C:\\Program Files\\Sublime Text 3\\sublime_text.exe",
-		mac: "/Applications/Sublime Text.app/Contents/MacOS/Sublime Text",
-	},
 
+	cfgMap : {},
+	
 	// vs编辑器选项
 	vsEditorConfig: {
 
@@ -987,12 +983,13 @@ module.exports = {
 				// 自动窗口最大高度占比%
 				path: "autoLayoutMax",
 				type: "number",
-				defaultValue: 80,
+				defaultValue: 85,
 				defaults: [
 					{ caption: tools.translate('userHabit' /*"使用用户调整窗口后的值"*/), value: 0 },
+					{ caption: tools.translate('fix')+" 90%", value: 90 },
+					{ caption: tools.translate('fix')+" 85%", value: 85 },
 					{ caption: tools.translate('fix')+" 80%", value: 80 },
-					{ caption: tools.translate('fix')+" 60%", value: 60 },
-					{ caption: tools.translate('fix')+" 50%", value: 50 },
+					{ caption: tools.translate('fix')+" 70%", value: 70 },
 				]
 			},
 
@@ -1088,9 +1085,7 @@ module.exports = {
 			return this.pro_cfg;
 		}
 		const fe 	= Editor2D.require('packages://simple-code/tools/tools.js');
-
-		const savePath = path.join(this.prsPath,'local','simple-code-config.json')
-		
+		const savePath = path.join(this.prsPath,'local','simple-code-config.json');
 		try {
 			this.pro_cfg = fe.isFileExit(savePath) ? require(savePath) : {};
 		} catch (error) {
@@ -1102,9 +1097,14 @@ module.exports = {
 	
 	// 编辑器用户配置
 	getUserEditorConfig(){
-		let cfg = this.importUserConfigFile(Editor2D.url('packages://simple-code/editor_config.js'));
+		let cfg = this.importUserConfigFile(Editor2D.url('packages://simple-code/editor_config.js'),true,true);
 		Object.assign(this.vsEditorConfig,cfg);
 		return this.vsEditorConfig;
+	},
+
+	// 快捷键用户配置
+	getUserKeyMap(){
+		return this.importUserConfigFile(Editor2D.url('packages://simple-code/keyMap.js'),true,true);
 	},
 	
 	// 保存配置
@@ -1115,24 +1115,49 @@ module.exports = {
 		fs.writeFileSync(this.cfgPath,JSON.stringify(this.cfg || {})) // 全局配置
 		// localStorage.setItem("simple-code-config", JSON.stringify(this.cfg || {}));
 	},
-
-	// 读取用户配置文件,没有则拷贝一份当用户配置文件
-	importUserConfigFile(filePath)
+	
+	/**
+	 * 读取用户配置文件
+	 * @param {String} filePath 配置文件原地址
+	 * @param {boolean} isCreate 没有用户配置时拷贝一份当用户配置文件
+	 * @param {boolean} isMerge 合并用户配置到源文件
+	 * @returns 
+	 */
+	importUserConfigFile(filePath,isCreate,isMerge)
 	{
+		if(this.cfgMap[filePath] && this.cfgMap[filePath] == isMerge){
+			return this.cfgMap[filePath].cfg;
+		}
+
 		let userFilePath = this.getUserConfigPath(filePath);
 		// 首次使用拷贝模板到可写路径
 		if(!tools.isFileExit(userFilePath)){
-			tools.createDir(userFilePath)
-			tools.copyFile(filePath,userFilePath)
+			if(isCreate){
+				tools.createDir(userFilePath)
+				tools.copyFile(filePath,userFilePath)
+			}else{
+				return ;
+			}
 		}
 		try {
-			return require(userFilePath);
+			let o_cfg = require(filePath);
+			let n_cfg = require(userFilePath);
+			if(isMerge){
+				Object.assign(o_cfg,n_cfg);
+			}
+			this.cfgMap[filePath] = {cfg:o_cfg, isMerge};
+			return this.cfgMap[filePath].cfg;
 		} catch (error) {
 			Editor.warn('[simple-code] import config error:',error);
-			return {}
+			return 
 		}
 	},
 
+	/**
+	 * 配置文件原地址转换用户配置地址
+	 * @param {string} filePath 配置文件原地址
+	 * @returns 用户配置地址
+	 */
 	getUserConfigPath(filePath){
 		return path.join(cacheDir,'configs',path.basename(filePath));
 	},

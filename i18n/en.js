@@ -20,6 +20,10 @@ module.exports = {
     'open-asset': 'Open Asset (V)',
     'goto-asset': 'Goto Asset (F)',
     'global-search': 'Global Search Script',
+    'add-next-occurrence-node': 'Add Next Occurrence Node (S)',
+    'batch-search': 'Batch Search (F)',
+    'folder-bind-shortcuts': 'Folder Bind Shortcuts (alt+0~9)',
+    'shortcut-jump-folder': 'Shortcut Jump Folder (0~9)',
     'search-unused-assets': 'Search Unused Assets',
 
     'debug': 'Debug',
@@ -27,18 +31,14 @@ module.exports = {
     'refresh-preview': 'Refresh Preview',
 
     'edit': 'Edit',
+    'switch-editor-window': 'Switch Editor Window (C)',
     'batch-rename': 'Batch-Rename (D)',
     'batch-binding-component': 'Batch Binding Component (G)',
     'batch-insert-prefab': 'Batch Insert Prefab (A)',
-    'add-next-occurrence-node': 'Add Next Occurrence Node (S)',
-    'batch-search': 'Batch Search (F)',
+    'set-node-active': 'Hide Or Show Node(Q)',
     'new-file-and-bind-node': 'New File And Bind Node',
     'open-code': 'Open Code | Unlock Edit',
-    'folder-bind-shortcuts': 'Folder Bind Shortcuts (alt+0~9)',
-    'shortcut-jump-folder': 'Shortcut Jump Folder (0~9)',
     'double-click-edit-text': 'Double Click Edit Text(F2)',
-    'shear-files': 'Shear Files (X)',
-    'paste-files': 'Paste Files (C)',
     'delete-node-and-script': 'Delete Node And Script',
     'load-custom-widgets-to-code' : 'Load Custom Widgets To Code',
 
@@ -46,7 +46,7 @@ module.exports = {
     'open-project-directory': 'Open Project Directory',
     'open-project-to-external-editor': 'Open Project To External Editor',
     'open-project-in-creator': 'Open Project In Creator',
-    'contact-author':"联系作者",
+    'contact-author':"Contact Author",
 
     /**
      * UI

@@ -1,6 +1,8 @@
+const Editor2D = require("../tools/editor2D");
+
 // 暂无实现
-const ace                 = Editor.require('packages://simple-code/ace/ace.js');
-const language_tools      = Editor.require('packages://simple-code/ace/ext-language_tools.js');
+const ace                 = Editor2D.require('packages://simple-code/ace/ace.js');
+const language_tools      = Editor2D.require('packages://simple-code/ace/ext-language_tools.js');
 
 Vue.component('widgetBase', {
   // 修改组件在 inspector 的显示样式
@@ -31,7 +33,7 @@ Vue.component('widgetBase', {
   // created
   created () {
 	
-	ace.config.set("basePath",Editor.url('packages://simple-code/ace/', 'utf8'))
+	ace.config.set("basePath",Editor2D.url('packages://simple-code/ace/', 'utf8'))
 	var editor = ace.edit(this.$editor);
 	editor.setOptions({
 		// 默认:false

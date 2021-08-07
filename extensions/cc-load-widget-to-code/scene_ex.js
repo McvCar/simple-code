@@ -9,6 +9,7 @@ var md5 = require('md5');
 const tools = require('../../tools/tools');
 const config = require('../../config');
 const { USER_NEW_VAR_RULE } = require('./panel_ex');
+const Editor2D = require('../../tools/editor2D');
 const fe = Editor2D.require('packages://simple-code/tools/tools.js');
 
 
@@ -67,7 +68,7 @@ let loadSelectedCompsOrAssets = async (parent,args) =>
 	}
 
 	// 获得绑定资源
-	let slsAssets = args.insertUuids && args.insertUuids.length ? args.insertUuids : Editor.Selection.curSelection(args.isAssets ? 'asset' : 'node');
+	let slsAssets = args.insertUuids && args.insertUuids.length ? args.insertUuids : Editor2D.Selection.curSelection(args.isAssets ? 'asset' : 'node');
 	const uuids = [];
 	if (args.isAssets) 
 	{
@@ -194,7 +195,7 @@ module.exports = {
 			 * 1. 获得当前脚本所绑定的Node
 			 * 2. 解析 node.name 生成规则
 			 */
-			let bindNodeList = getCurrEditorFileBindNodes(args.fileUuid, parent);
+			let bindNodeList = parent.getEditFileBindNodes(args.fileUuid);
 			if(!bindNodeList.length) {
 				return {rules:[],bindNodeList};
 			}
@@ -215,10 +216,9 @@ module.exports = {
 			//2.检测该属性是否存在 getComponent('')
 			//3.获取选取的组件信息
 			//4.将选取的组件插入到脚本中
-
+			
 			let node = parent.findNode(args.bindNodeList[0].node_uuid)
 			let old_comp_uuid = node && node.getComponent(args.bindNodeList[0].comp_name) && node.getComponent(args.bindNodeList[0].comp_name).uuid;
-
 			// 定时检测creator加载新建文件缓存没
 			let stop_func;
 			let chk_count = 0;
@@ -233,15 +233,12 @@ module.exports = {
 						let scriptComp = scriptNode.getComponent(args.bindNodeList[0].comp_name)
 						if(!scriptComp) return;
 	
-						let isUpScene = scriptComp.uuid != old_comp_uuid;
+						let isUpScene = scriptComp.hasOwnProperty(args.symbolName);// scriptComp.uuid != old_comp_uuid;
 						// *：组件uuid改变了说明场景已经刷新了一遍, scriptComp.uuid != old_comp_uuid 
 						// 创建脚本瞬间添加的node组件会丢失,所以需要检测1次组件确定加载了
 						if (isUpScene)
 						{
-							if(isUpScene){
-								stop_func();
-							}
-	
+							stop_func();
 							// 绑定资源关系
 							let uuids = loadSelectedCompsOrAssets(parent,args);
 							resolve(uuids);

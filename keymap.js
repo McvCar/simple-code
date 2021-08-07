@@ -29,6 +29,8 @@ module.exports = {
 	'quickAddNextNode' : { win32:[["s"]] , mac:[["s"]] }, 
 	// 隐藏、显示 选中的Node
 	'setNodeActive' : { win32:[["q"]] , mac:[["q"]] },  
+	// 展开、收缩编辑器窗口，自动伸缩窗口手动版
+	'switchEditorWindow' : { win32:[["c"]] , mac:[["c"]] },  
 
 	// 批量重命名快捷键
 	'renameNodeOrFile' : { win32:[["d"]] , mac:[["d"]] },  

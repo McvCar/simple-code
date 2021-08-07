@@ -135,7 +135,7 @@ let layer =
 		})
 	},
 
-	// 右键菜单初始化
+	// tab标签 右键菜单初始化
 	initContextMenu(){
 		this.menu = electron.remote.Menu.buildFromTemplate([
 			// 关闭
@@ -190,7 +190,7 @@ let layer =
 			{
 				if(this.menu.currTabId == null || this.edit_list[this.menu.currTabId] == null) return;
 				let file_info = this.edit_list[this.menu.currTabId];
-				Editor2D.Ipc.sendToAll('assets:hint', file_info.uuid);
+				this.scriptHint(file_info.uuid);
 			}},
 		]);
 
@@ -823,19 +823,19 @@ let layer =
 	},
 
 	// 异步加载 vs_model
-	loadVsModeAsyn(filePath, extname, isUrlType,isCover,callback){
+	async loadVsModeAsyn(filePath, extname, isUrlType,isCover,callback){
 		let file_type = this.FILE_OPEN_TYPES[extname.substr(1).toLowerCase()];
 		if(!file_type) {
 			return;
 		}
-		let fsPath = fe.normPath(  isUrlType ? Editor.remote.assetdb.urlToFspath(filePath)  : filePath );
+		let fsPath = fe.normPath(  isUrlType ? await Editor2D.assetdb.urlToFspath(filePath)  : filePath );
 		if (!fe.isFileExit(fsPath)) {
 			return;
 		}
 		fe.readFileAsyn(fsPath,async (err,code)=>{
 			if(err) {
 				if(callback) callback();
-				return Editor.info('读取文件失败:',err);
+				return Editor.log('读取文件失败:',err);
 			}
 			if(this._is_destroy ) {
 				if(callback) callback();
@@ -994,9 +994,9 @@ let layer =
 
 	saveFileByUrl(url,text)
 	{
-		Editor2D.assetdb.saveExists(url, text, (err, meta)=> {
+		Editor2D.assetdb.saveExists(url, text,async (err, meta)=> {
 			if (err) {
-				fs.writeFileSync(Editor.remote.assetdb.urlToFspath(url), text); //外部文件
+				fs.writeFileSync(await Editor2D.assetdb.urlToFspath(url), text); //外部文件
 				Editor.warn("保存的脚本存在语法错误或是只读文件:",url,err,meta);
 			}else{
 				// 刚刚保存了，creator还没刷新
@@ -1436,7 +1436,7 @@ let layer =
 			}else{
 				template =  "packages://simple-code/template/readme-en.md"
 			}
-			fe.copyFile(Editor.url(template), filePath);
+			fe.copyFile(Editor2D.url(template), filePath);
 		}
 
 		// 已经打开过了

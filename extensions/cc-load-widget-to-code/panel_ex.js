@@ -8,6 +8,7 @@ const fs 			= require('fs');
 const md5			= require('md5');
 const config 		= require('../../config');
 const tools 		= require('../../tools/tools');
+const Editor2D = require('../../tools/editor2D');
 const prsPath 		= Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
 
 let is_lock			= false;
@@ -49,7 +50,7 @@ module.exports = {
 	{
 		let nodes = insertUuids || Editor2D.Selection.curSelection('node') || [];
 		isQuick = isQuick || nodes.length >1
-		Editor.Scene.callSceneScript('simple-code', 'getNodesInfo',nodes, (err, nodeInfos) => 
+		Editor2D.Scene.callSceneScript('simple-code', 'getNodesInfo',nodes, (err, nodeInfos) => 
 		{ 
 			if(!nodeInfos.length) return;
 
@@ -102,7 +103,7 @@ module.exports = {
 			return
 		}
 		// let meta = await Editor.Message.request("asset-db",'query-asset-meta',uuid)
-		Editor.assetdb.queryInfoByUuid(insertUuids[0],(_,fileInfo)=>
+		Editor2D.assetdb.queryInfoByUuid(insertUuids[0],(_,fileInfo)=>
 		{
 			if(fileInfo==null){
 				return;
@@ -110,7 +111,7 @@ module.exports = {
 
 			let widgetType = fileInfo.redirect && fileInfo.redirect.type ? fileInfo.redirect.type : fileInfo.type //ASSETS_TYPE_MAP[fileInfo.importer];
 			if(widgetType==null){
-				Editor.info('不支持插入的资源类型:',fileInfo.importer,fileInfo)
+				Editor.log('不支持插入的资源类型:',fileInfo.importer,fileInfo)
 				return;
 			}
 
@@ -667,7 +668,7 @@ module.exports = {
 			return result;
 		}
 		
-		this.parent.ace.openSearchBox(defineName,[],(data,cmdLine)=>onSearchAccept(data,cmdLine),(cmdLine)=>onCompletionsFunc(cmdLine))
+		this.parent.ace.openSearchBox(defineName,[],(data,cmdLine)=>onSearchAccept(data,cmdLine),(cmdLine)=>onCompletionsFunc(cmdLine),null,'cc-load-widget-name')
 		this.parent.ace.setMiniSearchBoxToTouchPos();
 	},
 

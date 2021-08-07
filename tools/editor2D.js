@@ -36,13 +36,13 @@ let Editor2D =
 	},
 
 	url(url_path){
-		let absPath = Editor._getUrlLast(url_path,'packages:');
+		let absPath = Editor2D._getUrlLast(url_path,'packages:');
 		if(absPath){
 			absPath = absPath.replace(/simple-code\//,'');
 			return path.join(baseDir,absPath)
 		}
 
-		absPath = Editor._getUrlLast(url_path,'db:');
+		absPath = Editor2D._getUrlLast(url_path,'db:');
 		if(absPath ) {
 			return path.join(prsPath,absPath)
 		}
@@ -281,7 +281,38 @@ let Editor2D =
 		select(type,uuidOrArray){
 			Editor.Selection.clear(type);
 			Editor.Selection.select(type,uuidOrArray)
-		}
+		},
+		clear:Editor.Selection.clear,
+	},
+
+	analogApi(){
+		let packageRoot = __dirname.replace(/\\/g,'/')
+		packageRoot = packageRoot.substr(0,packageRoot.lastIndexOf('/'));
+		baseDir = packageRoot;
+
+		// 插入api
+		// let copyFunc = (s_obj,t_obj)=>
+		// {
+		// 	for (const key in s_obj) 
+		// 	{
+		// 		const v = s_obj[key];
+		// 		if(t_obj[key] == null){
+		// 			t_obj[key] = v;
+		// 		}else if(t_obj[key] instanceof Object){
+		// 			copyFunc(v,t_obj[key]);
+		// 		}
+		// 	}
+		// }
+
+		// copyFunc(Editor2D,Editor);
+
+		Editor.error = console.error,
+		Editor.log = console.log,
+		Editor.warn = console.warn,
+		Editor.info = console.info,
+		
+		Editor2D.Panel.panels = getPanels();
+		global.Editor2D = Editor2D;
 	}
 }
 
@@ -301,30 +332,5 @@ function getPanels(){
 	}
 	return [];
 }
-
-module.exports.analogApi = ()=>
-{
-	let packageRoot = __dirname.replace(/\\/g,'/')
-	packageRoot = packageRoot.substr(0,packageRoot.lastIndexOf('/'));
-	baseDir = packageRoot;
-
-	// 插入api
-	let copyFunc = (s_obj,t_obj)=>
-	{
-		for (const key in s_obj) 
-		{
-			const v = s_obj[key];
-			if(t_obj[key] == null){
-				t_obj[key] = v;
-			}else if(t_obj[key] instanceof Object){
-				copyFunc(v,t_obj[key]);
-			}
-		}
-	}
-
-	copyFunc(Editor2D,Editor);
-
-
-	Editor2D.Panel.panels = getPanels();
-	global.Editor2D = Editor2D;
-}
+Editor2D = global.Editor2D || Editor2D;
+module.exports = Editor2D;

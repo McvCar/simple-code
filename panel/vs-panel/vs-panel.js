@@ -1,7 +1,9 @@
 // 代码编辑器窗口
 // 编辑功能 MonaocEditor 编辑器面板
 
-require('../../tools/compatibleApi.js').analogApi();
+const Editor2D 		= require('../../tools/editor2D');
+Editor2D.analogApi()
+
 const fs 			= require('fs');
 const path 			= require("path");
 const electron 		= require('electron');
@@ -17,20 +19,18 @@ const statistical 	= Editor2D.require('packages://simple-code/tools/statistical.
 const vsEditorPanel = Editor2D.require('packages://simple-code/panel/vs-panel/vs-panel-base.js');
 const acePanel 		= Editor2D.require('packages://simple-code/panel/vs-panel/ace-panel.js');
 const config 		= Editor2D.require('packages://simple-code/config.js');
-const keyMap 		= Editor2D.require('packages://simple-code/keyMap.js');
 const packageCfg 	= Editor2D.require('packages://simple-code/package.json');
 const updater 		= Editor2D.require('packages://simple-code/tools/updater.js');
-
 const eventMerge 	= Editor2D.require('packages://simple-code/tools/eventMerge');
 
-
+const keyMap  = config.getUserKeyMap();
 const prsPath = Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
 
 let _scripts = [];
 
 /** @extends vsEditorPanel */
 let layer = {
-	
+	keyMap,
 	style:'',
 
 	template: `
@@ -90,8 +90,8 @@ let layer = {
 	{
 		console.log("启动")
 		this.$ = args.$;
-		this.initStartData()
-		this.initCSS()
+		this.initStartData();
+		this.initCSS();
 		this.runExtendFunc("ready",this);
 		this.initVsEditor(()=>{
 			this.initData();
@@ -189,7 +189,6 @@ let layer = {
 	saveOptions(){
 		//  写入配置
 		this.cfg.fontSize = this.vs_editor.getRawOptions().fontSize;
-		this.cfg.search_history = this.search_history;
 		this.cfg.self_flex_per = this.self_flex_per;
 		delete this.cfg.language;
 		config.saveStorage();
@@ -217,8 +216,6 @@ let layer = {
 		this.waitSaveIntervals = {}
 		// 当前场景所有子节点信息缓存
 		this.currSceneChildrenInfo = [];
-		// 搜索历史
-		this.search_history = this.pro_cfg.search_history  = this.pro_cfg.search_history || [];
 
 		this.setLockWindow(this.cfg.is_lock_window);
 	},
@@ -268,15 +265,7 @@ let layer = {
 		// 定位文件
 		this.$.gotoFileBtn.addEventListener('confirm', () => {
 			if (this.file_info) {
-				Editor2D.Ipc.sendToAll('assets:hint', this.file_info.uuid);
-				Editor2D.Scene.callSceneScript('simple-code', 'getEditFileBindNodes',this.file_info.uuid, (err, bindNodeList) => 
-				{ 
-					if(err) return;
-					for (let i = 0; i < bindNodeList.length; i++) {
-						const info = bindNodeList[i];
-						Editor2D.Ipc.sendToAll('assets:hint', info.node_uuid);
-					}
-				});
+				this.scriptHint(this.file_info.uuid);
 			}
 		});
 
@@ -622,11 +611,23 @@ let layer = {
 	getKeys(keyName){
 		let keyInfo = keyMap[keyName];
 		if(keyInfo){
-			return Editor.isWin32 ? keyInfo.win32 : keyInfo.mac;
+			return Editor2D.isWin32 ? keyInfo.win32 : keyInfo.mac;
 		}
 	},
 
-
+	// 高亮脚本
+	scriptHint(uuid){
+		Editor2D.Ipc.sendToAll('assets:hint', uuid);
+		Editor2D.Scene.callSceneScript('simple-code', 'getEditFileBindNodes',uuid, (err, bindNodeList) => 
+		{ 
+			if(err) return;
+			for (let i = 0; i < bindNodeList.length; i++) {
+				const info = bindNodeList[i];
+				Editor2D.Ipc.sendToAll('assets:hint', info.node_uuid);
+			}
+		});
+	},
+	
 	setWaitIconActive(isActive){
 		if(this.$.waitIco){
 			this.$.waitIco.className = isActive ? 'turnAnim' : '';
@@ -917,17 +918,17 @@ let layer = {
 		},
 
 		'openKeyMap'(){
-			let file = Editor.url("packages://simple-code/keyMap.js");
+			let file = config.getUserConfigPath(Editor2D.url("packages://simple-code/keyMap.js"));
 			this.openOutSideFile(file,true)
 		},
 
 		'openConfig'(){
-			let file = config.getUserConfigPath(Editor.url('packages://simple-code/editor_config.js'));
+			let file = config.getUserConfigPath(Editor2D.url('packages://simple-code/editor_config.js'));
 			this.openOutSideFile(file,true)
 		},
 
 		'openConfigHitn'(){
-			let file = Editor.url("packages://simple-code/template/hint_text.txt");
+			let file = Editor2D.url("packages://simple-code/template/hint_text.txt");
 			this.openOutSideFile(file,true)
 		},
 
@@ -948,7 +949,7 @@ layer.initExtend();
 tools.extendTo(layer,vsEditorPanel);
 
 exports.ready = function(){ layer.ready(this) };
-exports.beforeClose = function(){ layer.onDestroy() };
+// exports.beforeClose = function(){ layer.onDestroy() };
 // exports.close = ()=> layer.close;
 exports.methods = layer.messages;
 exports.template = layer.template;

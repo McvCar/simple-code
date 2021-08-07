@@ -5,7 +5,8 @@
 'use strict';
 const path 			= require('path');
 const fs 			= require('fs');
-let COLOR
+const Editor2D 		= require('../../tools/Editor2D');
+let COLOR;
 // COLOR 			= [
 //     "rgba(255,255,255,0.01)",
 //     "rgba(255,255,255,0.03)",
@@ -17,22 +18,22 @@ let COLOR
 //     "rgba(255,255,255,0.15)",
 // ];
 
-// COLOR 			= [
-//     "rgba(255,255,255,0.15)",
-//     "rgba(255,255,255,0.13)",
-//     "rgba(255,255,255,0.11)",
-//     "rgba(255,255,255,0.09)",
-//     "rgba(255,255,255,0.07)",
-//     "rgba(255,255,255,0.05)",
-//     "rgba(255,255,255,0.03)",
-//     "rgba(255,255,255,0.01)",
-// ];
 COLOR 			= [
-    "rgba(255,255,64,0.04)",
-    "rgba(127,255,127,0.04)",
-    "rgba(255,127,255,0.04)",
-    "rgba(79,236,236,0.04)"
-]
+    "rgba(255,255,255,0.15)",
+    "rgba(255,255,255,0.13)",
+    "rgba(255,255,255,0.11)",
+    "rgba(255,255,255,0.09)",
+    "rgba(255,255,255,0.07)",
+    "rgba(255,255,255,0.05)",
+    "rgba(255,255,255,0.03)",
+    "rgba(255,255,255,0.01)",
+];
+// COLOR 			= [
+//     "rgba(255,255,64,0.04)",
+//     "rgba(127,255,127,0.04)",
+//     "rgba(255,127,255,0.04)",
+//     "rgba(79,236,236,0.04)"
+// ]
 
 module.exports = {
 	/** @type import('../../panel/vs-panel/vs-panel-base') */
@@ -59,8 +60,8 @@ module.exports = {
 
 	initRainbow(){
 		let args  = {colours:COLOR,debounce:200}
-		let rainbow 		= require('./rainbow-decorator');
-		this.rainbowObj = rainbow.rainbowDecorate(this.parent.vs_editor,args);;
+		let rainbow = Editor2D.require('packages://simple-code/extensions/editor-rainbow-decorator/rainbow-decorator/dist/index.js');
+		this.rainbowObj = rainbow.rainbowDecorate(this.parent.vs_editor,this.parent.$.box,args);;
 	},
 
 	destoryRainbow(){

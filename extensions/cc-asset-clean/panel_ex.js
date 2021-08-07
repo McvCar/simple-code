@@ -5,12 +5,19 @@
 'use strict';
 const path = require('path');
 const fs = require('fs');
-const md5 = require('md5');
-const fe = Editor2D.require('packages://simple-code/tools/tools.js');
-const AssetCleaner = Editor2D.require('packages://simple-code/extensions/cc-asset-clean/AssetCleanerForCocosCreator/AssetCleaner');
-const prsPath = Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
+const Editor2D = require('../../tools/Editor2D');
+const tools = require('../../tools/tools');
 
-let is_lock = false;
+// 包含引用信息的文件类型
+const referenceTypes = {
+	"cc.SceneAsset":1, "cc.Prefab":1, "cc.Material":1, "cc.AnimationClip":1
+}
+
+// 搜索类型
+const searchTypes = {
+	"cc.ImageAsset":1, "cc.Prefab":1, "cc.Material":1, "cc.AnimationClip":1
+}
+
 
 module.exports = {
 	/** @type import('../../panel/vs-panel/vs-panel-base') */
@@ -20,190 +27,174 @@ module.exports = {
 	onLoad(parent) {
 		// index.js 对象
 		this.parent = parent;
+		this.fileBuffs = {}
 	},
 
 
 	// 面板销毁
 	onDestroy() {
-
+		
 	},
 
-	async loadList(outMap, color) {
-		let not_select_list = []
-		let is_swi_mode = true
-		for (let [type, files] of outMap.entries()) {
-			if (files.length <= 0) {
-				continue;
-			}
+	// 选中资源
+	selectAsset(assetUuid){
+		Editor2D.Ipc.sendToAll('assets:hint', assetUuid)
+		Editor.Selection.select('asset', assetUuid);
+	},
 
-			for (let i = 0, len = files.length; i < len; i++) {
-				let info = files[i];
-				if (!info.uuid) {
-					info.uuid = await Editor2D.assetdb.fspathToUuid(info.path);
-				}
+	cleanSelect(){
+		 Editor.Selection.clear('asset');
+	},
 
-				if (info.uuid) {
-					let item = document.getElementById(info.uuid)
-					if (item) {
-						if (is_lock) {
-							item.style.backgroundColor = color; // 紫色高亮
-						} else {
-							item.style.backgroundColor = null; // 取消高亮
-						}
-						is_swi_mode = false
-					} else if (await Editor.assetdb.existsByUuid(info.uuid)) {
-						//新版不支持,切换模式
-						not_select_list.push(info.uuid)
-						// Editor.log("未发现item",info.path);
-						// Editor.Selection.select('asset', uuid)
-						// Editor.Ipc.sendToAll('assets:hint', uuid)
+	async findAssets(uuid) {
+		if(this._isRuning){
+			return console.log("正在搜索引用...")
+		}
+		this.fileBuffs = {}
+		let selectFileInfo = await Editor.Message.request("asset-db",'query-asset-info',uuid);
+		if(!selectFileInfo){
+			return;
+		}
+		this._isRuning = true
+
+		this.cleanSelect()
+		let assets = await Editor.Message.request("asset-db",'query-assets');
+		// 1.检测当前uuid是否文件夹
+		if(selectFileInfo.importer == 'directory'){
+			let searchDir = selectFileInfo.url;
+			for (let i = 0; i < assets.length; i++) 
+			{
+				const fileInfo = assets[i];
+				// 2.遍历文件夹下的文件信息
+				if(searchTypes[fileInfo.type] && fileInfo.url.startsWith(searchDir)){
+					// 3.查找指定类型使用状态
+					let results = await this.findReferences(fileInfo,assets);
+					if(results.length == 0){
+						// 7.未使用的资源标记上
+						this.selectAsset(fileInfo.uuid);
 					}
 				}
 			}
+		}else if(searchTypes[selectFileInfo.type])
+		{
+			// 2.查找选定文件使用状态
+			let results = await this.findReferences(selectFileInfo,assets);
+			if(results.length == 0){
+				// 7.未使用的资源标记上
+				this.selectAsset(selectFileInfo.uuid);
+				console.log(`[🔎 搜索:]${selectFileInfo.url}, 该文件未被引用`);
+			}
+		}else{
+			console.log(`[🔎 不支持搜索类型:] ${selectFileInfo.type}`);
+		}
+		this._isRuning = false
+	},
 
-			// 新版高亮
-			if (not_select_list.length && is_swi_mode) {
-				Editor2D.Selection.select('asset', not_select_list)
+	/**
+	 * 查找引用
+	 * @param {object} searchFileInfo 
+	 * @param {Array} assets 
+	 * @returns 
+	 */
+	 async findReferences(searchFileInfo,assets) {
+		const results = [];
+		// 4.遍历所有能绑定资源的配置信息，检测是否存在uuid
+		for (let i = 0; i < assets.length; i++){
+			const fileInfo = assets[i];
+			// 5. 过滤无效文件
+			if(!referenceTypes[fileInfo.type] || fileInfo.uuid == searchFileInfo.uuid){
+				continue;
+			}
+
+			let text = this.fileBuffs[fileInfo.uuid] || '';
+			if(text == ''){
+				text = await this.readFile(fileInfo.file)
+				this.fileBuffs[fileInfo.uuid] = text;
+			}
+
+			if(text.includes(searchFileInfo.uuid)){
+				// 6.记录下引用的资源
+				results.push(fileInfo);
+			}
+			
+		}
+		this.printResult(searchFileInfo,results)
+		return results;
+	},
+
+	readFile(fsPath){
+		return new Promise((resolve)=>{
+			fs.readFile(fsPath,(err,data)=>{
+				if(err) return resolve('');
+				resolve(data.toString());
+			});
+		}) 
+	},
+
+	/**
+	 * 打印结果至控制台
+	 * @param {object} searchFileInfo 
+	 * @param {object[]} results 
+	 */
+	printResult(searchFileInfo,results) {
+		if (results.length === 0) {
+			return;
+		}
+		let desc = `[🔎 搜索:]${searchFileInfo.url}，引用数量:${results.length}, ,引用详情:\n`
+		let list = []
+		for (let i = 0; i < results.length; i++) {
+			list.push(results[i].url);
+		}
+		console.log(desc,list.join('\n'));
+	},
+
+	/** 需要刷新creator右键菜单
+	 * @param type = node | asset 
+	 * */
+	onRefreshCreatorMenu(type, uuid) {
+		this.updateMenu(type, uuid)
+	},
+
+	updateMenu(type, uuid) {
+
+		// 当前选中的对象
+		this.currSelectInfo = { type, uuid };
+
+		if (type == 'asset') {
+			// 资源菜单
+			if (!uuid) {
+				// 清除菜单
+				this.parent.ccMenuMgr.setMenuConfig({ id: "cc-assets-clean", menuCfg: undefined })
+			} else {
+				// 菜单内容
+				let menuCfg = {
+					assetMenu: [
+						{ type: 'separator' },
+						{ label: '搜索 未使用的资源 🔎 ', enabled: true, click:this.messages["findCleanFileByDir"].bind(this) }, // 快速生成拖拽资源
+					],
+				}
+				this.parent.ccMenuMgr.setMenuConfig({ id: "cc-assets-clean", menuCfg: menuCfg })
 			}
 		}
-
 	},
-
-	search() {
-		if (!this.noBindMap) {
-			let { noBindMap, noLoadMap, outStr } = AssetCleaner.start(prsPath + path.sep + "assets");
-			this.noBindMap = noBindMap
-			this.noLoadMap = noLoadMap
-			Editor.log("搜索完成,请点开资源管理查看");
-			Editor.log(outStr);
-		}
-		this.loadList(this.noBindMap, 'rgba(114, 0, 218, 0.57)');
-		this.loadList(this.noLoadMap, 'rgba(14, 0, 218, 0.57)');
-	},
-
-
-	// /** 需要刷新creator右键菜单
-	// 	* @param type = node | asset 
-	// 	* */
-	// onRefreshCreatorMenu(type, uuid) {
-	// 	this.updateMenu(type, uuid)
-	// },
-
-	// updateMenu(type, uuid) {
-
-	// 	// 当前选中的对象
-	// 	this.currSelectInfo = { type, uuid };
-
-	// 	if (type == 'asset') {
-	// 		// 资源菜单
-	// 		if (!uuid) {
-	// 			// 清除菜单
-	// 			Editor2D.Ipc.sendToMain('simple-code:setMenuConfig', { id: "cc-assets-clean", menuCfg: undefined })
-	// 		} else {
-	// 			// 菜单内容
-	// 			let menuCfg = {
-	// 				assetMenu: [
-	// 					{ type: 'separator' },
-	// 					{ label: '搜索未使用的资源', enabled: true, cmd: "cleanFileByDir" }, // 快速生成拖拽资源
-	// 				],
-	// 			}
-	// 			Editor2D.Ipc.sendToMain('simple-code:setMenuConfig', { id: "cc-assets-clean", menuCfg: menuCfg })
-	// 		}
-	// 	} else if (type == 'node') {
-
-	// 	}
-	// },
-
-
-	// findViaUuid(uuid) {
-	// 	// 是否为有效 uuid
-	// 	if (!Editor2D.Utils.UuidUtils.isUuid(uuid)) {
-	// 		Editor2D.log('[🔎]', '该 uuid 无效', uuid);
-	// 		return;
-	// 	}
-	// 	// 获取资源信息
-	// 	const assetInfo = Editor2.assetdb.assetInfoByUuid(uuid);
-	// 	if (assetInfo) {
-	// 		// 暂不查找文件夹
-	// 		if (assetInfo.type === 'folder') {
-	// 			Editor.log('[🔎]', '暂不支持查找文件夹', assetInfo.url);
-	// 			return;
-	// 		}
-	// 		// 处理文件路径 & 打印头部日志
-	// 		const urlItems = assetInfo.url.replace('db://', '').split('/');
-	// 		if (!urlItems[urlItems.length - 1].includes('.')) {
-	// 			urlItems.splice(urlItems.length - 1);
-	// 		}
-
-	// 		// 记录子资源 uuid
-	// 		const subUuids = assetInfo ? [] : null;
-	// 		// 资源类型检查
-	// 		if (assetInfo.type === 'texture') {
-	// 			// 纹理子资源
-	// 			const subAssetInfos = Editor.assetdb.subAssetInfosByUuid(uuid);
-	// 			if (subAssetInfos) {
-	// 				for (let i = 0; i < subAssetInfos.length; i++) {
-	// 					subUuids.push(subAssetInfos[i].uuid);
-	// 				}
-	// 				uuid = null;
-	// 			}
-	// 		} else if (assetInfo.type === 'typescript' || assetInfo.type === 'javascript') {
-	// 			// 脚本
-	// 			uuid = Editor.Utils.UuidUtils.compressUuid(uuid);
-	// 		}
-	// 		// 查找
-	// 		const results = uuid ? this.findReferences(uuid) : [];
-	// 		if (subUuids && subUuids.length > 0) {
-	// 			for (let i = 0; i < subUuids.length; i++) {
-	// 				const subResults = this.findReferences(subUuids[i]);
-	// 				if (subResults.length > 0) {
-	// 					results.push(...subResults);
-	// 				}
-	// 			}
-	// 		}
-
-	// 		if (results.length === 0) {
-	// 			Editor.assetdb.delete(['db://' + urlItems.join('/')], function (err, results) {
-	// 				results.forEach(function (result) {
-	// 					if (err) {
-	// 						Editor.log("删除文件失败!!!");
-	// 						return;
-	// 					}
-	// 					Editor.log("删除文件成功!!!");
-	// 					Editor.log(urlItems.join('/'))
-	// 					Editor.log(`${'----'.repeat(36)}`);
-	// 				});
-	// 			});
-
-
-	// 			// Editor.log(ProjectPath+"/"+urlItems.join('/'))
-	// 			// Editor.assetdb.delete(ProjectPath+"/"+urlItems.join('/'))
-	// 			// Editor.assetdb.delete(ProjectPath+"/"+urlItems.join('/')+".meta")
-	// 			Editor.log('[🔎]', '没有找到可引用资源的图片', urlItems.join('/'));
-	// 			Editor.log(`${'----'.repeat(36)}`);
-	// 		}
-
-	// 	}
-	// },
-
-
 	messages: {
-		// 'cleanFileByDir'() {
-		// 	Editor.log('点击菜单后调用', this.currSelectInfo);
-		// 	this.findViaUuid(this.currSelectInfo.uuid)
-		// },
+		'findCleanFileByDir'() {
+			if(this.currSelectInfo && this.currSelectInfo.uuid){
+				this.findAssets(this.currSelectInfo.uuid)
+			}
+		},
+
+		'cleanFileByDir'() {
+			if(this.currSelectInfo && this.currSelectInfo.uuid){
+				this.findAssets(true,this.currSelectInfo.uuid)
+			}
+		},
+
 		'cleanFile'() {
-			if (!this.noBindMap) Editor.log("初次搜索未使用的资源,期间会卡顿几秒,请稍等...");
+			if (!this.noBindMap) Editor.info("初次搜索未使用的资源,期间会卡顿几秒,请稍等...");
 			setTimeout(() => {
 				is_lock = !is_lock;
 				this.search();
-
-				// 锁定选中状态
-				if (this.sch_id) clearInterval(this.sch_id)
-				if (is_lock) {
-					this.sch_id = setInterval(this.search.bind(this), 2000);
-					Editor.log("已锁定选中状态，若取消锁定 请再次按下'高亮未使用资源'快捷键");
-				}
 			}, this.noBindMap ? 1 : 500);
 		},
 	},

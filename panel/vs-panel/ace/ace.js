@@ -2694,7 +2694,11 @@ var TextInput = function(parentNode, host) {
     event.addListener(text, "compositionstart", onCompositionStart, host);
     event.addListener(text, "compositionupdate", onCompositionUpdate, host);
     event.addListener(text, "keyup", onKeyup, host);
-    event.addListener(text, "keydown", syncComposition, host);
+    event.addListener(text, "keydown", (e)=>{
+        // 修改: 阻止creator w e r t 2 快捷键事件
+        if(!(e.ctrlKey || e.metaKey || e.altKey) && e.key.length == 1) e.stopPropagation()
+        syncComposition()
+    }, host);
     event.addListener(text, "compositionend", onCompositionEnd, host);
 
     this.getElement = function() {

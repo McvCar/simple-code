@@ -459,8 +459,8 @@ var modes = modelist.modes.map(function(x){
 });
 
 
-var package_config = Editor.require('packages://simple-code/package.json');
-var simple_config = Editor.require('packages://simple-code/config.js');
+var package_config = Editor2D.require('packages://simple-code/package.json');
+var simple_config = Editor2D.require('packages://simple-code/config.js');
 var optionGroups = simple_config.optionGroups;
 // var optionGroups = {
 //     Main: {

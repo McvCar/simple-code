@@ -36,7 +36,7 @@ module.exports = {
 		const model = editor.getModel();
 		let languageInfo = model.getLanguageIdentifier();
 		if(!languageInfo || languageInfo.language != 'typescript'){
-			Editor.info(fe.translate('gettrs-setters-language'));
+			Editor.log(fe.translate('gettrs-setters-language'));
 			return;
 		}
 

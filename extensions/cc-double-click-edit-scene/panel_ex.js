@@ -88,7 +88,7 @@ module.exports = {
 			reSize();
 			return result;
 		}
-		this.parent.ace.openSearchBox(defineName,[],(data,cmdLine)=>onSearchAccept(data,cmdLine),(cmdLine)=>onCompletionsFunc(cmdLine))
+		this.parent.ace.openSearchBox(defineName,[],(data,cmdLine)=>onSearchAccept(data,cmdLine),(cmdLine)=>onCompletionsFunc(cmdLine),null,'editorText')
 		reSize(this.parent.mouse_pos);
 		// 场景快照
 		Editor.Message.send('scene','snapshot')

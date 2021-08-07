@@ -16,7 +16,7 @@ module.exports = {
 	 */
  	getSavePath(templePath,sceneUrl,currNodeName){
 		// 在home.scene文件同级目录下保存脚本
-		let saveUrl = path.dirname(sceneUrl) + '/' + 'scripts/' + currNodeName + path.extname(templePath)
+		let saveUrl = path.dirname(sceneUrl) + '/' + 'script/' + currNodeName + path.extname(templePath)
 		// saveUrl = 'db://assets/scene/scripts/node-name.js'
 		// db://assets/ 为项目根目录
 		return saveUrl;
@@ -30,6 +30,8 @@ module.exports = {
 	 * @returns - 返回脚本内容用于
 	 */
  	getSaveText(originText,saveUrl,bindNode){
+		// scene环境运行,打印日志请用 console.warn('打印') ;
+		
 		// 替换类名，删除特殊字符
 		let className = bindNode.name.replace(/(\W|\d|_)/g, '');
 		// 头部大写
@@ -63,9 +65,11 @@ module.exports = {
 	 * @param {cc.Node} bindNode - 当前脚本绑定的 node
 	 */
  	onComplete(saveUrl,originText,bindNode,jsFileName){
+		// scene环境运行,打印日志请用 console.warn('打印') ;
+
 		// 获得已绑定node的组件
 		// let comp = bindNode.getComponent(jsFileName);
 		// 此阶段可对脚本成员变量进行赋值绑定其它组件关系
-		// console.log(comp);
+		// console.warn(comp);
 	},
 };

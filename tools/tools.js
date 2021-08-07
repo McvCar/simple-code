@@ -3,6 +3,7 @@ let path = require("path");
 let packageCfg = require("../package.json")
 var http 		= require('http');
 var querystring = require('querystring');
+const Editor2D = require("./editor2D");
 
 const inputType = { "text": 1, "password": 1, "number": 1, "date": 1, "color": 1, "range": 1, "month": 1, "week": 1, "time": 1, "email": 1, "search": 1, "url": 1, "textarea": 1 }
 let checkFsPath = new RegExp("\\.\\./", "g");
@@ -25,13 +26,13 @@ module.exports = {
 	},
 
 	getLanguage(){
-		return Editor.lang || window.navigator && window.navigator.language && window.navigator.language.split('-')[0];
+		return window.navigator && window.navigator.language && window.navigator.language.split('-')[0];
 	},
 
 	// 更新i18翻译文本，解决creator不重启不会刷新修改问题
 	initI18t(){
 		let locale = this.getLanguage() || 'zh';
-		let filePath = Editor.url('packages://simple-code/i18n/'+locale+'.js');
+		let filePath = Editor2D.url('packages://simple-code/i18n/'+locale+'.js');
 		if(!this.isFileExit(filePath)){
 			return
 		}
@@ -47,7 +48,7 @@ module.exports = {
 
 	translate(key){
 		let name = packageCfg.name+'.'+key
-		return translateMap[name] || Editor.T(name) || name
+		return translateMap[name] || Editor2D.T(name) || name
 	},
 
 	translateZhAndEn(zeText,enText){

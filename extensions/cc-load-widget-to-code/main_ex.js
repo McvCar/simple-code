@@ -5,6 +5,8 @@
 
 'use strict';
 
+const Editor2D = require("../../tools/editor2D");
+
 module.exports = {
 
 	// 初始化
@@ -22,11 +24,11 @@ module.exports = {
 	messages:
 	{
 		'loadCustomWidgetsToCode'(){
-			Editor.Ipc.sendToPanel('simple-code','loadCustomWidgetsToCode');
+			Editor2D.Ipc.sendToPanel('simple-code','loadCustomWidgetsToCode');
 		},
 
 		'openDragVarRuleFile'(){
-			Editor.Ipc.sendToPanel('simple-code','openDragVarRuleFile');
+			Editor2D.Ipc.sendToPanel('simple-code','openDragVarRuleFile');
 		}
 	}
 };

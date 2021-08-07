@@ -1,6 +1,7 @@
 'use strict';
 
-const fe 			= Editor.require('packages://simple-code/tools/tools.js');
+const Editor2D 		= require('./editor2D');
+const fe 			= Editor2D.require('packages://simple-code/tools/tools.js');
 const fs            = require('fs');
 const path 			= require("path");
 
@@ -9,7 +10,7 @@ var eventFuncs =
  {
  	// 合并事件
  	eventMerge(old_msg,moduleFile="panel_ex.js"){
- 		let fileList = fe.getDirAllFiles(Editor.url("packages://simple-code/extensions"),[])
+ 		let fileList = fe.getDirAllFiles(Editor2D.url("packages://simple-code/extensions"),[])
 
  		let messages = {}
  		let scripts = []

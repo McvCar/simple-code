@@ -6,6 +6,7 @@
 const path 		= require('path');
 const md5     	= require('md5');
 const fs 		= require('fs');
+const Editor2D = require('../../tools/editor2D');
 const cfg 		= Editor2D.require('packages://simple-code/config.js');
 const tools  	= Editor2D.require('packages://simple-code/tools/tools.js');
 
@@ -126,7 +127,7 @@ module.exports = {
 			'com': list[0].value ,
 		}
 		// 显示下拉框 
-		this.parent.ace.openSearchBox( texts[reType] || '' ,list,onAccept,onCompletionsFunc);
+		this.parent.ace.openSearchBox( texts[reType] || '' ,list,onAccept,onCompletionsFunc,null,'rename');
 		this.parent.ace.setMiniSearchBoxToTouchPos(200)
 	},
 
@@ -201,7 +202,7 @@ module.exports = {
 	 */
 	 onCCMenuPopup(_,selectInfo){
 		
-		let asset_list = Editor.Selection.curSelection(selectInfo.type);
+		let asset_list = Editor2D.Selection.curSelection(selectInfo.type);
 		if(asset_list.length && selectInfo && selectInfo.uuid){
 			let type = selectInfo.type;
 

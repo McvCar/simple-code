@@ -4,9 +4,12 @@
 */
 'use strict';
 const path 		= require('path');
+const fs 		= require('fs');
 const fe 		= Editor2D.require('packages://simple-code/tools/tools.js');
 const cfg 		= Editor2D.require('packages://simple-code/config.js');
-const exec 		= require('child_process').exec
+const plist 	= require("plist");
+const child_process 		= require('child_process')
+const exec 		= child_process.exec
 const inputType = {"text":1,"password":1,"number":1,"date":1,"color":1,"range":1,"month":1,"week":1,"time":1,"email":1,"search":1,"url":1,"textarea":1}
 module.exports = {
 	/** @type import('../../panel/vs-panel/vs-panel-base') */
@@ -142,7 +145,7 @@ module.exports = {
 					fileList.push(v)
 				}
 			});
-			this.parent.ace.openSearchBox("",fileList,(data)=>onSearchAccept(cmd,data));
+			this.parent.ace.openSearchBox("",fileList,(data)=>onSearchAccept(cmd,data),null,null,'findFileGoto');
 		}else if (cmd == "findFileAndOpen")
 		{
 			// 打开场景转跳
@@ -156,7 +159,7 @@ module.exports = {
 				}
 			});
 			// 打开搜索框
-			this.parent.ace.openSearchBox("",fileList,(data)=>onSearchAccept(cmd,data));
+			this.parent.ace.openSearchBox("",fileList,(data)=>onSearchAccept(cmd,data),null,null,'findFileAndOpen');
 		}else if (cmd == "findJsFileAndOpen")
 		{
 			// 打开场景转跳
@@ -170,7 +173,7 @@ module.exports = {
 				}
 			});
 			// 打开搜索框
-			this.parent.ace.openSearchBox("",fileList,(data)=>onSearchAccept(cmd,data));
+			this.parent.ace.openSearchBox("",fileList,(data)=>onSearchAccept(cmd,data),null,null,'findJsFileAndOpen');
 		}
 	},
 
@@ -179,7 +182,7 @@ module.exports = {
 	openFindNode(){
 
 		let uuid_list = Editor2D.Selection.curSelection('node');
-		if(uuid_list.length == 0) return Editor2D.info("请选中节点后再继续操作");
+		if(uuid_list.length == 0) return Editor2D.log("请选中节点后再继续操作");
 		let node_uuid = uuid_list[0];
 
 		let sch_id ;
@@ -206,7 +209,7 @@ module.exports = {
 		}
 
 		// 显示下拉框 
-		this.parent.ace.openSearchBox("",[],onAccept,onCompletionsFunc)
+		this.parent.ace.openSearchBox("",[],onAccept,onCompletionsFunc,null,'findNode')
 	},
 
 	getFileName(path){
@@ -237,7 +240,7 @@ module.exports = {
 		{
 			// 打开搜索框: 文件定位转跳
 			let list = JSON.parse(args)
-			this.parent.ace.openSearchBox("",list,(data)=>onSearchAccept(data));
+			this.parent.ace.openSearchBox("",list,(data)=>onSearchAccept(data),null,null,'openNodeComp');
 		});
 	},
 
@@ -268,7 +271,7 @@ module.exports = {
 		})
 
 		// 打开搜索框
-		this.parent.ace.openSearchBox("",list,(data)=>onSearchAccept(data));
+		this.parent.ace.openSearchBox("",list,(data)=>onSearchAccept(data),null,null,'openPrefabList');
 	},
 
 
@@ -335,7 +338,7 @@ module.exports = {
 			this.showGlobalSearchListView(searchText)
 		},()=>{
 			return [fe.translate("global-search-hint")] // 请输入全局搜索内容
-		});
+		},null,'openGlobalSearch');
 	},
 
 	showGlobalSearchListView(searchText){
@@ -354,14 +357,22 @@ module.exports = {
 			return result;
 		}
 		
-		this.parent.ace.openSearchBox(searchText,[],(data,cmdLine)=>onSearchAccept(data,cmdLine),(cmdLine)=>onCompletionsFunc(cmdLine))
+		this.parent.ace.openSearchBox(searchText,[],(data,cmdLine)=>onSearchAccept(data,cmdLine),(cmdLine)=>onCompletionsFunc(cmdLine),null,'showGlobalSearchListView')
 	},
+
+	async getCodeEditor() {
+		let e = "";
+		e = "darwin" === process.platform ? "/Applications/Visual Studio Code.app" : "C:\\Program Files (x86)\\Microsoft VS Code\\Code.exe";
+		const r = await Editor.Profile.getConfig("program", "script_editor");
+		return r && (e = r), e;
+	},
+
 
 	// 通过项目目录打开新项目
 	openProject(type){
 
 		// 下拉框选中后操作事件
-		let onSearchAccept = (data)=>
+		let onSearchAccept =async (data)=>
 		{
 			let dir_path = data.item.meta
 			if (type == "dir")
@@ -370,37 +381,46 @@ module.exports = {
 				exec( (Editor2D.isWin32 ? "start " : "open ")+dir_path )
 			}else if (type == "editor")
 			{
-				// 打开项目到外部代码编辑器
-				exec( (Editor2D.isWin32 ? '"'+cfg.editorPath.win+'"' :'"'+ cfg.editorPath.mac+'"')+" "+dir_path)
-
-				// 打开项目从新creator
-				if (Editor2D.isWin32){ 
-					exec('"'+cfg.editorPath.win+'" '+dir_path)
-				}else{
-					// Mac
-					exec("\""+cfg.editorPath.mac+"\" "+dir_path+"");
+				let editorPath = await this.getCodeEditor();
+				
+				let openDirs = [dir_path];
+				let cmdHead = "";
+				let cmd = editorPath
+				if ("darwin" === process.platform) {
+					if (cmd.endsWith(".app")) {
+						cmd = path.join(cmd, "/Contents/MacOS/");
+						const e = plist.parse(fs.readFileSync(path.join(cmd, "../Info.plist"), "utf8"));
+						cmd = path.join(cmd, e.CFBundleExecutable);
+					}
+					cmdHead = "open";
+					openDirs.splice(0, 0, cmd)
+					openDirs.splice(0, 0, "-a")
+				} else{
+					cmdHead = cmd
 				}
+				child_process.spawn(cmdHead, openDirs, { detached: !0, stdio: "ignore" }).unref();
 			}else if (type == "creator")
 			{
 				// 打开项目从新creator
-				if (Editor2D.isWin32){
-					let appPath = Editor.appPath.substr(0,Editor.appPath.lastIndexOf(path.sep)) 
-					appPath = appPath.substr(0,appPath.lastIndexOf(path.sep))
-					appPath = '"'+ appPath + path.sep+'CocosCreator.exe"'+ ' --path '
-					exec( appPath+dir_path)
-				}else{
-					// Mac
-					let appPath = Editor.appPath.substr(0,Editor.appPath.lastIndexOf(path.sep)) 
-					appPath.substr(0,appPath.lastIndexOf(path.sep))
-					exec("nohup "+appPath+" "+dir_path+" >/dev/null 2>&1 &")
-				}
+				// if (Editor2D.isWin32){
+				// 	let appPath = Editor.appPath.substr(0,Editor.appPath.lastIndexOf(path.sep)) 
+				// 	appPath = appPath.substr(0,appPath.lastIndexOf(path.sep))
+				// 	appPath = '"'+ appPath + path.sep+'CocosCreator.exe"'+ ' --path '
+				// 	exec( appPath+dir_path)
+				// 	Editor.Project.open(dir_path);
+				// }else{
+				// 	// Mac
+				// 	let appPath = Editor.appPath.substr(0,Editor.appPath.lastIndexOf(path.sep)) 
+				// 	appPath.substr(0,appPath.lastIndexOf(path.sep))
+				// 	exec("nohup "+appPath+" "+dir_path+" >/dev/null 2>&1 &")
+				// }
+				Editor.Project.open(dir_path);
 			}
 			Editor.log("正在执行打开操作:"+dir_path)
 		}
 
 		// 获得总项目目录位置: 当前项目上级目录
-		let root_path 	= Editor2D.url("db://assets/")
-		root_path 		= root_path.substr(0,root_path.lastIndexOf(path.sep))
+		let root_path 	= cfg.prsPath;
 		root_path 		= root_path.substr(0,root_path.lastIndexOf(path.sep))
 
 
@@ -412,7 +432,7 @@ module.exports = {
 			list.push( this.parent.getItem( dir_path.substr(dir_path.lastIndexOf(path.sep)+1) ,dir_path,0) )
 		})
 		// 打开搜索框: 文件定位转跳
-		this.parent.ace.openSearchBox("",list,(data)=>onSearchAccept(data));
+		this.parent.ace.openSearchBox("",list,(data)=>onSearchAccept(data),null,null,'openPrs');
 	},
 	/*************  事件 *************/  
 
@@ -441,27 +461,21 @@ module.exports = {
 			this.openProject('creator')
 		},
 
-
-		// 快捷键打开当前选中文件/节点进入编辑
-		'custom-cmd' (event,info) {
-			if(info.cmd == "findFileAndOpen")
-			{
-				// 下拉框打开场景或预制节点
-				this.searchCmd(info.cmd)
-			}else if(info.cmd == "findFileGoto")
-			{
-				// 下拉框转跳资源管理器
-				this.searchCmd(info.cmd)
-			}else if(info.cmd == "findJsFileAndOpen")
-			{
-				// 下拉框转跳资源管理器
-				this.searchCmd(info.cmd)
-			}
+		'findFileAndOpen'(){
+			// 下拉框打开场景或预制节点
+			this.searchCmd('findFileAndOpen')
 		},
-
-		'scene:saved'(){
-			// Editor.log("事件 save")
-		}
+		'findFileGoto'(){
+			// 下拉框转跳资源管理器
+			this.searchCmd('findFileGoto')
+		},
+		'findJsFileAndOpen'(){
+			// 下拉框转跳资源管理器
+			this.searchCmd('findJsFileAndOpen')
+		},
+		// 'scene:saved'(){
+		// 	// Editor.log("事件 save")
+		// }
 	},
 	
 };

@@ -72,19 +72,31 @@
 			},
 			{
 				"path": "i18n:simple-code.name/i18n:simple-code.search",
+				"label": "i18n:simple-code.add-next-occurrence-node",
+				"message": "selectNode"
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.search",
+				"label": "i18n:simple-code.batch-search",
+				"message": ""
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.search",
+				"label": "i18n:simple-code.folder-bind-shortcuts",
+				"message": ""
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.search",
+				"label": "i18n:simple-code.shortcut-jump-folder",
+				"message": ""
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.search",
 				"label": "i18n:simple-code.search-unused-assets",
 				"message": "cleanFile"
 			},
-			{
-				"path": "i18n:simple-code.name/i18n:simple-code.debug",
-				"label": "i18n:simple-code.exec-cmd",
-				"message": "runCommandLine"
-			},
-			{
-				"path": "i18n:simple-code.name/i18n:simple-code.debug",
-				"label": "i18n:simple-code.refresh-preview",
-				"message": "refresh-preview"
-			},
+			
+
 			{
 				"path": "i18n:simple-code.name/i18n:simple-code.edit",
 				"label": "i18n:simple-code.batch-rename",
@@ -102,13 +114,13 @@
 			},
 			{
 				"path": "i18n:simple-code.name/i18n:simple-code.edit",
-				"label": "i18n:simple-code.add-next-occurrence-node",
-				"message": "selectNode"
+				"label": "i18n:simple-code.switch-editor-window",
+				"message": "switchEditorWindow"
 			},
 			{
 				"path": "i18n:simple-code.name/i18n:simple-code.edit",
-				"label": "i18n:simple-code.batch-search",
-				"message": ""
+				"label": "i18n:simple-code.set-node-active",
+				"message": "setNodeActive"
 			},
 			{
 				"path": "i18n:simple-code.name/i18n:simple-code.edit",
@@ -122,27 +134,7 @@
 			},
 			{
 				"path": "i18n:simple-code.name/i18n:simple-code.edit",
-				"label": "i18n:simple-code.folder-bind-shortcuts",
-				"message": ""
-			},
-			{
-				"path": "i18n:simple-code.name/i18n:simple-code.edit",
-				"label": "i18n:simple-code.shortcut-jump-folder",
-				"message": ""
-			},
-			{
-				"path": "i18n:simple-code.name/i18n:simple-code.edit",
 				"label": "i18n:simple-code.double-click-edit-text",
-				"message": ""
-			},
-			{
-				"path": "i18n:simple-code.name/i18n:simple-code.edit",
-				"label": "i18n:simple-code.shear-files",
-				"message": ""
-			},
-			{
-				"path": "i18n:simple-code.name/i18n:simple-code.edit",
-				"label": "i18n:simple-code.paste-files",
 				"message": ""
 			},
 			{
@@ -154,6 +146,11 @@
 				"path": "i18n:simple-code.name/i18n:simple-code.edit",
 				"label": "i18n:simple-code.delete-node-and-script",
 				"message": "removeNodeAndScript"
+			},
+			{
+				"path": "i18n:simple-code.name/i18n:simple-code.debug",
+				"label": "i18n:simple-code.refresh-preview",
+				"message": "refresh-preview"
 			},
 			{
 				"path": "i18n:simple-code.name/i18n:simple-code.project-manage",
@@ -253,10 +250,16 @@
 				"mac": "CmdOrCtrl+shift+r"
 			},
 			{
+				"message": "switchEditorWindow",
+				"win": "alt+c",
+				"mac": "alt+c"
+			},
+			{
 				"message": "rename",
 				"win": "alt+enter",
 				"mac": "alt+enter"
 			},
+			
 			{
 				"message": "addNodeComp",
 				"win": "alt+shift+enter",
@@ -314,10 +317,21 @@
 			}
 		],
 		"messages": {
-			"asset-db:asset-change":{"methods":["vsEditor.asset-change"]},
-			"asset-db:asset-add":{"methods":["vsEditor.asset-add"]},
-			"asset-db:asset-delete":{"methods":["vsEditor.asset-delete"]},
-
+			"asset-db:asset-change": {
+				"methods": [
+					"vsEditor.asset-change"
+				]
+			},
+			"asset-db:asset-add": {
+				"methods": [
+					"vsEditor.asset-add"
+				]
+			},
+			"asset-db:asset-delete": {
+				"methods": [
+					"vsEditor.asset-delete"
+				]
+			},
 			"open": {
 				"methods": [
 					"open"
@@ -383,19 +397,19 @@
 					"vsEditor.cleanFile"
 				]
 			},
-			"runCommandLine": {
+			"switchEditorWindow":{
 				"methods": [
-					"vsEditor.runCommandLine"
-				]
-			},
-			"refresh-preview": {
-				"methods": [
-					"vsEditor.refreshPreview"
+					"vsEditor.switchEditorWindow"
 				]
 			},
 			"rename": {
 				"methods": [
 					"vsEditor.rename"
+				]
+			},
+			"setNodeActive": {
+				"methods": [
+					"vsEditor.setNodeActive"
 				]
 			},
 			"addNodeComp": {
@@ -467,6 +481,7 @@
 	},
 	"dependencies": {
 		"md5": "^2.3.0",
+		"plist": "^3.0.3",
 		"watch": "^1.0.2"
 	}
 }

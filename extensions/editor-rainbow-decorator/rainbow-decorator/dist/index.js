@@ -1,11 +1,12 @@
 "use strict";
+
 Object.defineProperty(exports, "__esModule", { value: true });
 
-const vsLoader = Editor2D.require('packages://simple-code/panel/vs-panel/monaco-editor/dev/vs/loader.js');
-var monaco = vsLoader.require("vs/editor/editor.main");
-var monaco_editor_1 = monaco;
+// const vsLoader = Editor2D.require('packages://simple-code/panel/vs-panel/monaco-editor/dev/vs/loader.js');
+// var monaco = vsLoader.require("vs/editor/editor.main");
+var monaco_editor_1 = Editor.monaco;
 var RainbowDecorator = /** @class */ (function () {
-    function RainbowDecorator(editor, options) {
+    function RainbowDecorator(editor,dom,options) {
         if (options === void 0) { options = {}; }
         this.oldDecorators = [];
         this.oldInvalidDecorators = [];
@@ -34,12 +35,9 @@ var RainbowDecorator = /** @class */ (function () {
             this.errorClassName = options.errorClassName;
         }
         if (output) {
-            let dom = Editor.Panel.find('simple-code')
             var style = document.createElement("style");
             style.innerHTML = output;
-            if (dom) {
-                dom.$box.appendChild(style);
-            }
+            dom.appendChild(style);
             this.styleSheet = style;
         }
         this.destroy = this.destroy.bind(this);
@@ -160,7 +158,7 @@ var RainbowDecorator = /** @class */ (function () {
         this.oldInvalidDecorators = model.deltaDecorations(this.oldInvalidDecorators, errorDecorators);
         this.oldModel = model;
     };
-    RainbowDecorator.defaultErrorColour = "rgba(128,32,32,0.3)";
+    RainbowDecorator.defaultErrorColour = "rgba(255,255,255,0.05)";
     RainbowDecorator.defaultColours = [
         "rgba(64,64,16,0.3)",
         "rgba(32,64,32,0.3)",

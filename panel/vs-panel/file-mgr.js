@@ -1,9 +1,10 @@
 /**
  * 1.管理文件资源逻辑部分
  */
-const fe 	= Editor.require('packages://simple-code/tools/tools.js');
+const Editor2D = require('../../tools/editor2D');
+const fe 	= Editor2D.require('packages://simple-code/tools/tools.js');
 const fs 	= require('fs');
-const config = Editor.require('packages://simple-code/config.js');
+const config = Editor2D.require('packages://simple-code/config.js');
 const path 	= require("path");
 const tools = require('../../tools/tools');
 const { WatchMgr, WatchFile } = require('../../tools/watchFile');
@@ -26,7 +27,7 @@ class FileMgr{
 			return ;
 		};
 
-		Editor.assetdb.deepQuery((err, results)=> {
+		Editor2D.assetdb.deepQuery((err, results)=> {
 			if(this.parent.file_list_buffer && this.parent.file_list_buffer.length >0) return;
 			
 			for (let i = 0; i < results.length; i++) 
@@ -93,8 +94,8 @@ class FileMgr{
 	}
 	
 	async getFileUrlInfoByUuidAsync(uuid) {
-		let url = await Editor.assetdb.uuidToUrl(uuid);
-		let fs_path = await Editor.assetdb.urlToFspath(url);
+		let url = await Editor2D.assetdb.uuidToUrl(uuid);
+		let fs_path = await Editor2D.assetdb.urlToFspath(url);
 		if(url == null || fs_path == null) return;
 		fs_path = fs_path.replace(/\\/g,'/');
 
@@ -111,8 +112,8 @@ class FileMgr{
 	async getFileUrlInfoByFsPathAsync(fs_path) 
 	{
 		fs_path = fs_path.replace(/\\/g,'/');
-		let uuid = await Editor.assetdb.fspathToUuid(fs_path) || "outside";
-		let url = uuid == "outside" ? fs_path.replace(/\\/g,'/') : await Editor.assetdb.uuidToUrl(uuid);
+		let uuid = await Editor2D.assetdb.fspathToUuid(fs_path) || "outside";
+		let url = uuid == "outside" ? fs_path.replace(/\\/g,'/') : await Editor2D.assetdb.uuidToUrl(uuid);
 
 		let name = url.substr(url.lastIndexOf('/') + 1);
 		let file_type = name.substr(name.lastIndexOf('.') + 1)
@@ -129,7 +130,7 @@ class FileMgr{
 	}
 	
 	async getModelByUrlAsync(url){
-		return this.getModelByFsPath(await Editor.assetdb.urlToFspath(url))
+		return this.getModelByFsPath(await Editor2D.assetdb.urlToFspath(url))
 	}
 
 	fsPathToModelUrl(fsPath){

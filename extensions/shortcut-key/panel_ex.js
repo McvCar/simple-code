@@ -199,9 +199,22 @@ module.exports = {
 
 	messages:{
 
-		// 'scene:saved'(){
-		// 	// Editor.log("事件 save")
-		// }
+		'selectNode'(){
+			Editor2D.Scene.callSceneScript('simple-code', 'select-node' ,"");
+		},
+
+		// 删除节点与脚本回收
+		'removeNodeAndScript'(){
+			// 发送事件到场景脚本处理
+			Editor2D.Scene.callSceneScript('simple-code', 'removeNodeAndScript' ,{},function (err, event) {
+				// Editor.log("delect node")
+			});
+			
+		},
+
+		'setNodeActive'(){
+			Editor2D.Scene.callSceneScript('simple-code', 'active-curr-node' ,{});
+		},
 	},
 	
 };

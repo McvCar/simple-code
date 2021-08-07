@@ -8,6 +8,7 @@ const fs = require('fs');
 const config = require('../../config');
 const tools = require('../../tools/tools');
 const exec = require('child_process').exec;
+const Editor2D = require('../../tools/editor2D');
 
 let TEMPLE_PATH = path.join(path.resolve(__dirname, './'), 'new_file_temple');
 let USER_TEMPLE_PATH = path.join(config.cacheDir, 'new_file_temple');
@@ -92,7 +93,7 @@ module.exports = {
                     return;
                 }
 
-                let saveFspath = await Editor.assetdb.urlToFspath(saveUrl);
+                let saveFspath = await Editor2D.assetdb.urlToFspath(saveUrl);
                 tools.createDir(saveFspath);
                 args = { templePath, saveUrl, saveFspath };
                 args.type = type;

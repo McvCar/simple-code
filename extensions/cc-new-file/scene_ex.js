@@ -7,6 +7,7 @@ var path = require('path');
 var fs = require('fs');
 const config = require('../../config');
 const USER_NEW_FILE_RULE = require('./panel_ex').USER_NEW_FILE_RULE;
+const Editor2D = require('../../tools/editor2D');
 
 let onComplete = (saveUrl,data,node,jsFileName)=>{
 	
@@ -81,7 +82,7 @@ module.exports = {
 
 			return new Promise((resolve, reject )=>{
 				// 创建文件
-				Editor.assetdb.create(args.saveUrl, data, (err, results) => {
+				Editor2D.assetdb.create(args.saveUrl, data, (err, results) => {
 					if (err) return resolve({});
 					
 					// 6. 定时检测creator加载新建文件缓存没
