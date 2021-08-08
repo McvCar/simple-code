@@ -783,7 +783,7 @@ module.exports = {
 				// 字体粗细
 				path: "fontWeight",
 				type: "select",
-				defaultValue: process.platform == 'darwin' ? "normal" : "600",
+				defaultValue: "normal",
 				items: [
 					{ caption: "default", value: "normal" },
 					{ caption: "1号", value: "100" },
@@ -1073,12 +1073,11 @@ module.exports = {
 			return this.cfg;
 		}
 
-		this.cfg = tools.isFileExit(this.cfgPath) && fs.readFileSync(this.cfgPath).toString() || localStorage.getItem("simple-code-config");
+		this.cfg = tools.isFileExit(this.cfgPath) && fs.readFileSync(this.cfgPath).toString() || '{}';
 		try {
 			this.cfg = this.cfg ? JSON.parse(this.cfg) : {}; 
 		} catch (error) {
 			this.cfg = {};
-			console.warn(error);
 		}
 		return this.cfg;
 	},

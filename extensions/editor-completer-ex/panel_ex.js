@@ -82,6 +82,7 @@ module.exports = {
 	
 	// 刷新场景所有的子节点信息缓存
 	upCurrSceneChildrenInfo() {
+		if(!this.parent.is_init_finish) return;
 		// 从场景获得nodeTree数据
 		Editor2D.Scene.callSceneScript('simple-code', 'scene-children-info', (err, currSceneChildrenInfo) => {
 			if (!currSceneChildrenInfo) return;

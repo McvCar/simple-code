@@ -234,7 +234,7 @@ class vsEditorPanel {
 
 
 	setTheme(name) {
-		let filePath = this.THEME_DIR + name + ".json"
+		let filePath = path.join(this.THEME_DIR , name + ".json")
 		if (fe.isFileExit(filePath)) {
 			let data = fs.readFileSync(filePath).toString();
 			this.monaco.editor.defineTheme(name, JSON.parse(data));

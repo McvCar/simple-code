@@ -426,7 +426,7 @@ class EditorPanel extends VsEditorPanel{
 	addBroadcastListener(name,callback){
 		
 		let _callback = callback;//async(...args)=>{ console.log("监听:",name,await Editor.Message.request('asset-db','query-ready'))} // 修复未知警告
-		this.listenBroadcastList.push({name,_callback});
+		this.listenBroadcastList.push({name,callback:_callback});
 		Editor.Message.addBroadcastListener(name,_callback)
 	}
 
@@ -1010,6 +1010,7 @@ let messages = {
 
 
 // 合并事件函数,分发
+let editorPanel;
 let info = eventMerge.eventMerge(messages, "panel_ex.js");
 messages = info.messages; // 合并后的事件
 _scripts = info.scripts;
@@ -1017,30 +1018,32 @@ var methods = {}
 for (const key in messages) {
 	const func = messages[key];
 	methods[key] = function(...args){
-		return func.bind(this.editorPanel)(...args);
+		return func.bind(editorPanel)(...args);
 	}
 }
+
+
 exports.EditorPanel = EditorPanel;
 exports.methods = methods;
 // layer.initExtend();
 // tools.extendTo(layer,VsEditorPanel);
 exports.ready = function(){ 
-	this.editorPanel = new EditorPanel(this);
+	editorPanel = new EditorPanel(this);
 };
 exports.beforeClose = function(){ 
 	// 如果编辑器未初始化完成禁止移动
-	if(!this.editorPanel.is_init_finish){
+	if(!editorPanel.is_init_finish){
 		return false;
 	}
 }
 exports.close = function(){ 
-	this.editorPanel.onDestroy() 
+	editorPanel.onDestroy() 
 };
 // 监听面板事件
 exports.linsteners = {
     // 面板显示的时候触发的钩子
     show() {
-		this.editorPanel.upLayout()
+		editorPanel.upLayout()
 	},
     // 面板隐藏的时候触发的钩子
     hide() {},
