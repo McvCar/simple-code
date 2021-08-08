@@ -41,7 +41,7 @@ function rgbToHex(r, g, b) {
 }
 
 module.exports = {
-	/** @type import('../../panel/vs-panel/vs-panel-base') */
+	/** @type import('../../panel/vs-panel/vs-panel').EditorPanel */
 	parent : null,
 
 
@@ -101,8 +101,8 @@ module.exports = {
 
 		}
 		
-		this.parent.monaco.languages.registerColorProvider("javascript",regObj)
-		this.parent.monaco.languages.registerColorProvider("typescript",regObj)
+		this.parent.pushMonacoEvent(this.parent.monaco.languages.registerColorProvider("javascript",regObj))
+		this.parent.pushMonacoEvent(this.parent.monaco.languages.registerColorProvider("typescript",regObj))
 	},
 
 	onLoadColors(model,colors)

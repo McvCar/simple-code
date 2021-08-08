@@ -15,75 +15,78 @@ tools.initI18t();
 module.paths.push(path.join(Editor.App.path, 'node_modules'));
 
 Editor2D.require('packages://simple-code/panel/vs-panel/ace/ace.js');
+const VsEditorPanel = require('./vs-panel-base');
+const config 		= require('../../config');
+const packageCfg 	= require('../../package');
 const statistical 	= Editor2D.require('packages://simple-code/tools/statistical.js');
-const vsEditorPanel = Editor2D.require('packages://simple-code/panel/vs-panel/vs-panel-base.js');
 const acePanel 		= Editor2D.require('packages://simple-code/panel/vs-panel/ace-panel.js');
-const config 		= Editor2D.require('packages://simple-code/config.js');
-const packageCfg 	= Editor2D.require('packages://simple-code/package.json');
 const updater 		= Editor2D.require('packages://simple-code/tools/updater.js');
 const eventMerge 	= Editor2D.require('packages://simple-code/tools/eventMerge');
 
 const keyMap  = config.getUserKeyMap();
 const prsPath = Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
 
+
 let _scripts = [];
-
-/** @extends vsEditorPanel */
-let layer = {
-	keyMap,
-	style:'',
-
-	template: `
-			<div id="box">
-				<div id="editorA"></div>
-				<div id="editorB"></div>
-				<div id="layoutTab" class="layout horizontal titleBarFontSize">
-					<div id="tabList" class="layout horizontal">
-						<img src=file://${Editor2D.url("packages://simple-code/panel/images/settingIco.png")} id="waitIco" class="turnAnim"></img> <span></span> <span></span>
-						<div id="title0" class="closeTab">
-							<div class="tabTitle"><nobr>无文件<nobr></div>
-							<div class="closeBtn"><nobr> x <nobr></div>
-						</div>
-
-					</div>
-					<div id="toolsPanel" class="layout horizontal">
-						<ui-checkbox id="lockChk">${tools.translate('lock-tab')}</ui-checkbox>
-						<ui-checkbox id="lockWindowChk">${tools.translate('lock-win')}</ui-checkbox>
-						<ui-button id="manualCompile" class="">${tools.translate('manual-compile')}</ui-button>
-						<ui-button id="gotoFileBtn" class="">${tools.translate('goto-file-btn')}</ui-button>
-						<ui-button id="settingBtn" class="">${tools.translate('set')}</ui-button>
-					</div>
-				</div>
-				<div id="overlay" class="overlay"></div>
-				<div id="dropBg" class="dropBg"></div>
+exports.style = ``;
+exports.template = `
+<div id="box">
+	<div id="editorA"></div>
+	<div id="editorB"></div>
+	<div id="layoutTab" class="layout horizontal titleBarFontSize">
+		<div id="tabList" class="layout horizontal">
+			<img src=file://${Editor2D.url("packages://simple-code/panel/images/settingIco.png")} id="waitIco" class="turnAnim"></img> <span></span> <span></span>
+			<div id="title0" class="closeTab">
+				<div class="tabTitle"><nobr>无文件<nobr></div>
+				<div class="closeBtn"><nobr> x <nobr></div>
 			</div>
-	`,
 
-	$: {
-		lockChk: '#lockChk',
-		lockWindowChk: '#lockWindowChk',
-		layoutTab: '#layoutTab',
-		manualCompile: '#manualCompile',
-		settingBtn: '#settingBtn',
-		// resetBtn: '#resetBtn',
-		gotoFileBtn: '#gotoFileBtn',
-		editorA: '#editorA',
-		editorB: '#editorB',
-		title0: '#title0',
-		tabList: '#tabList',
-		box: '#box',
-		waitIco: '#waitIco',
-		overlay: '#overlay',
-		dropBg:'#dropBg',
-		toolsPanel: '#toolsPanel',
-	},
+		</div>
+		<div id="toolsPanel" class="layout horizontal">
+			<ui-checkbox id="lockChk">${tools.translate('lock-tab')}</ui-checkbox>
+			<ui-checkbox id="lockWindowChk">${tools.translate('lock-win')}</ui-checkbox>
+			<ui-button id="manualCompile" class="">${tools.translate('manual-compile')}</ui-button>
+			<ui-button id="gotoFileBtn" class="">${tools.translate('goto-file-btn')}</ui-button>
+			<ui-button id="settingBtn" class="">${tools.translate('set')}</ui-button>
+		</div>
+	</div>
+	<div id="overlay" class="overlay"></div>
+	<div id="dropBg" class="dropBg"></div>
+</div>
+`;
+exports.$ = {
+	lockChk: '#lockChk',
+	lockWindowChk: '#lockWindowChk',
+	layoutTab: '#layoutTab',
+	manualCompile: '#manualCompile',
+	settingBtn: '#settingBtn',
+	// resetBtn: '#resetBtn',
+	gotoFileBtn: '#gotoFileBtn',
+	editorA: '#editorA',
+	editorB: '#editorB',
+	title0: '#title0',
+	tabList: '#tabList',
+	box: '#box',
+	waitIco: '#waitIco',
+	overlay: '#overlay',
+	dropBg:'#dropBg',
+	toolsPanel: '#toolsPanel',
+};
+
+// 编辑器面板
+class EditorPanel extends VsEditorPanel{
+	constructor(args){
+		super(args);
+		this.messages = methods;
+		this.ready(args);
+	}
 
 	/** @type monaco */
-	monaco:null,
+	monaco = null;
 	/** @type import("./file-mgr") */
-	fileMgr:null,
+	fileMgr = null;
 	/** @type import("./cc-menu-mgr") */
-	ccMenuMgr:null,
+	ccMenuMgr = null;
 
 	// 启动事件
 	ready(args) 
@@ -104,7 +107,8 @@ let layer = {
 			this.setOptions(this.cfg,true);
 			window._panel = this;
 		});
-	},
+	}
+
 
 	// 绑定creator事件,启动阶段绑定会失效
 	initCocosCreatorBroadcastEvent(){
@@ -113,7 +117,8 @@ let layer = {
 				this.addBroadcastListener(key,this.messages[key]);
 			}
 		}
-	},
+	}
+
 	
 	initCSS()
 	{
@@ -127,7 +132,8 @@ let layer = {
 		style.innerHTML = text;
 		this.$.box.appendChild(style);
 		this.styleSheet = style.sheet;
-	},
+	}
+
 
 	initStartData(){
 		// 游戏资源路径缓存
@@ -147,20 +153,21 @@ let layer = {
 		this.pro_cfg 			= config.getProjectLocalStorage();
 		this.ace				= new acePanel(this);
 		this.ccMenuMgr			= new ccMenuMgr(this);
-	},
+	}
+
 
 	// 设置选项
 	setOptions(cfg,isInit) 
 	{	
 		// 基类
-		this._super(cfg,isInit);
+		super.setOptions(cfg,isInit);
 
 		if (cfg.newFileType != null) {
 			localStorage.setItem("newFileType", cfg.newFileType || "ts");
 		}
 		if(cfg.tabBarPos != null){
 			this.setTabBarPos(cfg.tabBarPos);
-		}
+	}
 		if(cfg.hideToolsBar != null){
 			this.$.toolsPanel.hidden = cfg.hideToolsBar;
 		}
@@ -177,14 +184,16 @@ let layer = {
 		
 		this.runExtendFunc("setOptions", cfg,isInit);
 		if(!isInit) this.saveOptionsByDelayTime()
-	},
+	}
+
 
 	
 	saveOptionsByDelayTime(){
 		this.setTimeoutById(()=>{
 			this.saveOptions()
 		},1000,'saveOptionsByDelayTime')
-	},
+	}
+
 	
 	saveOptions(){
 		//  写入配置
@@ -192,7 +201,8 @@ let layer = {
 		this.cfg.self_flex_per = this.self_flex_per;
 		delete this.cfg.language;
 		config.saveStorage();
-	},
+	}
+
 
 	setCssByName(name,infoText){
 		for (let i = 0; i < this.styleSheet.cssRules.length; i++) {
@@ -203,7 +213,8 @@ let layer = {
 				break;
 			}
 		}
-	},
+	}
+
 
 	// 加载数据
 	initData() {
@@ -218,7 +229,8 @@ let layer = {
 		this.currSceneChildrenInfo = [];
 
 		this.setLockWindow(this.cfg.is_lock_window);
-	},
+	}
+
 
 	// 綁定事件
 	initBindEvent() {
@@ -401,12 +413,14 @@ let layer = {
 			this.upNeedImportListWorker()
 			this.onCheckLayout(is_up_layout)
 		}, 0.5);
-	},
+	}
+
 
 	addListenerIpc(name,callback){
 		this.listenIpcList.push({name,callback});
 		electron.ipcRenderer.on(name,callback);
-	},
+	}
+
 
 	// creator事件广播监听
 	addBroadcastListener(name,callback){
@@ -414,7 +428,8 @@ let layer = {
 		let _callback = callback;//async(...args)=>{ console.log("监听:",name,await Editor.Message.request('asset-db','query-ready'))} // 修复未知警告
 		this.listenBroadcastList.push({name,_callback});
 		Editor.Message.addBroadcastListener(name,_callback)
-	},
+	}
+
 	
 
 	upLayout(){
@@ -424,7 +439,8 @@ let layer = {
 			this.vs_editor.layout();
 			return true;
 		}
-	},
+	}
+
 
 	// 键盘键事件
 	initKeybody() {
@@ -551,7 +567,8 @@ let layer = {
 			e.preventDefault();// 吞噬捕获事件
 			return false;
 		}, 1, "keydown");
-	},
+	}
+
 
 	// 获得下拉条列表目数据
 	getItem(value, meta, score, args) {
@@ -564,11 +581,13 @@ let layer = {
 			exactMatch: 1,
 		};
 		return item_cfg;
-	},
+	}
+
 
 	setTabBarPos(str){
 		this.$.box.style.flexDirection = str ? 'column' : 'column-reverse';
-	},
+	}
+
 	
 	// 锁定编辑
 	setLockEdit(is_lock,id) 
@@ -581,14 +600,16 @@ let layer = {
 		this.vs_editor.updateOptions({ lineNumbers: info.is_cmd_mode || id != 0 ? "on" : 'off' });
 		this.vs_editor.updateOptions({ lineNumbers: info.is_cmd_mode || id != 0 ? "on" : 'off' });
 		this.upTitle(id);
-	},
+	}
+
 
 	// 锁定窗口
 	setLockWindow(is_lock) 
 	{
 		this.cfg.is_lock_window = is_lock;
 		this.$.lockWindowChk.checked = is_lock ? true : false;
-	},
+	}
+
 
 	// 添加快捷键, 例子: this.addKeybodyEvent([ ["Ctrl","x"] ],()=>{})
 	addKeybodyEvent(arrKeys, callback, isOnEditorRun, touchType = "keydown") {
@@ -598,7 +619,8 @@ let layer = {
 			})
 			this.key_cfg.push({ keys, callback, mode: isOnEditorRun, touch_type: touchType });
 		})
-	},
+	}
+
 
 	// 按钮事件
 	addKeybodyEventByName(keyName, callback, isOnEditorRun, touchType = "keydown") {
@@ -606,14 +628,16 @@ let layer = {
 		if(arrKeys){
 			this.addKeybodyEvent(arrKeys, callback, isOnEditorRun, touchType) 
 		}
-	},
+	}
+
 
 	getKeys(keyName){
 		let keyInfo = keyMap[keyName];
 		if(keyInfo){
 			return Editor2D.isWin32 ? keyInfo.win32 : keyInfo.mac;
 		}
-	},
+	}
+
 
 	// 高亮脚本
 	scriptHint(uuid){
@@ -626,33 +650,39 @@ let layer = {
 				Editor2D.Ipc.sendToAll('assets:hint', info.node_uuid);
 			}
 		});
-	},
+	}
+
 	
 	setWaitIconActive(isActive){
 		if(this.$.waitIco){
 			this.$.waitIco.className = isActive ? 'turnAnim' : '';
 		}
-	},
+	}
+
 
 	onCheckLayout(isUpLayout){
 		this.runExtendFunc("onCheckLayout", isUpLayout);
-	},
+	}
+
 
 	onMouseDoubleClick(mousePos){
 		this.runExtendFunc("onMouseDoubleClick",mousePos);
-	},
+	}
+
 	
 	// 窗口获得焦点
 	onFocus(){
-		this._super()
+		super.onFocus()
 		this.runExtendFunc("onFocus");
-	},
+	}
+
 
 	// 窗口失去焦点
 	onBlur(){
-		this._super()
+		super.onBlur()
 		this.runExtendFunc("onBlur");
-	},
+	}
+
 
 	// onclose(){
 	// 	this.onDestroy()
@@ -664,8 +694,10 @@ let layer = {
 		console.log("释放")
 		if(this._is_destroy || this.edit_list == null) return;
 		this._is_destroy = true;
-		this._super();
+		super.onDestroy();
 		this.runExtendFunc("onDestroy");
+		
+		this.monaco.removeAllEvent();
 
 		for (let i = 0; i < this.window_event_listener.length; i++) {
 			const event = this.window_event_listener[i];
@@ -674,6 +706,12 @@ let layer = {
 		for (let i = 0; i < this.document_event_listener.length; i++) {
 			const event = this.document_event_listener[i];
 			document.body.removeEventListener(event.eventName,event.callback,event.option)
+		}
+		
+		// 移除Monaco事件
+		for (let i = 0; i < this.monaco_editor_event_listener.length; i++) {
+			const monacoEvent = this.monaco_editor_event_listener[i];
+			monacoEvent.dispose()
 		}
 		
 		// 移除ipc事件
@@ -687,7 +725,13 @@ let layer = {
 			const event = this.listenBroadcastList[i];
 			Editor.Message.removeBroadcastListener(event.name,event.callback);
 		}
-
+		
+		// 停止定时器
+		for (const key in this.timer_map) {
+			const stop = this.timer_map[key];
+			if(stop) stop();
+		}
+		
 		// 停止事件
 		if (this.schFunc) this.schFunc();
 		if(this.menu && this.menu.destroy) this.menu.destroy()
@@ -734,14 +778,20 @@ let layer = {
 			this.closeTab(id);
 		});
 		
-		// let models = this.monaco.editor.getModels();
-		// for (const key in models) {
-		// 	const model = models[key];
-		// 	if(model) model.dispose();
-		// }
+		this.tsWr.setEnableUpdate(false);
+		this.jsWr.setEnableUpdate(false);
+		this.tsWr.setEnableUpdateScript(false);
+		this.jsWr.setEnableUpdateScript(false);
+		let models = this.monaco.editor.getModels();
+		for (const key in models) {
+			const model = models[key];
+			if(model) model.dispose();
+		}
+		this.vs_editor.dispose();
 
 		this.saveOptions();
-	},
+	}
+
 
 
 	initExtend() 
@@ -754,7 +804,8 @@ let layer = {
 		_scripts = info.scripts;
 		this.messages = info.messages;
 		
-	},
+	}
+
 
 	runExtendFunc(funcName, ...args) {
 		_scripts.forEach((obj) => {
@@ -762,7 +813,8 @@ let layer = {
 				obj[funcName](...args);
 			}
 		})
-	},
+	}
+
 	
 	/**鼠标移动经过节点树或资源目录时触发
 	 * @param type = node | asset 
@@ -770,7 +822,8 @@ let layer = {
 	onEditorSelectionHoverin(type,uuid){
 		this.onRefreshCreatorMenu(type,uuid);
 		this.runExtendFunc('onEditorSelectionHoverin',type,uuid)
-	},
+	}
+
 
 	/** 需要刷新creator右键菜单,鼠标经过资源item时触发,菜单配置生成步骤需要使用到异步方法时才需要使用该事件
 	 * @param type = node | asset 
@@ -780,7 +833,8 @@ let layer = {
 		this.currCreatorEditorSelectInfo.type = type;
 		this.currCreatorEditorSelectInfo.uuid = uuid;
 		this.runExtendFunc('onRefreshCreatorMenu',type,uuid)
-	},
+	}
+
 
 	/**
 	 * creator菜单即将弹出
@@ -792,7 +846,8 @@ let layer = {
 	onCCMenuPopup(type,selectInfo){
 		selectInfo = this.currCreatorEditorSelectInfo;
 		this.runExtendFunc('onCCMenuPopup',type,selectInfo)
-	},
+	}
+
 
 	/**
 	 * 拖入事件
@@ -813,7 +868,8 @@ let layer = {
 		}
 		// 分发事件给插件使用
 		this.runExtendFunc('onDrag',e,dragsArgs,mouseDownItem)
-	},
+	}
+
 
 	/**
 	 *  资源改变事件
@@ -824,14 +880,17 @@ let layer = {
 	 */ 
 	onAssetsCreatedEvent(file){
 		this.runExtendFunc('onAssetsCreatedEvent',file)
-	},
+	}
+
 	onAssetsDeletedEvent(file){
 		this.runExtendFunc('onAssetsDeletedEvent',file)
-	},
+	}
+
 	onAssetsChangedEvent(file){
-		this._super(file);
+		super.onAssetsChangedEvent(file);
 		this.runExtendFunc('onAssetsChangedEvent',file)
-	},
+	}
+
 
 	/**
 	 *  移动资源文件
@@ -844,7 +903,8 @@ let layer = {
 	 */ 
 	onAssetsMovedEvent(file){
 		this.runExtendFunc('onAssetsMovedEvent',file)
-	},
+	}
+
 
 	// 检查更新
 	async checkUpdate() {
@@ -856,105 +916,121 @@ let layer = {
 		}
 
 		statistical.countStartupTimes();
+	}
+
+
+
+};
+
+
+let messages = {
+
+	// 场景保存
+	'scene:save'(event) {
+		if(!this.is_init_finish) return;
+		this.saveFileFromDelayTime();
+	},
+
+	// 场景加载完
+	'scene:ready'(event) {
+		if(!this.is_init_finish) return;
+	},
+
+	// 选择改变
+	'selection:select'(event) {
+		if(!this.is_init_finish || this.is_not_select_active) return;
+		// 阻止保存时tab乱切换
+		if(this._isMoveDown || !this.isFocused()){
+			this.openActiveFile(!this.is_save_wait_up && this.cfg.clickToViewCode,!this.is_save_wait_up);
+		}
+	},
+
+	// 项目资源创建
+	'asset-add'(event, file) {
+		if(!this.is_init_finish) return;
+		if (!file && this.file_list_buffer) return;
+
+		this.fileMgr.assetsCreatedEvent(file)
+	},
+
+	// 项目文件被删除
+	'asset-delete'(event, file) {
+		if(!this.is_init_finish) return;
+		if (!file && this.file_list_buffer) return;
+
+		
+		this.fileMgr.assetsDeletedEvent(file)
+	},
+
+	// 项目资源文件发生改变、移动、重命名、
+	'asset-change'(event, file) {
+		if(!this.is_init_finish || this.is_not_select_active || file.isDirectory) return;
+
+		this.fileMgr.assetsChangedEvent(file);
 	},
 
 
-	messages: {
+	'open-code-file'(e,file){
+		this.openOutSideFile(file,true)
+	},
 
-		// 场景保存
-		'scene:save'(event) {
-			if(!this.is_init_finish) return;
-			this.saveFileFromDelayTime();
-		},
+	// 快捷键打开当前选中文件/节点进入编辑
+	'openSetting'(event, info) {
+		if(!this.is_init_finish) return;
 
-		// 场景加载完
-		'scene:ready'(event) {
-			if(!this.is_init_finish) return;
-		},
+		this.ace.openMenu();
+	},
 
-		// 选择改变
-		'selection:select'(event) {
-			if(!this.is_init_finish || this.is_not_select_active) return;
-			// 阻止保存时tab乱切换
-			if(this._isMoveDown || !this.isFocused()){
-				this.openActiveFile(!this.is_save_wait_up && this.cfg.clickToViewCode,!this.is_save_wait_up);
-			}
-		},
+	'openKeyMap'(){
+		let file = config.getUserConfigPath(Editor2D.url("packages://simple-code/keyMap.js"));
+		this.openOutSideFile(file,true)
+	},
 
-		// 项目资源创建
-		'asset-add'(event, file) {
-			if(!this.is_init_finish) return;
-			if (!file && this.file_list_buffer) return;
+	'openConfig'(){
+		let file = config.getUserConfigPath(Editor2D.url('packages://simple-code/editor_config.js'));
+		this.openOutSideFile(file,true)
+	},
 
-			this.fileMgr.assetsCreatedEvent(file)
-		},
+	'openConfigHitn'(){
+		let file = Editor2D.url("packages://simple-code/template/hint_text.txt");
+		this.openOutSideFile(file,true)
+	},
 
-		// 项目文件被删除
-		'asset-delete'(event, file) {
-			if(!this.is_init_finish) return;
-			if (!file && this.file_list_buffer) return;
+	// 快捷键打开当前选中文件/节点进入编辑
+	'custom-cmd'(event, info) {
+		if(!this.is_init_finish) return;
 
-			
-			this.fileMgr.assetsDeletedEvent(file)
-		},
-
-		// 项目资源文件发生改变、移动、重命名、
-		'asset-change'(event, file) {
-			if(!this.is_init_finish || this.is_not_select_active || file.isDirectory) return;
-
-			this.fileMgr.assetsChangedEvent(file);
-		},
-
-
-		'open-code-file'(e,file){
-			this.openOutSideFile(file,true)
-		},
-
-		// 快捷键打开当前选中文件/节点进入编辑
-		'openSetting'(event, info) {
-			if(!this.is_init_finish) return;
-
+		if (info.cmd == "openFile") {
+			this.openActiveFile(true,false);
+		} else if (info.cmd == "setting") {
 			this.ace.openMenu();
-		},
-
-		'openKeyMap'(){
-			let file = config.getUserConfigPath(Editor2D.url("packages://simple-code/keyMap.js"));
-			this.openOutSideFile(file,true)
-		},
-
-		'openConfig'(){
-			let file = config.getUserConfigPath(Editor2D.url('packages://simple-code/editor_config.js'));
-			this.openOutSideFile(file,true)
-		},
-
-		'openConfigHitn'(){
-			let file = Editor2D.url("packages://simple-code/template/hint_text.txt");
-			this.openOutSideFile(file,true)
-		},
-
-		// 快捷键打开当前选中文件/节点进入编辑
-		'custom-cmd'(event, info) {
-			if(!this.is_init_finish) return;
-
-			if (info.cmd == "openFile") {
-				this.openActiveFile(true,false);
-			} else if (info.cmd == "setting") {
-				this.ace.openMenu();
-			}
 		}
 	}
 };
 
-layer.initExtend();
-tools.extendTo(layer,vsEditorPanel);
 
-exports.ready = function(){ layer.ready(this) };
-// exports.beforeClose = function(){ layer.onDestroy() };
-// exports.close = ()=> layer.close;
-exports.methods = layer.messages;
-exports.template = layer.template;
-exports.style = layer.style;
-exports.$ = layer.$;
+// 合并事件函数,分发
+let info = eventMerge.eventMerge(messages, "panel_ex.js");
+messages = info.messages; // 合并后的事件
+_scripts = info.scripts;
+var methods = {}
+for (const key in messages) {
+	const func = messages[key];
+	methods[key] = function(...args){
+		return func.bind(this.editorPanel)(...args);
+	}
+}
+exports.EditorPanel = EditorPanel;
+exports.methods = methods;
+// layer.initExtend();
+// tools.extendTo(layer,VsEditorPanel);
+exports.ready = function(){ 
+	this.editorPanel = new EditorPanel(this);
+};
+// exports.beforeClose = function(){ }
+exports.close = function(){ 
+	this.editorPanel.onDestroy() 
+};
 // 监听面板事件
 exports.linsteners = {
     // 面板显示的时候触发的钩子
@@ -962,3 +1038,4 @@ exports.linsteners = {
     // 面板隐藏的时候触发的钩子
     hide() {},
 };
+

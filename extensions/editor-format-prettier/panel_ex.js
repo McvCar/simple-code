@@ -11,7 +11,7 @@ const OLD_PRETTIER_CONFIG_FILE = path.join(__dirname,'prettier.config.js')
 const PRETTIER_CONFIG_FILE 	   = path.join(prsPath,'local','prettier.config.js');
 
 module.exports = {
-	/** @type import('../../panel/vs-panel/vs-panel-base') */
+	/** @type import('../../panel/vs-panel/vs-panel').EditorPanel */
 	parent : null,
 
 
@@ -95,7 +95,7 @@ module.exports = {
 		// })
 
 
-		Editor.monaco.languages.registerDocumentFormattingEditProvider("typescript", {
+		this.parent.pushMonacoEvent(Editor.monaco.languages.registerDocumentFormattingEditProvider("typescript", {
 			provideDocumentFormattingEdits(model , options , token){
 				
 				_this.cfg.filepath = model.fsPath;
@@ -134,7 +134,7 @@ module.exports = {
 					return []
 				}
 			}
-		})
+		}));
 		
 	},
 

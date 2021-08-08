@@ -36,7 +36,7 @@ COLOR 			= [
 // ]
 
 module.exports = {
-	/** @type import('../../panel/vs-panel/vs-panel-base') */
+	/** @type import('../../panel/vs-panel/vs-panel').EditorPanel */
 	parent : null,
 
 
@@ -73,6 +73,7 @@ module.exports = {
 
 	// 面板销毁
 	onDestroy(){
+		this.destoryRainbow()
 	},
 
 

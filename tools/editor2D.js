@@ -59,6 +59,8 @@ let Editor2D =
 	},
 
 	Panel :{
+		open:Editor.Panel.open,
+
 		find:(name)=>{
 			for (let i = 0; i < Editor2D.Panel.panels.length; i++) {
 				const element = Editor2D.Panel.panels[i];

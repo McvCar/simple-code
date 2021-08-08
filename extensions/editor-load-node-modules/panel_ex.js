@@ -16,16 +16,17 @@ const REG_EXP_PACKAGE 		= /(package\.json)/
 
 
 module.exports = {
-	/** @type import('../../panel/vs-panel/vs-panel-base') */
+	/** @type import('../../panel/vs-panel/vs-panel').EditorPanel */
 	parent : null,
 
 	// 初始化事件
 	onLoadEvent(parent){
 		// index.js 对象
 		this.parent = parent; 
+		this._isInit = false;
 		this.dependencies = {};
 		// 创建view缓存model事件
-		this.parent.monaco.editor.onDidCreateModel((model)=>
+		this.parent.pushMonacoEvent(this.parent.monaco.editor.onDidCreateModel((model)=>
 		{
 			// 加载 tsconfig 配置文件解析
 			let url = model.uri.toString();
@@ -35,10 +36,10 @@ module.exports = {
 			}else{
 				this.updatePackageMainModulePath(model)
 			}
-		});
+		}));
 
 		// 删除代码文件 view缓存model
-		this.parent.monaco.editor.onWillDisposeModel((model)=>{
+		this.parent.pushMonacoEvent(this.parent.monaco.editor.onWillDisposeModel((model)=>{
 			// 删除 tsconfig 配置文件解析
 			let url = model.uri.toString();
 			let isconfig = url.match(REG_EXP_TS_CONFIG);
@@ -48,7 +49,7 @@ module.exports = {
 			if(isconfig || url.endsWith('package.json')){
 				setTimeout(()=>this.parent.tsWr.removeOtherFile(url),1);
 			}
-		});
+		}));
 
 		this.initProjectConfig()
 	},

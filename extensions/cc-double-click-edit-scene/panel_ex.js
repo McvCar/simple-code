@@ -10,7 +10,7 @@ const fe 		= Editor2D.require('packages://simple-code/tools/tools.js');
 const cfg 		= Editor2D.require('packages://simple-code/config.js');
 
 module.exports = {
-	/** @type import('../../panel/vs-panel/vs-panel-base') */
+	/** @type import('../../panel/vs-panel/vs-panel').EditorPanel */
 	parent : null,
 
 

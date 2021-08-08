@@ -12,14 +12,14 @@ const child_process 		= require('child_process')
 const exec 		= child_process.exec
 const inputType = {"text":1,"password":1,"number":1,"date":1,"color":1,"range":1,"month":1,"week":1,"time":1,"email":1,"search":1,"url":1,"textarea":1}
 module.exports = {
-	/** @type import('../../panel/vs-panel/vs-panel-base') */
+	/** @type import('../../panel/vs-panel/vs-panel').EditorPanel */
 	parent : null,
 
 		// 面板初始化
 	onLoad(parent){
 		// index.js 对象
 		this.parent = parent; 
-
+		
 		// 0代表只有非编辑状态时可用，1代表仅在在文本编辑状态使用，2全局不受影响
 		// 键盘事件：添加节点组件
 		this.parent.addKeybodyEventByName('addCompToScene',(e)=>

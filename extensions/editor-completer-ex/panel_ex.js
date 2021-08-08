@@ -9,7 +9,7 @@ var fs 		= require('fs');
 
 
 module.exports = {
-	/** @type import('../../panel/vs-panel/vs-panel-base') */
+	/** @type import('../../panel/vs-panel/vs-panel').EditorPanel */
 	parent : null,
 
 
@@ -35,8 +35,8 @@ module.exports = {
 
 	initCompletionEvent(){
 		this.completor.onLoad(this.parent.vs_editor)
-		this.parent.monaco.languages.registerCompletionItemProvider('typescript',this.completor);
-		this.parent.monaco.languages.registerCompletionItemProvider('plaintext',this.completor);
+		this.parent.pushMonacoEvent(this.parent.monaco.languages.registerCompletionItemProvider('typescript',this.completor));
+		this.parent.pushMonacoEvent(this.parent.monaco.languages.registerCompletionItemProvider('plaintext',this.completor));
 	},
 
 	// 配置代码输入提示

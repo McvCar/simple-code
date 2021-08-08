@@ -11,7 +11,7 @@ const config 		= Editor2D.require('packages://simple-code/config.js');
 let id 				= 'editor-book-mark'
 
 module.exports = {
-	/** @type import('../../panel/vs-panel/vs-panel-base') */
+	/** @type import('../../panel/vs-panel/vs-panel').EditorPanel */
 	parent : null,
 
 

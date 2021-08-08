@@ -8,7 +8,7 @@ const fs 			= require('fs');
 const Editor2D = require('../../tools/editor2D');
 
 module.exports = {
-	/** @type import('../../panel/vs-panel/vs-panel-base') */
+	/** @type import('../../panel/vs-panel/vs-panel').EditorPanel */
 	parent : null,
 
 	// 面板初始化
@@ -19,6 +19,7 @@ module.exports = {
 		this.parent_dom 		= this.parent.panel;
 		this.layout_dom_flex 	= this.getLayoutDomFlex()
 		this.self_flex_per 		= this.parent.cfg.self_flex_per || this.getSelfFlexPercent();
+		this.old_focused_state  = null;
 
 	},
 
@@ -49,6 +50,7 @@ module.exports = {
 		// 伸缩快捷键
 		this.parent.addKeybodyEventByName('switchEditorWindow',(e)=>
 		{
+			console.log("执行")
 			if (!this.parent.is_mouse_down){
 				let isOpen = !this.old_focused_state;
 				this.setAutoLayout(isOpen)

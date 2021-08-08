@@ -10,7 +10,7 @@ const config 		= Editor2D.require('packages://simple-code/config');
 const eruda 		= Editor2D.require('packages://simple-code/extensions/editor-console/eruda/eruda.js');
 
 module.exports = {
-	/** @type import('../../panel/vs-panel/vs-panel-base') */
+	/** @type import('../../panel/vs-panel/vs-panel').EditorPanel */
 	parent : null,
 
 	// 面板初始化
@@ -103,7 +103,7 @@ module.exports = {
 			config.vsEditorConfig.value = ``
 			// this.tsWr.setEnableUpdateScript(true);
 			var editor = monaco.editor.create(this.editorBox,config.vsEditorConfig);
-			window.cmd_editor = this.cmd_editor = editor;
+			this.cmd_editor = editor;
 			editor.updateOptions({
 				minimap:{enabled:false}, gotoLocation:{enable:false}, hover:{enable:false} ,lineNumbers:'off',renderLineHighlight:false, links:false, contextmenu:false,
 				suggest:{maxVisibleSuggestions:3}
@@ -176,7 +176,7 @@ module.exports = {
 		// 	return null;
 		// }
 		//Register the custom completion function into Monaco Editor    
-		this.monaco.languages.registerCompletionItemProvider('typescript',obj );
+		this.parent.pushMonacoEvent(this.monaco.languages.registerCompletionItemProvider('typescript',obj ));
 	},
 
 	newItem(findObj,suggestions)

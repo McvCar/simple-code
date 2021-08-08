@@ -28,7 +28,7 @@ let NEW_VAR_RULE 	 	=  path.join(path.resolve(__dirname,"./"),"drag_var_rule.js"
 let USER_NEW_VAR_RULE 	=  path.join(config.cacheDir,"drag_var_rule.js");
 
 module.exports = {
-	/** @type import('../../panel/vs-panel/vs-panel-base') */
+	/** @type import('../../panel/vs-panel/vs-panel').EditorPanel */
 	parent : null,
 	USER_NEW_VAR_RULE,
 

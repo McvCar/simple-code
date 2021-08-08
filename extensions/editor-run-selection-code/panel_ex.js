@@ -7,7 +7,7 @@ const tools = require('../../tools/tools');
 let id 				= 'editor-run-code'
 
 module.exports = {
-	/** @type import('../../panel/vs-panel/vs-panel-base') */
+	/** @type import('../../panel/vs-panel/vs-panel').EditorPanel */
 	parent : null,
 
 
@@ -24,6 +24,7 @@ module.exports = {
 	ready(parent){
 		// index.js 对象
 		this.parent = parent;
+		this.is_mouse_down = false;
 	},
 
 	// monaco 编辑器初始化

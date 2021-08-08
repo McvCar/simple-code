@@ -8,7 +8,7 @@ const path 			= require('path');
 const fs 			= require('fs');
 
 module.exports = {
-	/** @type import('../../panel/vs-panel/vs-panel-base') */
+	/** @type import('../../panel/vs-panel/vs-panel').EditorPanel */
 	parent : null,
 
 
