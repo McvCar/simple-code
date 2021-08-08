@@ -319,11 +319,9 @@ class FileMgr{
 			// 2.正常路径方式找不到文件时切换为只对比文件名的方式加载
 			if( tryPaths.length ){
 				let retState = await loadFunc(tryPaths[0],true)
-				if(retState == 1){
-					continue;
-				}else if(retState == 0){
+				if(retState == 0){
 					isImport = true;
-					break;
+					continue;
 				}
 			}
 

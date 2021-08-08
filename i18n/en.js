@@ -27,6 +27,7 @@ module.exports = {
     'refresh-preview': 'Refresh Preview',
 
     'edit': 'Edit',
+    'switch-editor-window': 'Switch Editor Window (C)',
     'batch-rename': 'Batch-Rename (D)',
     'batch-binding-component': 'Batch Binding Component (G)',
     'batch-insert-prefab': 'Batch Insert Prefab (A)',

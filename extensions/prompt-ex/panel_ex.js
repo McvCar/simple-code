@@ -137,7 +137,7 @@ module.exports = {
 					fileList.push(v)
 				}
 			});
-			this.parent.ace.openSearchBox("",fileList,(data)=>onSearchAccept(cmd,data));
+			this.parent.ace.openSearchBox("",fileList,(data)=>onSearchAccept(cmd,data),null,null,'findFileGoto');
 		}else if (cmd == "findFileAndOpen")
 		{
 			// 打开场景转跳
@@ -151,7 +151,7 @@ module.exports = {
 				}
 			});
 			// 打开搜索框
-			this.parent.ace.openSearchBox("",fileList,(data)=>onSearchAccept(cmd,data));
+			this.parent.ace.openSearchBox("",fileList,(data)=>onSearchAccept(cmd,data),null,null,'findFileAndOpen');
 		}else if (cmd == "findJsFileAndOpen")
 		{
 			// 打开场景转跳
@@ -165,7 +165,7 @@ module.exports = {
 				}
 			});
 			// 打开搜索框
-			this.parent.ace.openSearchBox("",fileList,(data)=>onSearchAccept(cmd,data));
+			this.parent.ace.openSearchBox("",fileList,(data)=>onSearchAccept(cmd,data),null,null,'findJsFileAndOpen');
 		}
 	},
 
@@ -234,7 +234,7 @@ module.exports = {
 		{
 			// 打开搜索框: 文件定位转跳
 			let list = JSON.parse(args)
-			this.parent.ace.openSearchBox("",list,(data)=>onSearchAccept(data));
+			this.parent.ace.openSearchBox("",list,(data)=>onSearchAccept(data),null,null,'openodeCompList');
 		});
 	},
 
@@ -267,7 +267,7 @@ module.exports = {
 		})
 
 		// 打开搜索框
-		this.parent.ace.openSearchBox("",list,(data)=>onSearchAccept(data));
+		this.parent.ace.openSearchBox("",list,(data)=>onSearchAccept(data),null,null,'openPrefabList');
 	},
 
 

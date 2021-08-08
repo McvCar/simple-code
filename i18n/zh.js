@@ -27,6 +27,7 @@ module.exports = {
     'refresh-preview': '刷新预览页面',
 
     'edit': '编辑',
+    'switch-editor-window': '切换 编辑窗口 (C)',
     'batch-rename': '批量重命名 (D)',
     'batch-binding-component': '批量节点绑定组件 (G)',
     'batch-insert-prefab': '批量插入预制节点 (A)',
@@ -37,8 +38,8 @@ module.exports = {
     'folder-bind-shortcuts': '文件夹绑定快捷键 (alt+0~9)',
     'shortcut-jump-folder': '文件夹转跳快捷键 (0~9)',
     'double-click-edit-text': '双击 Label 编辑文字(F2)',
-    'shear-files': '剪切文件 (X)',
-    'paste-files': '粘贴文件 (C)',
+    'shear-files': '剪切文件 (Ctrl + X)',
+    'paste-files': '粘贴文件 (Ctrl + V)',
     'delete-node-and-script': '删除选中节点与绑定的脚本',
     'load-custom-widgets-to-code' : '生成自定义拖拽组件',
 

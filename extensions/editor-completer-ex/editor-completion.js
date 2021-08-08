@@ -299,7 +299,10 @@ class ImportCompletion
             let useItem;
             for (let i = 0; i < list.length; i++) {
                 const fixInfo = list[i];
-                if(useItem == null && fixInfo.modulePath == fileName || fixInfo.isAddExisting){
+                if(fixInfo.modulePath == fileName){
+                    useItem = fixInfo;
+                    break
+                }else if(fixInfo.isAddExisting){
                     useItem = fixInfo;
                 }
             }

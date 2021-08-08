@@ -161,8 +161,13 @@ module.exports = {
 
 		// 绑定页面全局快捷键事件,注意: 区分大小写 Ctrl = ctrl
 		this.arr_cut_asset = [];
-		this.parent.addKeybodyEvent([['x']],(e)=>
+		this.parent.addKeybodyEvent([Editor.isWin32 ? ["Ctrl",'x'] : ["Meta",'x'] ],(e)=>
 		{
+			let panel = Editor.Panel.getFocusedPanel()
+			if (!panel || this.inputTypeChk(e) || panel.id != "assets"){
+				return
+			}
+
 		    let activeInfo  = Editor.Selection.curGlobalActivate() // 检测面板焦点在资源管理器还是层级管理器
 		    if (activeInfo && activeInfo.type == "asset" && !this.inputTypeChk(e))
 		    {
@@ -170,14 +175,23 @@ module.exports = {
 		    	for (var i = 0; i < this.arr_cut_asset.length; i++) {
 					Editor.Ipc.sendToAll('assets:hint', this.arr_cut_asset[i]);
 				}
-				Editor.log("操作: 剪切选中的文件,请按‘c’粘贴到指定位置");
 				e.preventDefault();// 吞噬捕获事件
 				return false;
 			}
 		},0)
 
-		this.parent.addKeybodyEvent([['c']],(e)=>
+		this.parent.addKeybodyEvent([Editor.isWin32 ? ["Ctrl",'c'] : ["Meta",'c'] ],(e)=>
 		{
+			this.arr_cut_asset = [];
+		},0)
+
+		this.parent.addKeybodyEvent([Editor.isWin32 ? ["Ctrl",'v'] : ["Meta",'v'] ],(e)=>
+		{
+			let panel = Editor.Panel.getFocusedPanel()
+			if (!panel || this.arr_cut_asset.length == 0 || this.inputTypeChk(e) || panel.id != "assets" ){
+				return
+			}
+
 		    let activeInfo  = Editor.Selection.curGlobalActivate() // 检测面板焦点在资源管理器还是层级管理器
 		    if (activeInfo && activeInfo.type == "asset" && !this.inputTypeChk(e))
 		    {
@@ -196,6 +210,7 @@ module.exports = {
 		    	}
 		    	this.arr_cut_asset = [];
 				e.preventDefault();// 吞噬捕获事件
+				e.stopPropagation();
 				return false;
 			}
 		},0)

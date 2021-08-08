@@ -26,5 +26,8 @@ module.exports = {
 
 	messages:
 	{
+		'switchEditorWindow'(){
+			Editor.Ipc.sendToPanel('simple-code', 'switchEditorWindow');
+		}
 	}
 };

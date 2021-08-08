@@ -1,7 +1,7 @@
 {
 	"name": "simple-code",
 	"scene-script": "panel/scene-info.js",
-	"version": "2.8.1", 
+	"version": "2.8.2", 
 	"description": "快闪-代码编辑器",
 	"author": "嘉年华(mcv-cpu)",
 	"main": "main.js",
@@ -67,6 +67,8 @@
 			"message": "simple-code:refresh-preview",
 			"accelerator": "CmdOrCtrl+shift+r"
 		},
+
+
 		"i18n:simple-code.name/i18n:simple-code.edit/i18n:simple-code.batch-rename": {
 			"message": "simple-code:rename",
 			"accelerator": "alt+enter"
@@ -86,6 +88,10 @@
 		"i18n:simple-code.name/i18n:simple-code.edit/i18n:simple-code.batch-search": {
 			"message": "",
 			"accelerator": ""
+		},
+		"i18n:simple-code.name/i18n:simple-code.edit/i18n:simple-code.switch-editor-window": {
+			"message": "simple-code:switchEditorWindow",
+			"accelerator": "alt+c"
 		},
 		"i18n:simple-code.name/i18n:simple-code.edit/i18n:simple-code.new-file-and-bind-node": {
 			"message": "simple-code:newFile",

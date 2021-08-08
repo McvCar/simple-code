@@ -41,6 +41,16 @@ module.exports = {
 			},10)
 		},false);
 
+
+		// 伸缩快捷键
+		this.parent.addKeybodyEventByName('switchEditorWindow',(e)=>
+		{
+			let isOpen = !this.old_focused_state;
+			this.setAutoLayout(isOpen,true)
+			isOpen ? Editor.Panel.focus('simple-code') : Editor.Panel.focus('scene')
+			e.preventDefault();
+		},0)
+
 		this.setAutoLayout(Editor.Panel.getFocusedPanel() == this.parent_dom);
 	},
 
@@ -86,9 +96,9 @@ module.exports = {
 	},
 	
 	// 设置展开面板或收起来
-	setAutoLayout(is_focused)
+	setAutoLayout(is_focused,isUse)
 	{
-		if(this.parent.cfg.is_lock_window) 
+		if(this.parent.cfg.is_lock_window && !isUse) 
 			return;
 		this.getLayoutDomFlex();
 		let now_flex = this.layout_dom_flex && this.layout_dom_flex.style.flex;
@@ -249,9 +259,15 @@ module.exports = {
 
 	messages:{
 
-		// 'cleanFile'()
-		// {
-		// },
+		'switchEditorWindow'()
+		{
+			if(!this.parent.is_init_finish){
+				return;
+			}
+			let isOpen = !this.old_focused_state;
+			this.setAutoLayout(isOpen)
+			isOpen ? this.parent_dom.focus() : this.parent_dom.blur()
+		},
 	},
 	
 };

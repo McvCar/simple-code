@@ -95,20 +95,31 @@ class AcePanel{
 		input.cmdLine.resize()
 	}
 	
-	/* 
-		打开下拉框, 例子: this.openSearchBox("",fileList,(data)=>{console.log(data.item)});
-		onAccept:处理完成调
-		onCompletionsFunc:修改搜索框时，通过该函数读取显示的实时显示的列表
-	*/
-	openSearchBox(msg = "", itemList, onAccept, onCompletionsFunc) {
+	/**
+	 * 打开下拉框, 例子: this.openSearchBox("",fileList,(data)=>{console.log(data.item)});
+	 * @param {string} msg 默认显示内容
+	 * @param {Function} itemList 搜索列表
+	 * @param {Function} onAccept 用户确认
+	 * @param {Function} onCompletionsFunc 修改搜索框时，通过该函数读取显示的实时显示的列表
+	 * @param {Function} onDone 窗口关闭，完成
+	 * @param {string} type 历史记录标记
+	 */
+	 openSearchBox(msg = "", itemList, onAccept, onCompletionsFunc,onDone,type='general') {
 		let _this = this
+
+		// 搜索记录
+		let record = _this.parent.pro_cfg.search_record = _this.parent.pro_cfg.search_record || {}
+		if(!record[type]){
+			record[type] = []
+		}
+		
 		// 打开个自定义 下拉 选项 
 		this.ace_editor.prompt(msg, {
 			// 名字
 			name: "searchFile",
 			selection: [0, Number.MAX_VALUE],
-			maxHistoryCount: 20,
-
+			maxHistoryCount: itemList.length>200 ? 20 : 100,// 历史记录最大数量
+			
 			onAccept: function (data, label) {
 				if (data.item && !onCompletionsFunc) this.addToHistory(data.item);
 				onAccept(data, label);
@@ -127,7 +138,7 @@ class AcePanel{
 				if (this.maxHistoryCount > 0 && history.length > this.maxHistoryCount) {
 					history.splice(history.length - 1, 1);
 				}
-				_this.parent.search_history = history;
+				record[type] = history;
 			},
 
 			// 搜索文字蓝色高亮
@@ -139,7 +150,7 @@ class AcePanel{
 
 			// 历史使用记录
 			history: function () {
-				let commands = JSON.parse(JSON.stringify(_this.parent.search_history || []));
+				let commands = JSON.parse(JSON.stringify(record[type] || []));
 				for (let i = commands.length - 1; i >= 0; i--) {
 
 					let isNot = true
