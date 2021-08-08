@@ -20,7 +20,6 @@ module.exports = {
 		this.layout_dom_flex 	= this.getLayoutDomFlex()
 		this.self_flex_per 		= this.parent.cfg.self_flex_per || this.getSelfFlexPercent();
 		this.old_focused_state  = null;
-
 	},
 
 	onLoad(){
@@ -38,7 +37,7 @@ module.exports = {
 
 		this.parent_dom.addEventListener('blur',(e)=>{
 			if(this.parent.cfg.is_lock_window) return;
-			setTimeout(()=>{
+			this.parent.setTimeout(()=>{
 				let panel = Editor2D.Panel.getFocusedPanel()
 				let is_need_close = this.isSameGroupPanel(panel);
 				if(is_need_close){
@@ -50,7 +49,6 @@ module.exports = {
 		// 伸缩快捷键
 		this.parent.addKeybodyEventByName('switchEditorWindow',(e)=>
 		{
-			console.log("执行")
 			if (!this.parent.is_mouse_down){
 				let isOpen = !this.old_focused_state;
 				this.setAutoLayout(isOpen)
@@ -192,8 +190,8 @@ module.exports = {
 			is2D = await Editor.Message.request('scene','query-is2D');
 		}
 		Editor.Message.send('scene','change-is2D',is2D)
-		setTimeout(async ()=>{Editor.Message.send('scene','change-is2D',await Editor.Message.request('scene','query-is2D',is2D))},5)
-		setTimeout(async ()=>{Editor.Message.send('scene','change-is2D',await Editor.Message.request('scene','query-is2D',is2D))},50)
+		this.parent.setTimeout(async ()=>{Editor.Message.send('scene','change-is2D',await Editor.Message.request('scene','query-is2D',is2D))},5)
+		this.parent.setTimeout(async ()=>{Editor.Message.send('scene','change-is2D',await Editor.Message.request('scene','query-is2D',is2D))},50)
 	},
 
 	// 是否父节点的子子级

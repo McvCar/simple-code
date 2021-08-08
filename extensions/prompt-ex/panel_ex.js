@@ -82,7 +82,7 @@ module.exports = {
 		{
 			if(this.parent.is_mouse_down) return;
 			if ( !this.inputTypeChk(e)){
-				setTimeout(()=>{
+				this.parent.setTimeout(()=>{
 					this.openFindNode()
 				},1)
 			}
@@ -128,7 +128,7 @@ module.exports = {
 						this.parent.openOutSideFile(data.item.meta,true)
 					}else{
 						Editor2D.Selection.select('asset', data.item.uuid)
-						setTimeout(()=>this.parent.openActiveFile(true,false),50) 
+						this.parent.setTimeout(()=>this.parent.openActiveFile(true,false),50) 
 					}
 				}
 			}
@@ -193,7 +193,7 @@ module.exports = {
 				clearTimeout(sch_id);
 			}
 
-			sch_id = setTimeout(()=>
+			sch_id = this.parent.setTimeout(()=>
 			{
 				if(name != "")
 				{

@@ -13,7 +13,6 @@ class ImportCompletion
 	constructor(parent)
     {
 		this.parent = parent;
-        this.parent = parent;
         this.triggerCharacters = ['/','.'];
         this.all_sym_sugges = []
 		// 编辑代码提示 配置
@@ -322,7 +321,7 @@ class ImportCompletion
             this.upAllSymSuggests();
             if(type == 'showPanel'){
                 // 刷新提示面板
-                setTimeout(()=>{
+                this.parent.setTimeout(()=>{
                     this.editor._commandService.executeCommand('editor.action.triggerSuggest')
                 },100)
             }

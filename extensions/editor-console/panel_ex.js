@@ -321,7 +321,7 @@ module.exports = {
 		}
 		// console.log(this.cmd_editor.getModel().getPositionAt(text.length-1))
 
-		setTimeout(()=>{
+		this.parent.setTimeout(()=>{
 			let select = this.cmd_editor.getSelection()
 			select.endColumn = select.positionColumn;
 			select.endLineNumber = select.positionLineNumber;

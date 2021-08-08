@@ -394,7 +394,7 @@
 			},
 			"cleanFile": {
 				"methods": [
-					"vsEditor.cleanFile"
+					"vsEditor.findCleanFileByDir"
 				]
 			},
 			"switchEditorWindow":{

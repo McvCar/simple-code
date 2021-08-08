@@ -75,6 +75,10 @@ var RainbowDecorator = /** @class */ (function () {
                 this.oldInvalidDecorators   = this.oldModel.deltaDecorations(this.oldInvalidDecorators, []);
             }
         }
+        if(this.debounceTimer){
+            clearTimeout(this.debounceTimer)
+            this.debounceTimer = null;
+        }
     };
     RainbowDecorator.prototype.applyWithDebounce = function () {
         var _this = this;

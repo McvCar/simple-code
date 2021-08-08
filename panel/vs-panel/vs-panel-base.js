@@ -61,6 +61,7 @@ class vsEditorPanel {
 		});
 	}	
 	initEditorStartData(){
+		this.timeout_index 		= 0;
 		this.timer_map 			= {};
 		this.file_list_buffer  	= this.file_list_buffer || [];
 		this.file_list_map 	  	= this.file_list_map || {};
@@ -1572,6 +1573,12 @@ class vsEditorPanel {
 		return Editor2D.Panel.getFocusedPanel() == this.panel;
 	}
 
+	// 设置定时器并保存记录,面板销毁时定时器自动关闭
+	setTimeout(func,time){
+		this.timeout_index++
+		return this.setTimeoutById(func,time,this.timeout_index).id;
+	}
+
 	// 调用原生JS的定时器
 	setTimeoutById(func,time,id='com') 
 	{
@@ -1585,6 +1592,7 @@ class vsEditorPanel {
 			func()
 		}, time);
 		this.timer_map[id] = ()=>clearTimeout(headler);
+		this.timer_map[id].id = headler;
 		return this.timer_map[id];
 	}
 

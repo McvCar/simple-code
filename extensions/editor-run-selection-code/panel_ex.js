@@ -51,7 +51,7 @@ module.exports = {
 			if(!this.parent.cfg.enabledDebugBtn){
 				return;
 			}
-			setTimeout(()=>{
+			this.parent.setTimeout(()=>{
 				this.is_mouse_down = false;
 				let selections = this.parent.vs_editor.getSelections();
 				this.upDecorator(selections);

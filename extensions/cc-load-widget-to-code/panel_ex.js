@@ -180,7 +180,7 @@ module.exports = {
 					symbolName = this.insertTextToModel(widgetType,symbolName,codeInfo,false,rule);
 				}
 
-				setTimeout(()=>{
+				this.parent.setTimeout(()=>{
 					// 4.给成员变量赋值引用对象
 					this.insertWidgetInfo(args.bindNodeList,widgetType,symbolName,false,nodeUuids,false,rule);
 				},100);
@@ -228,7 +228,7 @@ module.exports = {
 
 				// 插入成员变量文本
 				symbolName = this.insertTextToModel(widgetType,symbolName,codeInfo,false);
-				setTimeout(()=>{
+				this.parent.setTimeout(()=>{
 					// 2.添加引用
 					this.insertWidgetInfo(bindNodeList,widgetType,symbolName,false,uuids,isAssets);
 				},100);
@@ -274,7 +274,7 @@ module.exports = {
 			// save
 			this.saveFile(codeInfo.editInfo.vs_model,oldCodeText);
 
-			setTimeout(()=>{
+			this.parent.setTimeout(()=>{
 				this.insertWidgetInfo(bindNodeList,widgetType,symbolName,isArray,insertUuids,isAssets);
 			},100);
 		});

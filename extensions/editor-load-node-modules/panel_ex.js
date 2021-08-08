@@ -32,7 +32,7 @@ module.exports = {
 			let url = model.uri.toString();
 			if(url.match(REG_EXP_TS_CONFIG) && this.isDependencie(url)){
 				this.parent.tsWr.addProjectReference(url)
-				setTimeout(()=>this.parent.tsWr.writeOtherFile(url,model.getValue()),1);
+				this.parent.setTimeout(()=>this.parent.tsWr.writeOtherFile(url,model.getValue()),1);
 			}else{
 				this.updatePackageMainModulePath(model)
 			}
@@ -47,7 +47,7 @@ module.exports = {
 				this.parent.tsWr.removeProjectReference(url)
 			}
 			if(isconfig || url.endsWith('package.json')){
-				setTimeout(()=>this.parent.tsWr.removeOtherFile(url),1);
+				this.parent.setTimeout(()=>this.parent.tsWr.removeOtherFile(url),1);
 			}
 		}));
 
@@ -168,7 +168,7 @@ module.exports = {
 			return;
 		}
 		
-		setTimeout(async ()=>{
+		this.parent.setTimeout(async ()=>{
 			this.parent.tsWr.writeOtherFile(url,model.getValue()); // 保存package.json文件缓存到ts解析器参与进一步解析工作
 			let tryModulePaths = await this.parent.tsWr.getPackageMainModulePath(url);
 			// console.log("modeule包路径:",url,tryModulePaths)

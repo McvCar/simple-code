@@ -105,6 +105,9 @@ module.exports = {
 		this.disposables.forEach(function (d) {
 			return d.dispose();
 		});
+		if( this.debounceTimer){
+			clearTimeout(this.debounceTimer)
+		}
 		// 后续跟随面板销毁自动释放
 	},
 

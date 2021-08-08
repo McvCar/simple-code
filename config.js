@@ -965,6 +965,20 @@ module.exports = {
 			},
 		},
 		More: {
+			"autoLayoutMax": {
+				// 自动窗口最大高度占比%
+				path: "autoLayoutMax",
+				type: "number",
+				defaultValue: 85,
+				defaults: [
+					{ caption: "90%", value: 90 },
+					{ caption: "85%", value: 85 },
+					{ caption: "80%", value: 80 },
+					{ caption: "70%", value: 70 },
+					{ caption: tools.translate('userHabit' /*"使用用户调整窗口后的值"*/), value: 0 },
+				]
+			},
+
 			"autoLayoutMin": {
 				// 自动窗口最小高度占比%
 				path: "autoLayoutMin",
@@ -976,20 +990,6 @@ module.exports = {
 					{ caption: "40%", value: 40 },
 					{ caption: "20%", value: 20 },
 					{ caption: "10%", value: 10 }
-				]
-			},
-
-			"autoLayoutMax": {
-				// 自动窗口最大高度占比%
-				path: "autoLayoutMax",
-				type: "number",
-				defaultValue: 85,
-				defaults: [
-					{ caption: tools.translate('userHabit' /*"使用用户调整窗口后的值"*/), value: 0 },
-					{ caption: tools.translate('fix')+" 90%", value: 90 },
-					{ caption: tools.translate('fix')+" 85%", value: 85 },
-					{ caption: tools.translate('fix')+" 80%", value: 80 },
-					{ caption: tools.translate('fix')+" 70%", value: 70 },
 				]
 			},
 
@@ -1064,6 +1064,10 @@ module.exports = {
 
 	cfgPath : path.join(cacheDir,'userConfig.json'),
 
+	/**
+	 * 获得全局配置
+	 * @returns {Object}
+	 */
 	getLocalStorage(){
 		if(this.cfg){
 			return this.cfg;
@@ -1079,7 +1083,10 @@ module.exports = {
 		return this.cfg;
 	},
 
-	// 项目位置的本地缓存
+	/**
+	 * 获得与项目相关配置
+	 * @returns {Object}
+	 */
 	getProjectLocalStorage(){
 		if(this.pro_cfg){
 			return this.pro_cfg;

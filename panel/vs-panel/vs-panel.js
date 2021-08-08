@@ -1027,14 +1027,21 @@ exports.methods = methods;
 exports.ready = function(){ 
 	this.editorPanel = new EditorPanel(this);
 };
-// exports.beforeClose = function(){ }
+exports.beforeClose = function(){ 
+	// 如果编辑器未初始化完成禁止移动
+	if(!this.editorPanel.is_init_finish){
+		return false;
+	}
+}
 exports.close = function(){ 
 	this.editorPanel.onDestroy() 
 };
 // 监听面板事件
 exports.linsteners = {
     // 面板显示的时候触发的钩子
-    show() {},
+    show() {
+		this.editorPanel.upLayout()
+	},
     // 面板隐藏的时候触发的钩子
     hide() {},
 };

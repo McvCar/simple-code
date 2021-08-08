@@ -28,7 +28,7 @@ module.exports = {
 				return 
 			}
 			// 定时器用于解决 getSelections 选中列表为空的bug
-			setTimeout(()=>{
+			this.parent.setTimeout(()=>{
 				this.isWait = true
 				// 防止重复触发事件重复调用
 				this.upVimCursor(this.parent.vs_editor.getSelections())

@@ -183,20 +183,6 @@ module.exports = {
 				this.findAssets(this.currSelectInfo.uuid)
 			}
 		},
-
-		'cleanFileByDir'() {
-			if(this.currSelectInfo && this.currSelectInfo.uuid){
-				this.findAssets(true,this.currSelectInfo.uuid)
-			}
-		},
-
-		'cleanFile'() {
-			if (!this.noBindMap) Editor.info("初次搜索未使用的资源,期间会卡顿几秒,请稍等...");
-			setTimeout(() => {
-				is_lock = !is_lock;
-				this.search();
-			}, this.noBindMap ? 1 : 500);
-		},
 	},
 
 };
