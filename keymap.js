@@ -11,6 +11,8 @@ module.exports = {
 	'prevView' : { win32:[["Ctrl", "Alt", "j"], ["Ctrl", "Alt", "ArrowLeft"], ["Ctrl", "PageUp"]] , mac:[["Meta", "Alt", "j"], ["Meta", "Alt", "ArrowLeft"], ["Alt", "Shift", "Tab"]] },  
 	// 跳到下一个tab窗口 
 	'nextView' : { win32:[["Ctrl", "Alt", "l"], ["Ctrl", "Alt", "ArrowRight"], ["Ctrl", "PageDown"]] , mac:[["Meta", "Alt", "l"], ["Meta", "Alt", "ArrowRight"], ["Alt", "Tab"]] },  
+	// 切换tab
+	'switchTab' : { win32:[["Ctrl", "Tab"]] , mac:[["Ctrl", "Tab"]] },  
 	// 缩小字体
 	'fontSmall' : { win32:[["Ctrl",'-']] , mac:[["Meta",'-']] },  
 	// 增大字体
@@ -53,5 +55,5 @@ module.exports = {
 	// 跳到下个书签, 鼠标点击行数栏标记位置
 	'nextBookmark' : { win32:[["Alt",'`']] , mac:[["Meta",'F1']] },  
 	// 打开控制台
-	'openConsole' : { win32:[["Ctrl","Shift",'y']] , mac:[["Ctrl","Shift",'y']] },  
+	'openConsole' : { win32:[["Ctrl","Shift",'y'],["Ctrl",'`']] , mac:[["Ctrl","Shift",'y'],["Ctrl",'`']] },  
 }
