@@ -16,7 +16,7 @@ const Updater = {
      * @returns {Promise<object>}
      */
     async getRemotePackageJson() {
-        const packageJsonUrl = `${this.remoteUrl}/raw/master/package.json`;
+        const packageJsonUrl = `${this.remoteUrl}/raw/master/package3.json`;
         // 发起网络请求
         const response = await fetch(packageJsonUrl, {
             method: 'GET',
@@ -33,7 +33,7 @@ const Updater = {
     },
 
     async getRemoteDesc() {
-        const descUrl = `${this.remoteUrl}/raw/master/README.md`;
+        const descUrl = `${this.remoteUrl}/raw/master/README3.md`;
         // 发起网络请求
         const response = await fetch(descUrl, {
             method: 'GET',

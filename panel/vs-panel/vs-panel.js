@@ -28,6 +28,7 @@ const prsPath = Editor.Project && Editor.Project.path ? Editor.Project.path : Ed
 
 
 let _scripts = [];
+let isShowUpdate = false;
 exports.style = ``;
 exports.template = `
 <div id="box">
@@ -401,7 +402,7 @@ class EditorPanel extends VsEditorPanel{
 		},false);
 
 		
-		// 检测窗口改变大小调整
+		// 检测窗口改变大小调整 
 		this.schFunc = this.setTimeoutToJS(() => 
 		{
 			if(this.panel.parentElement == null){
@@ -498,6 +499,7 @@ class EditorPanel extends VsEditorPanel{
 			}
 			ret_type = onApplyEvent(e, 'keydown');
 			_this.runExtendFunc("onKeyDown", e);
+			// console.log("键盘:",e)
 			return ret_type;
 		}, true);
 
@@ -567,6 +569,15 @@ class EditorPanel extends VsEditorPanel{
 			e.preventDefault();// 吞噬捕获事件
 			return false;
 		}, 1, "keydown");
+
+		// tab 
+		this.addKeybodyEventByName('switchTab', (e) => {
+			this.setTabPage(this.old_edit_id);
+			e.preventDefault();// 吞噬捕获事件
+			e.stopPropagation()
+			return false;
+		}, 1, "keydown");
+		
 	}
 
 
@@ -908,17 +919,18 @@ class EditorPanel extends VsEditorPanel{
 
 	// 检查更新
 	async checkUpdate() {
+		if(isShowUpdate) return;
+		isShowUpdate = true;
+
 		const newVersionDesc = await updater.check();
 		// 打印到控制台
 		if (newVersionDesc) {
 			let hitnText = tools.translateZhAndEn('发现新版本,请过”扩展商店”下载更新,更新内容如下:\n','If you find the new version, please go to the "Extension Store" to download the update as follows :\n')
+			Editor.Task.addNotice({title:packageCfg.description+':发现新版本',timeout:10000,type:'warn'})
 			Editor.log(`[${packageCfg.description}]`, hitnText ,newVersionDesc);
 		}
-
 		statistical.countStartupTimes();
 	}
-
-
 
 };
 
@@ -1032,12 +1044,14 @@ exports.ready = function(){
 };
 exports.beforeClose = function(){ 
 	// 如果编辑器未初始化完成禁止移动
-	if(!editorPanel.is_init_finish){
+	if(editorPanel && !editorPanel.is_init_finish){
 		return false;
 	}
 }
 exports.close = function(){ 
-	editorPanel.onDestroy() 
+	if(editorPanel){
+		editorPanel.onDestroy() 
+	}
 };
 // 监听面板事件
 exports.linsteners = {

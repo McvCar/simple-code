@@ -61,7 +61,7 @@ module.exports = {
 
 		eruda._entryBtn.on('click', () => this.cmd_editor.layout());
 		eruda._entryBtn._$el[0].style.visibility = this.parent.cfg.enabledConsoleBtn ? "visible" : 'hidden';
-		eruda._entryBtn._$el[0].title = "控制台快捷键: Ctrl+Shift+Y、Esc"
+		eruda._entryBtn._$el[0].title = "控制台快捷键: Ctrl+`、Esc"
 
 		// 打开控制台快捷键
 		this.parent.addKeybodyEventByName('openConsole',(e)=>
@@ -75,16 +75,16 @@ module.exports = {
 			return false;
 		},1);
 
-		this.parent.addKeybodyEvent([["Escape"]],(e)=>
-		{
-			if(!this.parent.cfg.enabledVim){
-				eruda._devTools.show();
-				this.cmd_editor.focus()
-				this.cmd_editor.layout()
-			}
-			e.preventDefault();// 吞噬捕获事件
-			return false;
-		},1);
+		// this.parent.addKeybodyEvent([["Escape"]],(e)=>
+		// {
+		// 	if(!this.parent.cfg.enabledVim){
+		// 		eruda._devTools.show();
+		// 		this.cmd_editor.focus()
+		// 		this.cmd_editor.layout()
+		// 	}
+		// 	e.preventDefault();// 吞噬捕获事件
+		// 	return false;
+		// },1);
 	},
 	
 	getWindowObj(){
