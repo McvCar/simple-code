@@ -488,7 +488,7 @@ class EditorPanel extends VsEditorPanel{
 		}
 		
 		
-		this.addDocumentEventListener("keydown", function (e) {
+		this.addWindowEventListener("keydown", function (e) {
 			pressedKeys = {
 				[config.keyMap[e.keyCode] ? config.keyMap[e.keyCode] : e.key] : 1,
 				['Alt'] : e.altKey,
@@ -498,6 +498,7 @@ class EditorPanel extends VsEditorPanel{
 			}
 			ret_type = onApplyEvent(e, 'keydown');
 			_this.runExtendFunc("onKeyDown", e);
+			// console.log(pressedKeys);
 			return ret_type;
 		}, true);
 

@@ -2,7 +2,7 @@
 const path 	= require("path");
 const fs 	= require("fs");
 const tools = require("./tools/tools");
-const cacheDir = path.join(path.resolve(__dirname,"../"),"simple-code-cache","cache");
+const cacheDir = path.join(Editor.App.home,'',"simple-code-profiles");
 
 // 基础配置
 module.exports = {

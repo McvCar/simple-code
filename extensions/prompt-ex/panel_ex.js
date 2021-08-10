@@ -45,7 +45,7 @@ module.exports = {
 		{	
 			this.openGlobalSearch()
 			e.preventDefault();// 吞噬捕获事件
-		},1)
+		},2)
 
 		// 键盘事件：切换场景
 		this.parent.addKeybodyEventByName('gotoAnything',(e)=>
@@ -290,15 +290,23 @@ module.exports = {
 		for (const fsPath in this.parent.file_list_map) 
 		{
 			const item = this.parent.file_list_map[fsPath];
-			if(item.data == null){
-				continue;
+			let codeText = item.data;
+			if(codeText == null){
+				if(this.parent.FILE_OPEN_TYPES[item.extname.substr(1)] && item.url.startsWith('db:')){
+					try {
+						codeText = fs.readFileSync(item.fsPath).toString()
+					} catch(err){
+						continue;
+					}
+				}else{
+					continue;
+				}
 			}
 			let file_name  =  fsPath.substr(fsPath.lastIndexOf('/'))
 			if(file_name.indexOf('.d.ts') != -1) continue;
 			
 			let uri = Editor.monaco.Uri.parse(this.parent.fileMgr.fsPathToModelUrl(fsPath))
 			let model = Editor.monaco.editor.getModel(uri);
-			let codeText = item.data;
 			if(model){
 				codeText = model.getValue();
 			}

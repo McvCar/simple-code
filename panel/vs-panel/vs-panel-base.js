@@ -29,7 +29,7 @@ class vsEditorPanel {
 	// 忽略文件
 	IGNORE_FILE = ["png", "jpg", "zip", "labelatlas", "ttf", "mp3", "mp4", "wav", "ogg", "rar", 'scene', 'prefab', 'plist'];
 	// 打开文件格式对应的类型
-	FILE_OPEN_TYPES = { md: "markdown", js: "typescript", ts: "typescript", effect: "yaml", coffee: "coffeescript", lua: "lua", sql: "mysql", php: "php", xml: "xml", html: "html", css: "css", json: "json", manifest: "typescript", plist: "xml", gitignore: "gitignore", glsl: "glsl",text:"markdown",txt:"markdown",c:"c",cpp:"cpp",h:"cpp" };
+	FILE_OPEN_TYPES = { md: "markdown", js: "typescript", ts: "typescript", chunk: "cpp", effect: "cpp", coffee: "coffeescript", lua: "lua", sql: "mysql", php: "php", xml: "xml", html: "html", css: "css", json: "json", manifest: "typescript", plist: "xml", gitignore: "gitignore", glsl: "glsl",text:"markdown",txt:"markdown",c:"c",cpp:"cpp",h:"cpp" };
 	// 须加载配置文件
 	REG_EXP_DTS = /(\.d\.ts)/;
 	REG_EXP_JSON_CONFIG = /(tsconfig.*\.json|jsconfig.*\.json|package\.json)/;
@@ -729,6 +729,12 @@ class vsEditorPanel {
 	pushMonacoEvent(event){
 		// 用于释放
 		this.monaco_editor_event_listener.push( event );
+		try {
+			i = i+1;
+		} catch (error) {
+			event.err = error;
+		}
+		// console.log(arguments.callee.caller)
 	}
 	
 	addWindowEventListener(eventName,callback,option){

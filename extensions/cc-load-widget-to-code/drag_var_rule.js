@@ -119,7 +119,7 @@ module.exports = {
 
 		// 4.解析组件类型 widgetType = 'Sprite'
 		let widgetType = splitSymbol[1];
-		if(cc[widgetType+'Component']){
+		if(cc[widgetType] || cc[widgetType+'Component']){
 			widgetType = 'cc.'+widgetType;
 		}
 		
