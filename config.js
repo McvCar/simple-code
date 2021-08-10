@@ -1,140 +1,22 @@
-// 配置信息请写在这里
+
+const path 	= require("path");
+const fs 	= require("fs");
+const tools = require("./tools/tools");
+const cacheDir = path.join(path.resolve(__dirname,"../"),"simple-code-cache","cache");
+
+// 基础配置
 module.exports = {
-
-	// 快捷键配置
-	"main-menu": {
-		"i18n:代码编辑器/打开": {
-			"message": "simple-code:open",
-			"accelerator": "F1"
-		},
-		"i18n:代码编辑器/预览": {
-			"message": "simple-code:openPreview",
-			"accelerator": "F11"
-		},
-		"i18n:代码编辑器/设置": {
-			"message": "simple-code:setting",
-			"accelerator": "F10"
-		},
-		"i18n:代码编辑器/搜索/打开资源 (V)": {
-			"message": "simple-code:findFileAndOpen",
-			"accelerator": "alt+V"
-		},
-		"i18n:代码编辑器/搜索/跳转文件 (F)": {
-			"message": "simple-code:findFileGoto",
-			"accelerator": "alt+F"
-		},
-		"i18n:代码编辑器/搜索/全局文件搜索": {
-			"message": "simple-code:open-global-search",
-			"accelerator": "CmdOrCtrl+shift+F"
-		},
-		"i18n:代码编辑器/搜索/在资源管理器高亮未使用的资源": {
-			"message": "simple-code:cleanFile",
-			"accelerator": "alt+L"
-		},
-		"i18n:代码编辑器/调试/执行命令": {
-			"message": "simple-code:runCommandLine",
-			"accelerator": "alt+R"
-		},
-		"i18n:代码编辑器/调试/刷新预览页面": {
-			"message": "simple-code:refresh-preview",
-			"accelerator": "CmdOrCtrl+shift+r"
-		},
-		"i18n:代码编辑器/调试/执行场景所有节点绑定的脚本": {
-			"message": "simple-code:run-node-js",
-			"accelerator": "alt+shift+e"
-		},
-		"i18n:代码编辑器/编辑/打开外部编辑": {
-			"message": "simple-code:openNodeFileByOutside",
-			"accelerator": "f4"
-		},
-		"i18n:代码编辑器/编辑/批量重命名 (D)": {
-			"message": "simple-code:rename",
-			"accelerator": "alt+enter"
-		},
-		"i18n:代码编辑器/编辑/批量节点绑定组件 (G)": {
-			"message": "simple-code:addNodeComp",
-			"accelerator": "alt+shift+enter"
-		},
-		"i18n:代码编辑器/编辑/批量插入预制节点 (A)": {
-			"message": "simple-code:addPrefab",
-			"accelerator": "alt+shift+i"
-		},
-		"i18n:代码编辑器/编辑/批量选中同名节点 (S)": {
-			"message": "simple-code:selectNode",
-			"accelerator": "alt+d"
-		},
-		"i18n:代码编辑器/编辑/批量搜索|选中节点 (F)": {
-			"message": "simple-code:selectNode",
-			"accelerator": ""
-		},
-		"i18n:代码编辑器/编辑/新建脚本绑定Node": {
-			"message": "simple-code:newFile",
-			"accelerator": "f3"
-		},
-		"i18n:代码编辑器/编辑/打开代码|解锁编辑": {
-			"message": "simple-code:openNodeFile",
-			"accelerator": "f1"
-		},
-		"i18n:代码编辑器/编辑/文件夹绑定快捷键 (alt+0~9)": {
-			"message": "",
-			"accelerator": ""
-		},
-		"i18n:代码编辑器/编辑/文件夹转跳快捷键 (0~9)": {
-			"message": "",
-			"accelerator": ""
-		},
-		"i18n:代码编辑器/编辑/双击 Label 编辑文字(F2)": {
-			"message": "",
-			"accelerator": ""
-		},
-		"i18n:代码编辑器/编辑/剪切文件 (X)": {
-			"message": "simple-code:selectNode",
-			"accelerator": ""
-		},
-		"i18n:代码编辑器/编辑/粘贴文件 (C)": {
-			"message": "simple-code:selectNode",
-			"accelerator": ""
-		},
-		"i18n:代码编辑器/编辑/删除选中节点与绑定的脚本": {
-			"message": "simple-code:removeNodeAndScript",
-			"accelerator": "alt+delete"
-		},
-		"i18n:代码编辑器/项目管理/打开项目目录": {
-			"message": "simple-code:openProjectDir",
-			"accelerator": "alt+f1"
-		},
-		"i18n:代码编辑器/项目管理/打开项目到外部编辑器": {
-			"message": "simple-code:openProjectEditor",
-			"accelerator": "alt+f2"
-		},
-		"i18n:代码编辑器/项目管理/打开项目到Creator": {
-			"message": "simple-code:openProjectCreator",
-			"accelerator": "alt+f3"
-		},
-		"i18n:代码编辑器/项目管理/配置扩展模块": {
-			"message": "simple-code:openConfigExtendDir",
-			"accelerator": ""
-		},
-		"i18n:代码编辑器/项目管理/配置新建模板": {
-			"message": "simple-code:newFileDir",
-			"accelerator": ""
-		},
-		"i18n:代码编辑器/项目管理/配置功能快捷键": {
-			"message": "simple-code:openConfig",
-			"accelerator": ""
-		},
-		"i18n:代码编辑器/项目管理/配置代码输入提示": {
-			"message": "simple-code:openConfigHitn",
-			"accelerator": ""
-		},
-	},
-
+	
+	cacheDir : cacheDir,
+	
+	// 项目目录
+	prsPath : Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath,
+	
 	// 外部编辑器路径配置，win路径分隔符注意使用 ‘\\’
-	"editorPath": {
-		"win": "C:\\Program Files\\Sublime Text 3\\sublime_text.exe",
-		"mac": "/Applications/Sublime Text.app/Contents/MacOS/Sublime Text",
+	editorPath: {
+		win: "C:\\Program Files\\Sublime Text 3\\sublime_text.exe",
+		mac: "/Applications/Sublime Text.app/Contents/MacOS/Sublime Text",
 	},
-
 
 	// vs编辑器选项
 	vsEditorConfig: {
@@ -149,6 +31,13 @@ module.exports = {
 		formatOnPaste: true,
 		detectIndentation: true,        // 自动检测缩进格式
 		colorDecorators:true, 			// 代码块 #00000 cc.Color 颜色显示
+		minimap:{						// 代码预览层
+			// size: 'fit',// | 'fill' | 'fit',
+			showSlider:'always',
+			// maxColumn:35,
+			// scale:3,
+			// side: 'left',
+		},
 		// glyphMargin: true,				// 断点显示区域
 		// cursorSmoothCaretAnimation:true,
 		/**
@@ -763,10 +652,10 @@ module.exports = {
 	// 代码提示编译选项,对应 ts.config.json配置 :https://www.cnblogs.com/cczlovexw/p/11527708.html
 	compilerOptions: {
 
-		// allowJs: true,
-		// allowSyntheticDefaultImports: true,
+		allowJs: true,
+		allowSyntheticDefaultImports: true,
 		experimentalDecorators: true,
-		// rootDirs:["x:/Users/mac/Desktop/MyGame/Live2dForCocosCreator-master/assets"] ,
+		// rootDirs:["/assets"] ,
 		// paths: {
 		//   "@/*": ["src/*"]
 		// },
@@ -798,7 +687,7 @@ module.exports = {
 		//     maxNodeModuleJsDepth?: number;
 		// module: 1,
 		//  target: 3,
-		// moduleResolution: 2,
+		moduleResolution: 2, // 1.Classic 2.NodeJs
 		//     newLine?: NewLineKind;
 		//     noEmitHelpers?: boolean;
 		//     noEmitOnError?: boolean;
@@ -851,41 +740,59 @@ module.exports = {
 
 	optionGroups: {
 		Main: {
-			"主题": {
-				path: "theme",
+			"theme": {
+				// 主题
+				path: "theme", 
 				type: "select",
 				defaultValue: "vs-dark-ex",
 				items: [{ caption: 'vs', value: 'vs' }, { caption: 'vs-dark', value: 'vs-dark' }, { caption: 'vs-dark-ex', value: 'vs-dark-ex' }, { caption: 'hc-black', value: 'hc-black' }]
 			},
-			"语言": {
-				path: "language",
+			"language": {
+				// 语言
+				path: "language", 
 				type: "select",
 				items: []
 			},
-			"字体": {
+			"newFileType": {
+				// 新建文件格式
+				path: "newFileType", 
+				type: "buttonBar",
+				defaultValue: "ts",
+				items: [
+					{ caption: ".js", value: "js" },
+					{ caption: ".ts", value: "ts" },
+					{ caption: ".coffe", value: "coffee" },
+					{ caption: ".lua", value: "lua" }
+				]
+			},
+			"fontSize": {
+				//字体大小
+				path: "fontSize",
+				type: "number",
+				defaultValue: process.platform == 'darwin' ? 12 : 13.5 ,
+				defaults: [
+					{ caption: "8px", value: 8 },
+					{ caption: "10px", value: 10 },
+					{ caption: "12px", value: 12 },
+					{ caption: "13.5px", value: 13.5 },
+					{ caption: "14px", value: 14 },
+					{ caption: "16px", value: 16 }
+				],
+			},
+			"fontFamily": {
+				// 字体
 				path: "fontFamily",
 				type: "select",
 				defaultValue: undefined,
-				items: [{ caption: '默认', value: undefined }]
+				items: [{ caption: 'default', value: undefined }]
 			},
-			"字体大小": {
-				path: "fontSize",
-				type: "number",
-				defaultValue: 12,
-				defaults: [
-					{ caption: "6px", value: 8 },
-					{ caption: "10px", value: 10 },
-					{ caption: "12px", value: 12 },
-					{ caption: "16px", value: 16 },
-					{ caption: "18px", value: 18 }
-				],
-			},
-			"字体粗细": {
+			"fontWeight": {
+				// 字体粗细
 				path: "fontWeight",
 				type: "select",
-				defaultValue: "600",
+				defaultValue: process.platform == 'darwin' ? "normal" : "600",
 				items: [
-					{ caption: "默认", value: "normal" },
+					{ caption: "default", value: "normal" },
 					{ caption: "1号", value: "100" },
 					{ caption: "2号", value: "200" },
 					{ caption: "3号", value: "300" },
@@ -897,111 +804,181 @@ module.exports = {
 					{ caption: "9号", value: "900" },
 				]
 			},
-
-			"快捷键习惯": {
+			"wordWrap": {
+				// 自动换行
+				path: "wordWrap",
 				type: "buttonBar",
+				defaultValue: "off",
+				items: [
+					{ caption: "on", value: "on" },
+					{ caption: "off", value: "off" },
+				]
+			},
+			"keyboardHandler": {
+				// 快捷键习惯
 				path: "keyboardHandler",
+				type: "buttonBar",
 				defaultValue: "ace/keyboard/vscode",
 				items: [
 					{ caption: "VSCode", value: "ace/keyboard/vscode" }
 				]
 			},
-			"新建文件格式": {
+			"minimapStyle": {
+				// 显示代码预览
+				path: "minimapStyle",
 				type: "buttonBar",
-				path: "newFileType",
-				defaultValue: "ts",
+				defaultValue: "default",
 				items: [
-					{ caption: "js文件", value: "js" },
-					{ caption: "ts文件", value: "ts" },
-					{ caption: "coffe文件", value: "coffee" },
-					{ caption: "lua文件", value: "lua" }
+					{ caption: tools.T('隐藏','Hide'), value: "hide" },
+					{ caption: tools.T('默认','Default'), value: "default" },
+					{ caption: tools.T('细腻','Exquisite'), value: "exquisite" },
 				]
 			},
-			"触发编译方式": {
+			"minimapSide": {
+				// 显示代码预览
+				path: "minimapSide",
 				type: "buttonBar",
-				path: "codeCompileMode",
-				defaultValue: "save",
+				defaultValue: "right",
 				items: [
-					{ caption: "保存后", value: "save" },
-					{ caption: "退出编辑后", value: "blur" },
-					{ caption: "手动编译", value: "manual" },
+					{ caption: tools.T('左边','Left'), value: "left" },
+					{ caption: tools.T('右边','Right'), value: "right" },
 				]
 			},
-
-			"光标在边缘位置": {
+			"enabledRainbow": {
+				// 彩虹缩进显示
+				path: "enabledRainbow",
+				defaultValue: false,
+			},
+			"enabledBracketColor": {
+				// 括号多重彩色
+				path: "enabledBracketColor",
+				defaultValue: true,
+			},
+			"smoothScrolling": {
+				// 翻页过渡效果
+				path: "smoothScrolling",
+				defaultValue: true,
+			},
+			"cursorSmoothCaretAnimation": {
+				// 光标过渡效果
+				path: "cursorSmoothCaretAnimation",
+				defaultValue: false,
+			},
+			"enabledCCColor": {
+				// Color字段色彩预览
+				path: "enabledCCColor",
+				defaultValue: true,
+			},
+			"enabledDebugBtn": {
+				// 显示调试按钮
+				path: "enabledDebugBtn",
+				defaultValue: false,
+			},
+			"enabledConsoleBtn": {
+				// 显示控制台按钮
+				path: "enabledConsoleBtn",
+				defaultValue: false,
+			},
+			"clickToViewCode": {
+				// 点击Node自动显示代码
+				path: "clickToViewCode",
+				defaultValue: true,
+			},
+			"scrollPredominantAxis": {
+				// 光标在边缘位置
 				path: "scrollPredominantAxis",
 				type: "number",
 				defaultValue: 5,
 			},
-			"tab缩进数量": {
+
+			"codeCompileMode": {
+				// 触发编译方式
+				path: "codeCompileMode",
+				type: "buttonBar",
+				defaultValue: "save",
+				items: [
+					{ caption: tools.translate('whenSave' /*"保存后"*/), value: "save" },
+					{ caption: tools.translate('whenBlur' /*"退出编辑后"*/), value: "blur" },
+					{ caption: tools.translate('ManualComp' /*"手动编译"*/), value: "manual" },
+				]
+			},
+			"readCodeMode": {
+				// 加载代码方式
+				path: "readCodeMode",
+				type: "select",
+				defaultValue: "auto",
+				items: [
+					{ caption: tools.translate('auto' /*"自动"*/), value: 'auto' }, 
+					{ caption: tools.translate('allImport' /*"全部加载"*/), value: 'all' }, 
+					{ caption: tools.translate('atImportTo' /*"import时加载"*/), value: 'atImportTo' }
+				]
+			},
+			"enabledVim": {
+				// vim编辑模式
+				path: "enabledVim",
+				defaultValue: false,
+			},
+			"renameConverImportPath": {
+				// 重命名同步修改import路径
+				path: "renameConverImportPath",
+				defaultValue: true,
+			},
+			"enabledJsGlobalSugges": {
+				// JS模糊输入提示/函数跳转
+				path: "enabledJsGlobalSugges",
+				defaultValue: true,
+			},
+			"enabledTsGlobalSugges": {
+				// TS模糊输入提示/函数跳转
+				path: "enabledTsGlobalSugges",
+				defaultValue: false,
+			},
+			"enabledNpmDir": {
+				// 加载node_modules目录
+				path: "enabledNpmDir",
+				defaultValue: true,
+			},
+
+			"tabSize": {
+				// tab缩进数量
 				path: "tabSize",
 				type: "number",
 				defaultValue: 4,
 			},
-			"tab空格缩进": {
+			"insertSpaces": {
+				// tab空格缩进
 				path: "insertSpaces",
 				defaultValue: false,
 			},
-			"自动适配缩进格式": {
+			"detectIndentation": {
+				// 自动适配缩进格式
 				path: "detectIndentation",
 				defaultValue: true,
 			},
-			"粘贴自动格式化": {
+			"formatOnPaste": {
+				// 粘贴自动格式化
 				path: "formatOnPaste",
 				defaultValue: true,
 			},
-			"vim编辑模式": {
-				path: "enabledVim",
+			"formatOnSaveFile": {
+				// 保存自动格式化
+				path: "formatOnSaveFile",
 				defaultValue: false,
 			},
-			"重命名同步修改import路径": {
-				path: "renameConverImportPath",
-				defaultValue: true,
-			},
-			"JS 高性能函数跳转/提示": {
-				path: "enabledGlobalSugges",
-				defaultValue: true,
-			},
-			"显示代码预览": {
-				path: "enabledMinimap",
-				defaultValue: true,
-			},
-			"彩虹缩进显示": {
-				path: "enabledRainbow",
-				defaultValue: false,
-			},
-			"括号多重彩色": {
-				path: "enabledBracketColor",
-				defaultValue: true,
-			},
-			"翻页过渡效果": {
-				path: "smoothScrolling",
-				defaultValue: true,
-			},
-			"光标过渡效果": {
-				path: "cursorSmoothCaretAnimation",
-				defaultValue: false,
-			},
-			"Color字段色彩预览": {
-				path: "enabledCCColor",
-				defaultValue: true,
-			},
-			"显示调试按钮": {
-				path: "enabledDebugBtn",
-				defaultValue: true,
-			},
-			"显示控制台按钮": {
-				path: "enabledConsoleBtn",
-				defaultValue: true,
+			"enabledFormatFromPrettier": {
+				// prettire 插件
+				path: "enabledFormatFromPrettier",
+				defaultValue: Symbol.asyncIterator ? false : false, // 旧版js解析器不支持该库,则不开启
 			},
 		},
 		More: {
-			"自动窗口最小高度占比%": {
+			"autoLayoutMin": {
+				// 自动窗口最小高度占比%
 				path: "autoLayoutMin",
 				type: "number",
 				defaultValue: 10,
 				defaults: [
-					{ caption: "禁用功能", value: 0 },
+					{ caption: "disable", value: 0 },
 					{ caption: "60%", value: 60 },
 					{ caption: "40%", value: 40 },
 					{ caption: "20%", value: 20 },
@@ -1009,52 +986,80 @@ module.exports = {
 				]
 			},
 
-			"自动窗口最大高度占比%": {
+			"autoLayoutMax": {
+				// 自动窗口最大高度占比%
 				path: "autoLayoutMax",
 				type: "number",
 				defaultValue: 80,
 				defaults: [
-					{ caption: "使用用户调整窗口后的值", value: 0 },
-					{ caption: "固定80%", value: 80 },
-					{ caption: "固定60%", value: 60 },
-					{ caption: "固定50%", value: 50 },
+					{ caption: tools.translate('userHabit' /*"使用用户调整窗口后的值"*/), value: 0 },
+					{ caption: tools.translate('fix')+" 80%", value: 80 },
+					{ caption: tools.translate('fix')+" 60%", value: 60 },
+					{ caption: tools.translate('fix')+" 50%", value: 50 },
 				]
 			},
 
-			"自动窗口过渡动画时间": {
+			"autoLayoutDt": {
+				// 自动窗口过渡动画时间
 				path: "autoLayoutDt",
 				type: "number",
 				defaultValue: 0,
 				defaults: [
-					{ caption: "禁用", value: 0 },
-					{ caption: "0.1秒", value: 0.1 },
-					{ caption: "0.2秒", value: 0.2 },
+					{ caption: "disable", value: 0 },
+					{ caption: "0.1s", value: 0.1 },
+					{ caption: "0.2s", value: 0.2 },
 				]
 			},
 
-			"自动窗口过渡动作延迟": {
+			"autoLayoutDelay": {
+				// 自动窗口过渡动作延迟
 				path: "autoLayoutDelay",
 				type: "number",
 				defaultValue: 0.1,
 				defaults: [
-					{ caption: "禁用", value: 0 },
-					{ caption: "0.1秒", value: 0.1 },
+					{ caption: "disable", value: 0 },
+					{ caption: "0.1s", value: 0.1 },
 				]
 			},
 
-			"任务栏位置": {
-				type: "buttonBar",
+			"titleBarFontSize": {
+				// 工具栏大小
+				path: "titleBarFontSize",
+				type: "number",
+				defaultValue: 12,
+				defaults: [
+					{ caption: "8px", value: 8 },
+					{ caption: "10px", value: 10 },
+					{ caption: "12px", value: 12 },
+					{ caption: "14px", value: 14 },
+					{ caption: "16px", value: 16 }
+				],
+			},
+
+			"tabBarPos": {
+				// 工具栏位置
 				path: "tabBarPos",
+				type: "buttonBar",
 				defaultValue: "",
 				items: [
-					{ caption: "顶部", value: "" },
-					{ caption: "低部", value: "1" },
+					{ caption: "top", value: "" },
+					{ caption: "bottom", value: "1" },
 				]
 			},
-
-			"隐藏工具栏": {
+			"hideToolsBar": {
+				// 隐藏工具栏
 				path: "hideToolsBar",
 				defaultValue: false,
+			},
+			"isCheckUpdater": {
+				// 自动检测更新
+				path: "isCheckUpdater",
+				defaultValue: true,
+			},
+			"isQuickDrag": {
+				// 拖拽变量快速生成(使用文件名)
+				path: "isQuickDrag",
+				defaultValue: true,
 			},
 		},
 	},
@@ -1063,12 +1068,20 @@ module.exports = {
 		"48": '0', "49": '1', "50": '2', "51": '3', "52": '4', "53": '5', "54": '6', "55": '7', "56": '8', "57": '9', "65": 'a', "66": 'b', "67": 'c', "68": 'd', "69": 'e', "70": 'f', "71": 'g', "72": 'h', "73": 'i', "74": 'j', "75": 'k', "76": 'l', "77": 'm', "78": 'n', "79": 'o', "80": 'p', "81": 'q', "82": 'r', "83": 's', "84": 't', "85": 'u', "86": 'v', "87": 'w', "88": 'x', "89": 'y', "90": 'z',
 	},
 
+	cfgPath : path.join(cacheDir,'userConfig.json'),
+
 	getLocalStorage(){
 		if(this.cfg){
 			return this.cfg;
 		}
-		this.cfg = localStorage.getItem("simple-code-config");
-		this.cfg = this.cfg ? JSON.parse(this.cfg) : {}; 
+
+		this.cfg = tools.isFileExit(this.cfgPath) && fs.readFileSync(this.cfgPath).toString() || localStorage.getItem("simple-code-config");
+		try {
+			this.cfg = this.cfg ? JSON.parse(this.cfg) : {}; 
+		} catch (error) {
+			this.cfg = {};
+			console.warn(error);
+		}
 		return this.cfg;
 	},
 
@@ -1077,23 +1090,53 @@ module.exports = {
 		if(this.pro_cfg){
 			return this.pro_cfg;
 		}
-		const fe 	= Editor.require('packages://simple-code/tools/FileTools.js');
-		const path 	= require("path");
-		const prsPath = Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
+		const fe 	= Editor.require('packages://simple-code/tools/tools.js');
 
-		const savePath = path.join(prsPath,'local','simple-code-config.json')
-		this.pro_cfg = fe.isFileExit(savePath) ? require(savePath) : {};
+		const savePath = path.join(this.prsPath,'local','simple-code-config.json')
+		
+		try {
+			this.pro_cfg = fe.isFileExit(savePath) ? require(savePath) : {};
+		} catch (error) {
+			this.pro_cfg = {}
+		}
 		return this.pro_cfg;
 	},
-	
-	saveStorage(){
-		const fe 	= Editor.require('packages://simple-code/tools/FileTools.js');
-		const path 	= require("path");
-		const fs 	= require("fs");
-		const prsPath = Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
 
-		const savePath = path.join(prsPath,'local','simple-code-config.json')
-		fs.writeFileSync(savePath,JSON.stringify(this.pro_cfg || {}))
-		localStorage.setItem("simple-code-config", JSON.stringify(this.cfg || {}));
+	
+	// 编辑器用户配置
+	getUserEditorConfig(){
+		let cfg = this.importUserConfigFile(Editor.url('packages://simple-code/editor_config.js'));
+		Object.assign(this.vsEditorConfig,cfg);
+		return this.vsEditorConfig;
+	},
+	
+	// 保存配置
+	saveStorage(){
+		const savePath = path.join(this.prsPath,'local','simple-code-config.json')
+		fs.writeFileSync(savePath,JSON.stringify(this.pro_cfg || {})) // 跟着项目走的配置
+		tools.createDir(this.cfgPath)
+		fs.writeFileSync(this.cfgPath,JSON.stringify(this.cfg || {})) // 全局配置
+		// localStorage.setItem("simple-code-config", JSON.stringify(this.cfg || {}));
+	},
+
+	// 读取用户配置文件,没有则拷贝一份当用户配置文件
+	importUserConfigFile(filePath)
+	{
+		let userFilePath = this.getUserConfigPath(filePath);
+		// 首次使用拷贝模板到可写路径
+		if(!tools.isFileExit(userFilePath)){
+			tools.createDir(userFilePath)
+			tools.copyFile(filePath,userFilePath)
+		}
+		try {
+			return require(userFilePath);
+		} catch (error) {
+			Editor.warn('[simple-code] import config error:',error);
+			return {}
+		}
+	},
+
+	getUserConfigPath(filePath){
+		return path.join(cacheDir,'configs',path.basename(filePath));
 	},
 }

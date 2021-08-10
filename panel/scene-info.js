@@ -2,7 +2,7 @@
 const path 		= require('path');
 const fs 		= require('fs');
 const md5     	= require('md5');
-const fe    	= Editor.require('packages://simple-code/tools/FileTools.js');
+const fe    	= Editor.require('packages://simple-code/tools/tools.js');
 
 // 工作路径
 let prsPath  = Editor.importPath.split('library'+path.sep)[0] ;
@@ -11,18 +11,6 @@ let prsPath  = Editor.importPath.split('library'+path.sep)[0] ;
 
 var eventFuncs = 
  {
-
- 	// 新建js模板路径
- 	getJsTemplatePath(node_uuid,file_type){
- 		return Editor.url('packages://simple-code/template/define.'+file_type, 'utf8')
- 	},
-
- 	// 保存新建脚本路径
- 	getNewFileSavePath(node_url,file_type){
- 		// 场景文件路径: node_url = db://assets/xxxx/xxxx.xxx
- 		node_url = node_url.substr(0,node_url.lastIndexOf("/")) + '/' +"script_min" + '/'; //保存到预制节点的同级目录
- 		return node_url;
- 	},
 
  	// 获得活动面板
 	getActiveUuid()
@@ -129,10 +117,10 @@ var eventFuncs =
 		if (url) return callFunc(url,true,scene.uuid);
 
 		// 当前打开的预制节点路径
-		Editor.Ipc.sendToMain('simple-code:getPrefabUuid',{}, function (error, answer) 
+		Editor.Ipc.sendToMain('simple-code:getPrefabUuid',{}, function (error, uuid) 
 		{
-			if (answer != null){
-				callFunc( Editor.remote.assetdb.uuidToUrl(answer),false,answer)
+			if (uuid != null){
+				callFunc( Editor.remote.assetdb.uuidToUrl(uuid),false,uuid)
 			}
 		});
  	},
@@ -430,6 +418,40 @@ var eventFuncs =
 		cc.engine._animatingInEditMode = is_cmd_mode
 	},
 
+	// 标记场景切换时需要保存
+	'scene-need-save'(){
+		let node = cc.director.getScene().children[0];
+		if(!node){
+			return;
+		}
+		let uuid = node.uuid;
+		let opacity = node.opacity;
+		// Editor.Ipc.sendToPanel('scene', 'scene:undo-commit'); 
+		// Editor.Ipc.sendToAll('scene:undo-record',uuid,{id:uuid});
+		// Editor.Ipc.sendToPanel('scene', 'scene:set-property',{
+		// 	id: uuid,
+		// 	path: "opacity",//要修改的属性
+		// 	type: "number",
+		// 	value: 2555,
+		// 	isSubProp: false,
+		// });
+		Editor.Ipc.sendToPanel('scene', 'scene:set-property',{
+			id: uuid,
+			path: "opacity",//要修改的属性
+			type: "number",
+			value: opacity,
+			isSubProp: false,
+		});
+		// 撤销
+		Editor.Ipc.sendToPanel('scene', 'scene:undo');
+		// 重做
+		Editor.Ipc.sendToPanel('scene', 'scene:redo')
+		Editor.Ipc.sendToPanel('scene', 'scene:undo-commit'); 
+		// 恢复 nodeTree 选择状态
+		let list = Editor.Selection.curSelection('node');
+		setTimeout(()=>Editor.Selection.select('node', list),1)
+	},
+
 	// 运行命令
 	'run-command-code': function (event,args) {
 		let require = cc.require;
@@ -492,7 +514,6 @@ var eventFuncs =
 		cc.engine.animatingInEditMode = 1
 		if (args.type == "scene")
 		{
-			this.testEditorScene();
 		}else if(args.uuid){
 			this['run-js-file'](null,args);// 执行代码脚本
 		}
@@ -513,97 +534,6 @@ var eventFuncs =
 							if(js.isValid) js.update(0.02);
 						},0.02,{count:60})
 					}
-				}
-			})
-		})
-	},
-
-	testEditorScene(){
-
-		if (!cc.director._changeCocosFunc){
-			cc.director._changeCocosFunc = true
-
-			// 通过uuid加载场景
-			cc.director._loadSceneByUuid_temp = (uuid, onLaunched, onUnloaded)=>{
-		        cc.AssetLibrary.loadAsset(uuid, function (error, sceneAsset) {
-		            var self = cc.director;
-		            self._loadingScene = '';
-		            if (error) {
-		                error = 'Failed to load scene: ' + error;
-		                cc.error(error);
-		            }
-		            else {
-		                if (sceneAsset instanceof cc.SceneAsset) {
-		                    var scene = sceneAsset.scene;
-		                    scene._id = sceneAsset._uuid;
-		                    scene._name = sceneAsset._name;
-
-                            self.runSceneImmediate(scene, onUnloaded, onLaunched);
-		                    return;
-		                }
-		                else {
-		                    error = 'The asset ' + uuid + ' is not a scene';
-		                    cc.error(error);
-		                }
-		            }
-		            if (onLaunched) {
-		                onLaunched(error);
-		            }
-		        });
-			}
-
-			cc.director.loadScene = (sceneName,c1,c2,c3)=>{
-				Editor.assetdb.deepQuery( (err, results)=> {
-					for (let i = 0; i < results.length; i++) 
-					{
-						let result = results[i];
-						if (result.extname == ".fire" && result.name.indexOf(sceneName) != -1){
-							cc.director._loadSceneByUuid_temp(result.uuid,c1,c2,c3);
-							return
-						}
-					}
-					cc.warn("调试未发现场景:",sceneName)
-				})
-			}
-
-
-			// let old_func = cc.loader._getResUuid.bind(cc.loader);
-			// cc.loader._getResUuid =  (url, type, quiet) =>
-			// {
-			// 	let uuid = old_func(url,type,quiet)
-			//     if (uuid != "") {
-			//         return uuid;
-			//     }
-
-			//     // Ignore parameter
-			//     var index = url.indexOf('?');
-			//     if (index !== -1)
-			//         url = url.substr(0, index);
-			 	
-			//  	if(this._assetList){
-			//  		for (var i = 0; i < this._assetList.length; i++) {
-			//  			let info = this._assetList[i]
-			//  			let infoUrl = Editor.remote.assetdb.uuidToUrl(info.uuid);
-			//  			if (infoUrl.indexOf(url) != -1){
-			//  				uuid = info.uuid;
-			//  				break
-			//  			}
-			//  		}
-			//  	}
-			   	
-			//     return uuid;
-			// };
-		}
-		
-		// // 缓存资源列表
-		// Editor.assetdb.deepQuery( (err, results)=> {
-		// 	this._assetList = results;
-		// })	
-
-		this.getCurrSceneUrl((url,isScene,uuid)=>{
-			this.openDebugScene(uuid,isScene,(isSucceed)=>{
-				if (isSucceed){
-					setTimeout(()=>this['run-node-js'](),1)
 				}
 			})
 		})
@@ -729,92 +659,12 @@ var eventFuncs =
 
 	
 	
-	'new-js-file': function(event)
-	{
-		let file_type 	= localStorage.getItem("newFileType")|| "js"
-		let head_node   = Editor.Selection.curSelection('node')[0];
-		let node        = this.findNode(head_node );
-		let activeInfo  = Editor.Selection.curGlobalActivate(); 
-
-		if(node && activeInfo.type == "node")
-		{
-			let jsFile = this.isHasJsFile(node);
-			if (jsFile)
-			{
-				alert("该节点已经存在js脚本,不再创建脚本"); 
-			}else
-			{
-				let uuid       = node.uuid;
-				let jsFileName = "a_" + node.name +"_"+ md5(node.uuid).substr(0,6); 
-				let data       = fs.readFileSync(this.getJsTemplatePath(uuid,file_type)); 
-				let url        = 'db://assets/_script_min/'; 
-
-				// 获得当前场景或预制节点文件路径
-				this.getCurrSceneUrl((node_url)=>
-				{
-					if(!node_url) return event.reply(null,{});
-
-					// 默认新建文件保存地方
-					url = this.getNewFileSavePath(node_url,file_type)
-					// 创建目录
-					this.createDir(Editor.url(url))
-					// 创建文件
-					Editor.assetdb.create( url+jsFileName+'.'+file_type, data, ( err, results )=> 
-					{
-						if(err) return event.reply(null,{});
-
-						// 定时检测creator加载新建文件缓存没
-						let stop_func;
-						let chk_count = 0
-						stop_func = this.setTimeoutToJS(()=>
-						{
-							//等场景加载完脚本
-							node = this.findNode(uuid)
-							if (node && !node._objFlags){
-						 		let comp = node.getComponent(jsFileName)
-						 		if(comp)
-						 		{
-						 			// 创建脚本瞬间添加的node组件会丢失,所以需要检测3次组件确定加载了
-						 			if (chk_count++ == 3){
-						 				stop_func();
-						 				event.reply(null,{data:"",node_uuid:uuid,scipt_uuid:comp.__scriptUuid});
-								        Editor.Ipc.sendToPanel('simple-code', 'custom-cmd',{cmd:"openFile"});
-						 			}
-						 		}else
-						 		{
-					 				// 阻止报错提示
-					 				let func = Editor.failed;
-					 				Editor.failed = ()=>{}
-						 			try {
-						 			    comp = cc.require(jsFileName)
-						 			} catch(t) {}
-
-						 			Editor.failed = func;
-
-						 			// 添加组件
-						 			if (comp){
-						 				// Editor.Ipc.sendToPanel('scene', 'scene:add-component', uuid, jsFileName); //添加不了脚本
-						 				node.addComponent(jsFileName);
-						 			}
-						 		}
-							}
-						},0.5,{count:30})
-					},500)
-				});	
-			}
-		}else{
-			Editor.info("该功能需要您选中一个节点后再执行才能创建脚本与绑定节点")
-			event.reply(null,{});
-		}
-		
-	}
-
 
 };
 
 // 合并事件函数,分发
-let info 		= Editor.require("packages://simple-code/panel/event-merge").eventvMerge(eventFuncs,"scene_ex.js")
-let fileList 	= fe.getDirAllFiles(Editor.url("packages://simple-code/panel/editor-ex"),[])
+let info 		=  Editor.require('packages://simple-code/tools/eventMerge').eventMerge(eventFuncs,"scene_ex.js")
+let fileList 	= fe.getDirAllFiles(Editor.url("packages://simple-code/extensions"),[])
 eventFuncs 		= info.messages
 
 
