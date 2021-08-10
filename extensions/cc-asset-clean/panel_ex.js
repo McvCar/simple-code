@@ -104,6 +104,9 @@ module.exports = {
 		this.findAssets(true)
 	},
 	findAssets(bl,uuid) {
+		// if(window.cc && window.cc.ENGINE_VERSION.startsWith('1')){
+		// 	return Editor.log("该功能不支持Creator 2.0 以下版本")
+		// }
 		this.cleanSelect()
 		const curUuids = [uuid]//Editor.Selection.curSelection('asset');
 
@@ -387,7 +390,7 @@ module.exports = {
 		}
 
 		// 遍历资源目录下的文件
-		const rootPath = path.join(Editor.Project.path, 'assets');
+		const rootPath = path.join(prsPath, 'assets');
 		FileUtil.map(rootPath, handler);
 		return results;
 	},
@@ -564,7 +567,7 @@ module.exports = {
 				const nodeId = nodes[i]['__id__'];
 				read(tree, nodeId);
 			}
-		} else if (type === 'cc.Prefab') {
+		} else if (type === 'cc.Prefab' && data[data.length - 1]['asset']) {
 			// 预制体资源
 			tree['__type__'] = 'cc.Prefab';
 			tree['__uuid__'] = data[data.length - 1]['asset']['__uuid__'];
@@ -658,15 +661,21 @@ module.exports = {
 	},
 	messages: {
 		'findCleanFileByDir'() {
-			if(this.currSelectInfo && this.currSelectInfo.uuid){
-				this.findAssets(false,this.currSelectInfo.uuid)
-			}
+			Editor.info("开始搜索,可能会卡顿几秒,请稍等...");
+			setTimeout(() => {
+				if(this.currSelectInfo && this.currSelectInfo.uuid){
+					this.findAssets(false,this.currSelectInfo.uuid);
+				}
+			}, 500);
 		},
 
 		'cleanFileByDir'() {
-			if(this.currSelectInfo && this.currSelectInfo.uuid){
-				this.findAssets(true,this.currSelectInfo.uuid)
-			}
+			Editor.info("开始搜索,可能会卡顿几秒,请稍等...");
+			setTimeout(() => {
+				if(this.currSelectInfo && this.currSelectInfo.uuid){
+					this.findAssets(true,this.currSelectInfo.uuid);
+				}
+			}, 500);
 		},
 
 		'cleanFile'() {

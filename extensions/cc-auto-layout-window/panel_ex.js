@@ -59,6 +59,9 @@ module.exports = {
 	{
 		if(!isInit)
 		{
+			if(this.parent.cfg.is_lock_window) {
+				return;
+			}
 			if (cfg.autoLayoutMin != null) {
 				this.setAutoLayout(true);
 				this.setAutoLayout(false);
@@ -100,7 +103,7 @@ module.exports = {
 	{
 		if(this.parent.cfg.is_lock_window && !isUse) 
 			return;
-		this.getLayoutDomFlex();
+		this.layout_dom_flex = this.getLayoutDomFlex();
 		let now_flex = this.layout_dom_flex && this.layout_dom_flex.style.flex;
 		if(!this.parent.cfg.autoLayoutMin || now_flex == null || (this.old_focused_state != null && this.old_focused_state == is_focused)){
 			return;
@@ -108,33 +111,53 @@ module.exports = {
 		this.old_focused_state = is_focused;
 
 		// 焦点改变时修改布局
-		let my_per = is_focused ? (this.parent.cfg.autoLayoutMax ? this.parent.cfg.autoLayoutMax * 0.01 : this.self_flex_per) : this.parent.cfg.autoLayoutMin*0.01; // 调整窗口缩放比例
-		let max_per = 1
-		let sub_per = max_per-my_per;
-		let ohter_height = 0
+		// 统计其它同级窗口总宽或总高
 		let flexs = this.getFlexs();
-		
-		for (const i in flexs) {
-			const flexInfo = flexs[i];
-			if(flexInfo.dom != this.layout_dom_flex){
-				ohter_height += Number(flexInfo.flex[0])
+		// 是否水平布局
+		let is_horizontal = this.layout_dom_flex.isHorizontal;//this.isHorizontalLayout();
+		if(is_horizontal){
+			for (const i in flexs) {
+				const flexInfo = flexs[i];
+				if(this.parent.cfg.autoLayoutDt){
+					flexInfo.dom.style['-webkit-transition'] = 'flex '+this.parent.cfg.autoLayoutDt+"s ease "+(this.parent.cfg.autoLayoutDelay || '0')+'s'
+				}
+				let flex = flexInfo.dom.style.flex;
+				if(is_focused){
+					flexInfo.dom.old_flex_grow = flexInfo.flex[0]
+					flex = flexInfo.dom != this.layout_dom_flex ? '0.1 1 0%' : '1 1 0%';
+				}else if(flexInfo.dom.old_flex_grow != null){
+					flex = flexInfo.dom.old_flex_grow + ' 1 0%'// + ls;
+				}
+				flexInfo.dom.style.flex = flex;
 			}
-		}
+		}else{ // 垂直布局
+			let my_per = is_focused ? (this.parent.cfg.autoLayoutMax ? this.parent.cfg.autoLayoutMax * 0.01 : this.self_flex_per) : this.parent.cfg.autoLayoutMin*0.01; // 调整窗口缩放比例
+			let max_per = 1
+			let sub_per = max_per-my_per;
+			let ohter_size = 0
+			for (const i in flexs) {
+				const flexInfo = flexs[i];
+				if(flexInfo.dom != this.layout_dom_flex){
+					ohter_size += Number(flexInfo.flex[0])
+				}
+			}
 
-		for (const i in flexs) 
-		{
-			const flexInfo = flexs[i];
-			if(this.parent.cfg.autoLayoutDt){
-				
-				flexInfo.dom.style['-webkit-transition']='flex '+this.parent.cfg.autoLayoutDt+"s ease "+(this.parent.cfg.autoLayoutDelay || '0')+'s'
-			}
-			if(flexInfo.dom != this.layout_dom_flex)
+			for (const i in flexs) 
 			{
-				let per = Number(flexInfo.flex[0])/ohter_height;//占用空间百分比
-				let oth_per = per*sub_per;
-				flexInfo.dom.style.flex = oth_per+' '+ oth_per+' '+' 0px'
-			}else{
-				flexInfo.dom.style.flex = my_per+' '+ my_per+' '+' 0px'
+				const flexInfo = flexs[i];
+				if(this.parent.cfg.autoLayoutDt){
+					
+					flexInfo.dom.style['-webkit-transition']='flex '+this.parent.cfg.autoLayoutDt+"s ease "+(this.parent.cfg.autoLayoutDelay || '0')+'s'
+				}
+				if(flexInfo.dom != this.layout_dom_flex)
+				{
+					let per = Number(flexInfo.flex[0])/ohter_size;//占用空间百分比
+					let oth_per = isNaN(per) ? sub_per : per*sub_per; // 临时修复布局异常bug;
+					
+					flexInfo.dom.style.flex = oth_per+' 1 0%'
+				}else{
+					flexInfo.dom.style.flex = my_per+' 1 0%'
+				}
 			}
 		}
 		
@@ -212,7 +235,7 @@ module.exports = {
 	// 本窗口当前占用空间百分比
 	getSelfFlexPercent()
 	{
-		this.getLayoutDomFlex();
+		this.layout_dom_flex = this.getLayoutDomFlex();
 		let flexs = this.getFlexs();
 		let max_height = 0
 		let self_flex 
@@ -230,27 +253,41 @@ module.exports = {
 		return 0
 	},
 
+	// 获得竖板布局层
 	getLayoutDomFlex(){
-		if(this.parent_dom && this.parent_dom.parentElement)
+		return this.getLayoutDomFlexByPanel(this.parent_dom);
+	},
+
+	// 获得编辑器所在的布局块对象
+	getLayoutDomFlexByPanel(panel){
+		let layout_dom_flex;
+		if(panel && panel.parentElement)
 		{
-			this.layout_dom_flex = this.parent_dom.parentElement;
+			layout_dom_flex = panel.parentElement;
+			if(!layout_dom_flex.parentElement) return;
 			let isHorizontal = true;
-			for (let i = 0; i < this.layout_dom_flex.parentElement.children.length; i++) {
-				const dom = this.layout_dom_flex.parentElement.children[i];
-				if(dom.scrollHeight != this.layout_dom_flex.scrollHeight){
+			for (let i = 0; i < layout_dom_flex.parentElement.children.length; i++) {
+				const dom = layout_dom_flex.parentElement.children[i];
+				if(Math.abs(dom.scrollHeight - layout_dom_flex.scrollHeight)>50){
 					isHorizontal = false;
 				}
 			}
 			// 这里水平布局了两排以上
 			if(isHorizontal){
-				this.layout_dom_flex = this.layout_dom_flex.parentElement || this.layout_dom_flex; //再找一层
+				let n = layout_dom_flex.parentElement.tagName
+				if(n == "UI-MAIN-DOCK"){
+					layout_dom_flex.isHorizontal = true;// 面板,标记使用水平布局
+				}else{
+					layout_dom_flex = layout_dom_flex.parentElement
+					delete layout_dom_flex.isHorizontal;
+				}
 			}
 		}else{
-			this.layout_dom_flex = undefined;
+			layout_dom_flex = undefined;
 		}
-		return this.layout_dom_flex;
+		return layout_dom_flex;
 	},
-
+	
 	// 面板销毁
 	onDestroy(){
 		this.setAutoLayout(false);

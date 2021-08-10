@@ -75,16 +75,16 @@ module.exports = {
 			return false;
 		},1);
 
-		this.parent.addKeybodyEvent([["Escape"]],(e)=>
-		{
-			if(!this.parent.cfg.enabledVim){
-				eruda._devTools.show();
-				this.cmd_editor.focus()
-				this.cmd_editor.layout()
-			}
-			e.preventDefault();// 吞噬捕获事件
-			return false;
-		},1);
+		// this.parent.addKeybodyEvent([["Escape"]],(e)=>
+		// {
+		// 	if(!this.parent.cfg.enabledVim){
+		// 		eruda._devTools.show();
+		// 		this.cmd_editor.focus()
+		// 		this.cmd_editor.layout()
+		// 	}
+		// 	e.preventDefault();// 吞噬捕获事件
+		// 	return false;
+		// },1);
 	},
 	
 	getWindowObj(){

@@ -1,7 +1,7 @@
 {
 	"name": "simple-code",
 	"scene-script": "panel/scene-info.js",
-	"version": "2.8.2", 
+	"version": "2.8.3", 
 	"description": "快闪-代码编辑器",
 	"author": "嘉年华(mcv-cpu)",
 	"main": "main.js",
@@ -151,6 +151,7 @@
 		"type": "dockable",
 		"title": "i18n:simple-code.name",
 		"width": 400,
+		"min-width":150,
 		"height": 30
 	},
 	"panel.preview": {

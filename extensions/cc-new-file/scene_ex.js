@@ -28,7 +28,7 @@ let onComplete = (saveUrl,data,node,jsFileName)=>{
 		setTimeout(()=>{
 			try{
 				data = data || fs.readFileSync( Editor.remote.assetdb.urlToFspath(saveUrl)).toString();
-			}catch{err}{
+			}catch(err){
 			}
 			require(USER_NEW_FILE_RULE).onComplete(saveUrl,data,node,jsFileName);
 		},100)

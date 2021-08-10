@@ -43,8 +43,8 @@ let layer = {
 
 					</div>
 					<div id="toolsPanel" class="layout horizontal">
-						<ui-checkbox id="lockChk">${tools.translate('lock-tab')}</ui-checkbox>
-						<ui-checkbox id="lockWindowChk">${tools.translate('lock-win')}</ui-checkbox>
+						<ui-checkbox id="lockChk" title="锁定当前文件后不再自动关闭">${tools.translate('lock-tab')}</ui-checkbox>
+						<ui-checkbox id="lockWindowChk" title="锁定后窗口不再自动缩放">${tools.translate('lock-win')}</ui-checkbox>
 						<ui-button id="manualCompile" class="">${tools.translate('manual-compile')}</ui-button>
 						<ui-button id="gotoFileBtn" class="blue">${tools.translate('goto-file-btn')}</ui-button>
 						<ui-button id="settingBtn" class="green">${tools.translate('set')}</ui-button>
@@ -374,9 +374,9 @@ let layer = {
 	},
 
 	upLayout(){
-		if (this.old_width == null || Math.abs(this.$box.scrollWidth - this.old_width) >3 || this.old_height == null || Math.abs(this.$box.scrollHeight - this.old_height) >3) {
-			this.old_width = this.$box.scrollWidth;
-			this.old_height = this.$box.scrollHeight;
+		if (this.old_width == null || Math.abs(this.$box.clientWidth - this.old_width) >3 || this.old_height == null || Math.abs(this.$box.clientHeight - this.old_height) >3) {
+			this.old_width = this.$box.clientWidth;
+			this.old_height = this.$box.clientHeight;
 			this.vs_editor.layout();
 			return true;
 		}
@@ -438,6 +438,7 @@ let layer = {
 			}
 			ret_type = onApplyEvent(e, 'keydown');
 			_this.runExtendFunc("onKeyDown", e);
+			// console.log("A",e.key,pressedKeys)
 			return ret_type;
 		}, true);
 
@@ -465,7 +466,6 @@ let layer = {
 				['Meta'] : e.metaKey,
 				['Shift'] : e.shiftKey,
 			}
-			// console.log("C",e.key,pressedKeys)
 			_this.runExtendFunc("onKeyUp", e);
 		}, true);
 
@@ -507,6 +507,15 @@ let layer = {
 			e.preventDefault();// 吞噬捕获事件
 			return false;
 		}, 1, "keydown");
+
+		// tab 
+		this.addKeybodyEventByName('switchTab', (e) => {
+			this.setTabPage(this.old_edit_id);
+			e.preventDefault();// 吞噬捕获事件
+			e.stopPropagation()
+			return false;
+		}, 1, "keydown");
+		
 	},
 
 	// 获得下拉条列表目数据
