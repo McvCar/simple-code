@@ -1,13 +1,13 @@
 // 代码编辑器窗口
 // 编辑功能 MonaocEditor 编辑器面板
-
+clearRequireCache()
 const Editor2D 		= require('../../tools/editor2D');
 Editor2D.analogApi()
 
 const fs 			= require('fs');
 const path 			= require("path");
 const electron 		= require('electron');
-const tools 		= require('../../tools/tools.js');
+const tools 		= require('../../tools/tools');
 const ccMenuMgr		= require('./cc-menu-mgr.js');
 tools.initI18t();
 
@@ -92,10 +92,11 @@ class EditorPanel extends VsEditorPanel{
 	// 启动事件
 	ready(args) 
 	{
-		console.log("启动")
+		// console.log("启动")
 		this.$ = args.$;
 		this.initStartData();
 		this.initCSS();
+		this.checkJustUpgraded();
 		this.runExtendFunc("ready",this);
 		this.initVsEditor(()=>{
 			this.initData();
@@ -156,6 +157,15 @@ class EditorPanel extends VsEditorPanel{
 		this.ccMenuMgr			= new ccMenuMgr(this);
 	}
 
+	// 是否刚升级
+	checkJustUpgraded(){
+		
+		let old_version = localStorage.getItem('simple-code-version') || packageCfg.version;
+		if(old_version != packageCfg.version){
+			confirm(`检测到[${packageCfg.description}]已升级,\n为了防止插件出问题,请重启Cocos Creator`);
+		}
+		localStorage.setItem('simple-code-version',packageCfg.version)
+	}
 
 	// 设置选项
 	setOptions(cfg,isInit) 
@@ -702,7 +712,7 @@ class EditorPanel extends VsEditorPanel{
 	// 页面关闭
 	onDestroy() 
 	{ 
-		console.log("释放")
+		// console.log("释放")
 		if(this._is_destroy || this.edit_list == null) return;
 		this._is_destroy = true;
 		super.onDestroy();
@@ -1020,6 +1030,21 @@ let messages = {
 	}
 };
 
+// 升级插件后必须清除 require 缓存，否则升级插件后require对象是旧的缓存
+function clearRequireCache(){
+	const tools = require('../../tools/tools');
+	if(!tools.initI18t){
+		// 标记旧版
+		localStorage.setItem('simple-code-version','-1')
+	}
+    if(require.cache){
+        for (const key in require.cache) {
+            if(key.includes('simple-code')){
+                delete require.cache[key];
+            }
+        }
+    }
+}
 
 // 合并事件函数,分发
 let editorPanel;
@@ -1044,9 +1069,9 @@ exports.ready = function(){
 };
 exports.beforeClose = function(){ 
 	// 如果编辑器未初始化完成禁止移动
-	if(editorPanel && !editorPanel.is_init_finish){
-		return false;
-	}
+	// if(editorPanel && !editorPanel.is_init_finish){
+	// 	return false;
+	// }
 }
 exports.close = function(){ 
 	if(editorPanel){

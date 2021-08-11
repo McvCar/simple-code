@@ -1,4 +1,5 @@
 'use strict';
+clearRequireCache()
 const Editor2D = require('../tools/Editor2D.js');
 Editor2D.analogApi();
 
@@ -572,6 +573,17 @@ var eventFuncs =
 	
 
 };
+
+// 升级插件后必须清除 require 缓存，否则升级插件后require对象是旧的缓存
+function clearRequireCache(){
+    if(require.cache){
+        for (const key in require.cache) {
+            if(key.includes('simple-code')){
+                delete require.cache[key];
+            }
+        }
+    }
+}
 
 // 合并事件函数,分发
 let info 		=  Editor2D.require('packages://simple-code/tools/eventMerge').eventMerge(eventFuncs,"scene_ex.js")
