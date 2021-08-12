@@ -162,7 +162,7 @@ class EditorPanel extends VsEditorPanel{
 		
 		let old_version = localStorage.getItem('simple-code-version') || packageCfg.version;
 		if(old_version != packageCfg.version){
-			confirm(`检测到[${packageCfg.description}]已升级,\n为了防止插件出问题,请重启Cocos Creator`);
+			setTimeout(()=>confirm(`检测到[${packageCfg.description}]已升级,\n为了防止插件出问题,请重启Cocos Creator`),1000);
 		}
 		localStorage.setItem('simple-code-version',packageCfg.version)
 	}
@@ -1034,16 +1034,18 @@ let messages = {
 function clearRequireCache(){
 	const tools = require('../../tools/tools');
 	if(!tools.initI18t){
-		// 标记旧版
+		// 标记旧版,兼容旧版
 		localStorage.setItem('simple-code-version','-1')
 	}
-    if(require.cache){
-        for (const key in require.cache) {
-            if(key.includes('simple-code')){
-                delete require.cache[key];
-            }
-        }
-    }
+	
+	if(require.cache){
+		// console.log("清除缓存")
+		for (const key in require.cache) {
+			if(key.includes('simple-code') && !key.includes('monaco-editor')){
+				delete require.cache[key];
+			}
+		}
+	}
 }
 
 // 合并事件函数,分发
