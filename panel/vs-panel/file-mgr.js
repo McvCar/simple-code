@@ -21,12 +21,21 @@ class FileMgr{
     }
 
 	// 更新游戏项目文件列表缓存
-	initFileListBuffer(callback) {
+	async initFileListBuffer(callback) {
 		if (this.parent.file_list_buffer && this.parent.file_list_buffer.length != 0) {
 			if(callback) callback();
 			return ;
 		};
 
+		let isReady = await Editor.Message.request('asset-db','query-ready')
+		if(!isReady){
+			// creator 未初始化完成，等待500ms后在执行
+			// console.log("编辑未初始化")
+			this.parent.setTimeout(this.initFileListBuffer.bind(this,callback),500);
+			return;
+		}
+
+		
 		Editor2D.assetdb.deepQuery((err, results)=> {
 			if(this.parent.file_list_buffer && this.parent.file_list_buffer.length >0) return;
 			
