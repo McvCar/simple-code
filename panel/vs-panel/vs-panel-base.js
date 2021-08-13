@@ -1,4 +1,5 @@
 /// <reference path="./monaco-editor/monaco.d.ts"/>
+/// <reference path="./../../template/api_doc/editor.d.ts"/>
 /**
  * 1.管理vscode编辑器对象
  * 2.管理文件资源
@@ -37,11 +38,17 @@ class vsEditorPanel {
 
 	// 导入代码提示
 	/** @type monaco */
-	monaco=null;
+	monaco = null;
 	/** @type fileMgr */
-	fileMgr=null;
+	fileMgr = null;
 	/** @type import("./cc-menu-mgr") */
-	ccMenuMgr=null;
+	ccMenuMgr = null;
+	/** @type Array<FileItem> */
+	file_list_buffer = [];
+	/** @type Object<string,FileItem> */
+	file_list_map = {}
+	/** @type Object<string,FileItem> */
+	file_list_uuid = {}
 
 	constructor(){}
 
@@ -218,18 +225,7 @@ class vsEditorPanel {
 	}
 	
 	newFileInfo(extname, name, url, uuid,fsPath) {
-		let item_cfg = {
-			extname: extname,//格式
-			value: name == "" ? url : name,
-			meta: url,
-			url: url,
-			score: 0,//搜索优先级
-			fsPath:fsPath,
-			// matchMask: i,
-			// exactMatch: 0,
-			uuid: uuid,
-		};
-		return item_cfg;
+		return new FileItem(extname,name,uuid,url,fsPath);
 	}
 
 
@@ -745,6 +741,18 @@ class vsEditorPanel {
 	addDocumentEventListener(eventName,callback,option){
 		this.document_event_listener.push({eventName,callback,option});
 		document.body.addEventListener(eventName,callback,option);
+	}
+
+	/**
+	 * 添加语法
+	 * @param {string} id 语言名字
+	 * @param {Array<string>} extnames 文件扩展名
+	 */
+	registerLanguage(id,extnames){
+		for (let i = 0; i < extnames.length; i++) {
+			const element = extnames[i];
+			this.FILE_OPEN_TYPES[element] = id;
+		}
 	}
 	
 	// 用户编辑文本
@@ -1655,4 +1663,20 @@ class vsEditorPanel {
 	}
 
 };
+
+class FileItem {
+	constructor(extname, name, uuid, url, fsPath) {
+		this.extname = extname;//格式
+		this.value = name == "" ? url : name;
+		this.meta = url;
+		this.url = url;
+		this.score = 0;//搜索优先级
+		this.fsPath = fsPath;
+		// matchMask= i;
+		// exactMatch= 0;
+		this.uuid = uuid;
+	}
+}
+
+
 module.exports = vsEditorPanel;
