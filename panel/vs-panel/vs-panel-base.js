@@ -39,6 +39,8 @@ class vsEditorPanel {
 	// 导入代码提示
 	/** @type monaco */
 	monaco = null;
+	/** @type monaco.editor.IStandaloneCodeEditor */
+	vs_editor = null;
 	/** @type fileMgr */
 	fileMgr = null;
 	/** @type import("./cc-menu-mgr") */
@@ -49,6 +51,7 @@ class vsEditorPanel {
 	file_list_map = {}
 	/** @type Object<string,FileItem> */
 	file_list_uuid = {}
+	
 
 	constructor(){}
 
@@ -723,7 +726,7 @@ class vsEditorPanel {
 
 	/** @param {monaco.IDisposable} event */ 
 	pushMonacoEvent(event){
-		// 用于释放
+		// 用于自动释放
 		this.monaco_editor_event_listener.push( event );
 		try {
 			i = i+1;

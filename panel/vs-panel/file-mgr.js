@@ -138,6 +138,9 @@ class FileMgr{
 		return this.parent.monaco.Uri.parse(str_uri).toString();
 	}
 	
+	modelUrlToFsPath(strUri){
+		return strUri.startsWith('file://') ? strUri.substr('file://'.length) : strUri;
+	}
 	// fsPathToUrl(fsPath){
 	// 	fsPath = fsPath.replace(/\\/g,'/')
 	// 	let ind = fsPath.indexOf(fe.normPath( prsPath)+"/assets");

@@ -68,12 +68,12 @@ exports.language = {
 		],
 
 		yaml: [
-			[/%{/, { token: 'identifier', next: '@scriptEmbedded', nextEmbedded: 'yaml' }], // cover invalid e.g. <script type=>
+			[/%{/, { token: 'identifier', next: '@scriptEmbedded', nextEmbedded: 'yaml' }], // 使用yaml语法解析
 			[/}%|%}/, 'identifier', '@pop'],
 		],
 
 		glsl: [
-			[/%{/, { token: 'identifier', next: '@scriptEmbedded', nextEmbedded: 'cshader' }], // cover invalid e.g. <script type=>
+			[/%{/, { token: 'identifier', next: '@scriptEmbedded', nextEmbedded: 'cshader' }], // 使用cshader glsl语法解析
 			[/}%|%}/, 'identifier', '@pop'],
 		],
 

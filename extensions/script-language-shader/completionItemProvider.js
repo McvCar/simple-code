@@ -9,21 +9,26 @@ const { language } = require('./language-configuration');
 
 class CompletionItemProvider {
 
+	/** @type {import('../../panel/vs-panel/vs-panel').EditorPanel} parent  */
+	parent;
+	control;
+	languageId;
+
 	triggerCharacters = ['.','/','<']
 	all_suggestions = [];
+
 	/**
-	 * 
-	 * @param {import('../../panel/vs-panel/vs-panel').EditorPanel} parent 
-	 * @param {string} languageId 
+	 * @param {import('./panel_ex')} control 
 	 */
-	constructor(parent,languageId){
-		this.parent = parent;
-		this.languageId = languageId;
+	constructor(control){
+		this.control = control;
+		this.parent = control.parent;
+		this.languageId = this.control.languageId;
 	}
 	
 	/**
 	 * 
-	 * @param {ITextModel} model 
+	 * @param {monaco.editor.ITextModel} model 
 	 * @param {monaco.Position} position 
 	 * @param {string} context 
 	 * @param {object} token 
@@ -37,7 +42,7 @@ class CompletionItemProvider {
 
 		let text        = model.getLineContent(position.lineNumber);
 		// 1.文件路径提示
-		this.getPathItems(model,position,text,suggestions);
+		await this.getPathItems(model,position,text,suggestions);
 		if(suggestions.length){
 			return {suggestions};
 		}
@@ -51,15 +56,16 @@ class CompletionItemProvider {
     }
 
 	// 路径提示
-    getPathItems(model,position,text,suggestions){
-        let imports = this.getImportStringPaths(text);
+    async getPathItems(model,position,text,suggestions){
+
+		let scriptFile = await this.control.getScriptFile(model.uri);
+		let imports = scriptFile.getImportPaths();
         if(!imports.length) return;
 
         let item ;
         for (let i = 0; i < imports.length; i++) {
-            let col = position.column-1;
             // “”范围内路径
-            if(imports[i].start <= col && imports[i].start+imports[i].length >= col){
+            if(imports[i].startColumn <= position.column && imports[i].startLineNumber == position.lineNumber){
                 item = imports[i];
                 break;
             }
@@ -122,22 +128,22 @@ class CompletionItemProvider {
     }
     
 	// 获得import路径
-	getImportStringPaths(codeText) {
+	// getImportStringPaths(codeText) {
 
-		var regEx = /(#include\s*<)([\.\/a-zA-Z_\-]*)>{0,1}/g;
-		var match = regEx.exec(codeText);
-		var imports = []
-		while (match) {
-			let start = match.index + match[1].length + match[2].length;
-			imports.push({
-				path: match[2],
-				start: start,
-				length: match[2].length,
-			})
-			match = regEx.exec(codeText);
-		}
-		return imports
-	}
+	// 	var regEx = /(#include\s*<)([\.\/a-zA-Z_\-]*)>{0,1}/g;
+	// 	var match = regEx.exec(codeText);
+	// 	var imports = []
+	// 	while (match) {
+	// 		let start = match.index + match[1].length + match[2].length;
+	// 		imports.push({
+	// 			path: match[2],
+	// 			start: start,
+	// 			length: match[2].length,
+	// 		})
+	// 		match = regEx.exec(codeText);
+	// 	}
+	// 	return imports
+	// }
 
 	getAllKeywords(){
 		this.all_suggestions = [];

@@ -2,13 +2,7 @@
 shader语法解析
 */
 'use strict';
-const path = require('path');
-const fs = require('fs');
-const config = Editor2D.require('packages://simple-code/config.js');
 const languageConfig = require('./language-configuration');
-const DefinitionProvider = require('./definitionProvider');
-const CompletionItemProvider = require('./completionItemProvider');
-let id = 'editor-book-mark'
 
 module.exports = {
 	/** @type import('../../panel/vs-panel/vs-panel').EditorPanel */
@@ -37,6 +31,16 @@ module.exports = {
 		// // 输入提示 
 		// let completionItemProvider = new CompletionItemProvider(this.parent,this.languageId);
 		// this.parent.pushMonacoEvent(this.parent.monaco.languages.registerCompletionItemProvider(this.languageId, completionItemProvider))
+		
+		// 标记错误信息
+		// monaco.editor.setModelMarkers(Editor.monaco.vs_editor.getModel(), 'effect', [{
+		// 	severity: monaco.MarkerSeverity.Error,
+		// 	startLineNumber: 1,
+		// 	startColumn: 2,
+		// 	endLineNumber: 1,
+		// 	endColumn: 5,
+		// 	message: 'hi there'
+		//   }]);
 	},
 
 
