@@ -550,12 +550,15 @@ class EditorPanel extends VsEditorPanel{
 		// 	if (className.indexOf('monaco') != -1 && (e.key == "w" || e.key == "e" || e.key == "r" || e.key == "t")) e.preventDefault()
 		// }, false);
 
-		this.addKeybodyEvent([["Ctrl", "s"], ["Meta", "s"]], (e) => 
+		this.addKeybodyEvent([["Ctrl", "s"], ["Meta", "s"]],async (e) => 
 		{
 			let id = this.file_info.id;
 			this.saveFileFromDelayTime(true,false,id);
 			e.preventDefault();// 吞噬捕获事件
-			return false;
+			// 保存刷新浏览器
+			if (await Editor.Profile.getConfig("preview", "general.auto_refresh")){
+				Editor.Message.send('preview','reload-terminal')
+			}
 		}, 1, "keydown");
 
 		// 关闭页面
