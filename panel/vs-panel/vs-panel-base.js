@@ -343,10 +343,12 @@ class vsEditorPanel {
 		for (let i = 0; i < list.length; i++) 
 		{
 			let language = list[i];
-			for (let n = 0; n < language.extensions.length; n++) {
-				const ext = language.extensions[n];
-				if(this.FILE_OPEN_TYPES[ext.substr(1)] == null){
-					this.FILE_OPEN_TYPES[ext.substr(1)] = language.id;
+			if(language.extensions){
+				for (let n = 0; n < language.extensions.length; n++) {
+					const ext = language.extensions[n];
+					if(this.FILE_OPEN_TYPES[ext.substr(1)] == null){
+						this.FILE_OPEN_TYPES[ext.substr(1)] = language.id;
+					}
 				}
 			}
 			config.optionGroups.Main["language"].items.push({ caption: language.id, value: language.id });
