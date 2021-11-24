@@ -16,27 +16,30 @@ module.exports = {
 	 * @param {boolean} isArray - 数据是否数组类型
 	 * @param {Array} insertUuids - 插入的uuid, isAssets是节点情况下该值为节点的uuids,否则为资源文件的uuids; insertUuids = ['xxxx-xxx-xx']
 	 * @param {boolean} isAssets - 是资源费否则是节点
-	 * @param {object} rule - 第1阶段解析的参数, rule = {symbolName:'',widgetType:'',nodeUuid:'',args:['@','Sprite','name']} || null
+	 * @param {object} rule - 第1阶段解析的参数, rule = {symbolName:'',widgetType:'',nodeUuid:'',assetUuid:'',args:['@','Sprite','name']} || null
 	 * @returns 
 	 */
 	 setComponentVar(scriptComp,widgetType,symbolName,isArray,insertUuids,isAssets,rule){
 		// 使用例子 :
+		/**
+		// 是资源 || 是数组类型 || 选中的资源不存在 || 脚本里不存在该变量
+		if(isAssets || isArray || !insertUuids || !scriptComp.hasOwnProperty(symbolName)){
+			return
+		}
+		// 获得需要解析的node对象
+		let nodeUuid = insertUuids[0];
+		let node 	 = cc.engine.getInstanceById(nodeUuid);
+		if(!node){
+			return;
+		}
+		// 给脚本的成员赋值完成绑定组件
+		let comp = widgetType == 'cc.Node' ? node : node.getComponent(widgetType);
+		if(comp){
+			scriptComp[symbolName] = comp;
+		}
+		console.log('组件赋值',symbolName)
 
-		// if(isAssets || isArray || !insertUuids || !scriptComp.hasOwnProperty(symbolName)){
-		// 	return
-		// }
-		// // 获得需要解析的node对象
-		// let nodeUuid = insertUuids[0];
-		// let node 	 = cc.engine.getInstanceById(nodeUuid);
-		// if(!node){
-		// 	return;
-		// }
-		// // 给脚本的成员赋值完成绑定组件
-		// let comp = widgetType == 'cc.Node' ? node : node.getComponent(widgetType);
-		// if(comp){
-		// 	scriptComp[symbolName] = comp;
-		// }
-		// console.log('组件赋值',symbolName)
+		 */
 	},
 
 	/**
@@ -44,11 +47,12 @@ module.exports = {
 	 * @description 代码文本加工处理, 比如添加按钮回调函数之类的, 这里靠你想象了
 	 * @param {string} codeText - 代码的内容
 	 * @param {string} fileUrl - 当前脚本路径, fileUrl = 'db://assets/scene/file.js'
-	 * @param {Array} compRuleList - 生成代码规则列表,compRuleList = [ {symbolName:'',widgetType:'',nodeUuid:'',args:['@','Sprite','name']} ]
+	 * @param {Array} rules - 生成代码规则列表,rules = [ {symbolName:'',widgetType:'',nodeUuid:'',assetUuid:'',args:['@','Sprite','name']} ]
 	 * @param {ITextModel} model - monaco 编辑器当前页面控制器,可以不使用
+	 * @param {Array<cc.Node>} nodes - 需要加工处理的nodes
 	 * @returns {string} - 返回加工完成的代码文本
 	 */
-	processCode(codeText,fileUrl,compRuleList,model){
+	processCode(codeText,fileUrl,rules,model,nodes){
 		return codeText;
 	},
 
@@ -58,13 +62,13 @@ module.exports = {
 	 * @param {string} widgetType - 组件类型,widgetType = cc.Node
 	 * @param {string} symbolName - 变量名,symbolName = 'name'
 	 * @param {string} replaceText - 被替代的旧文本, replaceText = 'property({ type: cc.Node .....'
-	 * @param {object} rule - 第1阶段解析的参数, rule = {symbolName:'',widgetType:'',nodeUuid:'',args:['@','Sprite','name']} || null
+	 * @param {Array} rules - 生成代码规则列表,rules = [ {symbolName:'',widgetType:'',nodeUuid:'',assetUuid:'',args:['@','Sprite','name']} ]
 	 * @param {boolean} isArray - 是否数组变量
 	 * @param {boolean} isTs - 是否TS脚本
 	 * @param {boolean} isUrl - 资源类型是否为路径类
 	 * @returns - 返回插入的代码块 = 'property({ type: cc.Node .....'
 	 */
-	getInsertText(widgetType,symbolName,replaceText,rule,isArray,isTs,isUrl)
+	getInsertText(widgetType,symbolName,replaceText,rules,isArray,isTs,isUrl)
     {
 		let text = ''
 		if(isTs)
@@ -95,8 +99,18 @@ module.exports = {
 	},
 
 	/**
-	 * 第1阶段
-	 * @description 生成自定义绑定规则，根据 node.name 解析组件的绑定规则 ( Clrl+Shift+E 时才调用这里 )
+	 * 拖拽node或asset,第1阶段（鼠标拖拽生成变量才会调用此函数）
+	 * @description 生成自定义绑定规则，根据 node.name 解析组件的绑定规则
+	 * @param {cc.Node} node - 场景上的 node
+	 * @returns {Array} 返回生成 成员变量规则 = {symbolName:'',widgetType:'',nodeUuid:'',args:['@','Sprite','name']}
+	 */
+	dragWidgetStart(rules,isArray){
+		return {rules,isArray}
+	},
+
+	/**
+	 * 解析规则,第1阶段（Clrl+Shift+E 时才调用这里 ，直接拖拽生成变量不会走这里）
+	 * @description 生成自定义绑定规则，根据 node.name 解析组件的绑定规则
 	 * @param {cc.Node} node - 场景上的 node
 	 * @returns {Array} 返回生成 成员变量规则 = {symbolName:'',widgetType:'',nodeUuid:'',args:['@','Sprite','name']}
 	 */
@@ -154,21 +168,21 @@ module.exports = {
 	 * @param {string} fileUrl - 当前脚本的文件路径 db://assets/scene/file.js
 	 * @param {array} bindNodeList - 与当前脚本绑定的Node们
 	 * @param {cc.Node} rootNode - 当前选中的Node或场景 Root Node
-	 * @returns {Array} - 返回生成变量规则 compRuleList = [{symbolName:'',widgetType:'',nodeUuid:'',args:['@','Sprite','name']}]
+	 * @returns {Array} - 返回生成变量规则 rules = [{symbolName:'',widgetType:'',nodeUuid:'',args:['@','Sprite','name']}]
 	 */
 	getCustomWidgetRule(fileUrl,bindNodeList,rootNode){
 
 		// 遍历整个场景的 node
-		let compRuleList = []
+		let rules = []
 		getNodeChildren(rootNode,(node)=>
 		{
 			let compRule = this.getNodeWidgetRule(node);
 			if(compRule){
-				compRuleList.push(compRule);
+				rules.push(compRule);
 			}
 		})
 		// 
-		return compRuleList; 
+		return rules; 
 	},
 
 

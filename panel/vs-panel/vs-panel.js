@@ -212,11 +212,11 @@ let layer = {
 	initBindEvent() {
 
 		// 失去焦点，编译代码
-		this.addEventListener('blur', () => {
-			if(this.cfg.codeCompileMode == 'blur'){
-				this.refreshSaveFild(false)
-			}
-		},false);
+		// this.addEventListener('blur', () => {
+		// 	if(this.cfg.codeCompileMode == 'blur'){
+		// 		this.refreshSaveFild(false)
+		// 	}
+		// },false);
 
 		// 手动编译
 		this.$manualCompile.addEventListener('confirm', () => {
@@ -617,10 +617,10 @@ let layer = {
 	},
 
 	// 窗口失去焦点
-	onBlur(){
-		this._super()
-		this.runExtendFunc("onBlur");
-	},
+	// onBlur(){
+	// 	this._super()
+	// 	this.runExtendFunc("onBlur");
+	// },
 
 	// onclose(){
 	// 	this.onDestroy()

@@ -185,6 +185,24 @@ module.exports = {
 			event.reply(null,{rules,bindNodeList});
 		},
 
+		// 自定义保存的代码文本
+		'saveWidgetCodeFile'(event, args, parent){
+			try {
+				let nodes = []
+				for (let i = 0; i < args.rules.length; i++) {
+					const rule = args.rules[i];
+					if(rule.nodeUuid){
+						let node = cc.engine.getInstanceById(rule.nodeUuid);
+						nodes.push(node);
+					}
+				}
+				let newCodeText = require(USER_NEW_VAR_RULE).processCode(args.codeText, args.dbUrl, args.rules, null,nodes)
+				event.reply(null,newCodeText);
+			} catch (error) {
+				Editor.error('生成自定义绑定规则配置出错: ',error)
+			}
+		},
+
 		'insertWidgetInfo'(event, args, parent) {
 			//1.获取绑定当前脚本的Node
 			//2.检测该属性是否存在 getComponent('')

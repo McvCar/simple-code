@@ -145,7 +145,7 @@ module.exports = {
 		//1.获得生成组件规则
 		Editor.Scene.callSceneScript('simple-code', 'getCustomWidgetRule',{rootNodeUuid,fileUuid: codeInfo.editInfo.uuid,url: codeInfo.editInfo.url}, (err, args) => { 
 			
-			// rules = [{symbolName:'',widgetType:'',componentUuid:''}]
+			// rules = [{symbolName:'',widgetType:'',nodeUuid:'',assetUuid:''}]
 			let rules = args.rules;
 			// if(rules.length == 0){
 			// 	alert("生成拖拽组件失败,当前场景Nodes没有可解析的 node.name")
@@ -172,7 +172,7 @@ module.exports = {
 						continue;
 					}
 					// 2.插入成员变量文本
-					symbolName = this.insertTextToModel(widgetType,symbolName,codeInfo,false,rule);
+					symbolName = this.insertTextToModel(widgetType,symbolName,codeInfo,false,[rule]);
 				}
 
 				setTimeout(()=>{
@@ -210,19 +210,26 @@ module.exports = {
 			// 提供撤销
 			codeInfo.editInfo.vs_model.pushStackElement();
 			let oldCodeText = codeInfo.editInfo.vs_model.getValue();
-
+			let rules =  [ /* {symbolName:'',widgetType:'',nodeUuid:'',assetUuid:'',args:any} */ ];
 			for (let i = 0; i < symbolNames.length; i++) 
 			{
 				let widgetType = widgetTypes[i];
 				let symbolName = symbolNames[i];
 				let uuids 	   = [insertUuids[i]];
+				let rule = {
+					widgetType:widgetType,
+					symbolName:symbolName,
+					nodeUuid: isAssets ? undefined : insertUuids[i],
+					assetUuid: isAssets ? insertUuids[i] : undefined,
+				}
+				rules.push(rule)
 				if(!this.isNormalSymbolName(symbolName)){
 					alert('生成拖拽组件:变量命名不符合规范:'+symbolName);
 					continue;
 				}
 
 				// 插入成员变量文本
-				symbolName = this.insertTextToModel(widgetType,symbolName,codeInfo,false);
+				symbolName = this.insertTextToModel(widgetType,symbolName,codeInfo,false,[rule]);
 				setTimeout(()=>{
 					// 2.添加引用
 					this.insertWidgetInfo(bindNodeList,widgetType,symbolName,false,uuids,isAssets);
@@ -230,7 +237,7 @@ module.exports = {
 			}
 			
 			// 1.保存刷新creator生成变量拖拽组件
-			this.saveFile(codeInfo.editInfo.vs_model,oldCodeText);
+			this.saveFile(codeInfo.editInfo.vs_model,oldCodeText,rules);
 
 		});
 	},
@@ -263,11 +270,24 @@ module.exports = {
 			// 提供撤销
 			codeInfo.editInfo.vs_model.pushStackElement();
 			let oldCodeText = codeInfo.editInfo.vs_model.getValue();
+			// 用于自定义规则
+			let rules = []
+			for (let i = 0; i < insertUuids.length; i++) {
+				rules.push({
+					widgetType:widgetType,
+					symbolName:symbolName,
+					nodeUuid: isAssets ? undefined : insertUuids[i],
+					assetUuid: isAssets ? insertUuids[i] : undefined,
+				});
+			}
 			// 插入成员变量文本 
-			symbolName = this.insertTextToModel(widgetType,symbolName,codeInfo,isArray);
+			symbolName = this.insertTextToModel(widgetType,symbolName,codeInfo,isArray,rules);
+			for (let i = 0; i < insertUuids.length; i++) {
+				rules[i].symbolName = symbolName;
+			}
 
 			// save
-			this.saveFile(codeInfo.editInfo.vs_model,oldCodeText);
+			this.saveFile(codeInfo.editInfo.vs_model,oldCodeText,rules);
 
 			setTimeout(()=>{
 				this.insertWidgetInfo(bindNodeList,widgetType,symbolName,isArray,insertUuids,isAssets);
@@ -300,19 +320,16 @@ module.exports = {
 	saveFile(model,oldCodeText,rules){
 		// 加工代码块
 		let codeText = model.getValue();
-		try {
-			codeText = require(USER_NEW_VAR_RULE).processCode(codeText, model.dbUrl, rules || [], model)
-		} catch (error) {
-			Editor.error('生成自定义绑定规则配置出错: ',error)
-		}
-		model.setValue(codeText);
-
-		// 1.保存刷新creator生成变量拖拽组件
-		if(oldCodeText === null || oldCodeText != codeText){
-			this.parent.saveFile(true,true);
-			// 标记场景切换时需要保存
-			Editor.Scene.callSceneScript('simple-code', 'scene-need-save')
-		}
+		Editor.Scene.callSceneScript('simple-code', 'saveWidgetCodeFile',{codeText:codeText, dbUrl:model.dbUrl, rules:rules}, (err, newCodeText) => 
+		{ 
+			model.setValue(newCodeText);
+			// 1.保存刷新creator生成变量拖拽组件
+			if(oldCodeText === null || oldCodeText != newCodeText){
+				this.parent.saveFile(true,true);
+				// 标记场景切换时需要保存*号
+				Editor.Scene.callSceneScript('simple-code', 'scene-need-save')
+			}
+		});
 	},
 
 	// 面板销毁

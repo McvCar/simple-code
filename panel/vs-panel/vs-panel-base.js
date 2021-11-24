@@ -113,17 +113,18 @@ let layer =
 					
 					this.tsWr.getEditsForFileRename('inmemory://model/1','inmemory://model/2');// 预热模块
 					this.setEnableUpdateTs(false); // 优化性能: 关闭刷新代码缓存,等所有文件加载完成后再刷新
-					// if(this.tsWr && this.jsWr){
+					if(this.tsWr && this.jsWr){
 						callback();
-					// }
+					}
 				})})
-				// monaco.languages.typescript.getJavaScriptWorker().then((func)=>{func().then((jsWr)=>{
-				// 	this.jsWr = jsWr;// js文件静态解析器
-				// 	this.jsWr.getEditsForFileRename('inmemory://model/1','inmemory://model/2')// 预热模块
-				// 	if(this.tsWr && this.jsWr){
-				// 		callback();
-				// 	}
-				// })})
+				monaco.languages.typescript.getJavaScriptWorker().then((func)=>{func().then((jsWr)=>{
+					this.jsWr = jsWr;// js文件静态解析器
+					this.jsWr.setEnableUpdate(false);
+					this.jsWr.setEnableUpdateScript(false);
+					if(this.tsWr && this.jsWr){
+						callback();
+					}
+				})})
 			},100)
 		})
 	},
@@ -386,9 +387,9 @@ let layer =
 		},true);
 
 		// 窗口进入后台
-		this.addWindowEventListener("blur",()=>{
-			this.setTimeoutById(this.onBlur.bind(this),100,'windowfocus');
-		},true);
+		// this.addWindowEventListener("blur",()=>{
+		// 	this.setTimeoutById(this.onBlur.bind(this),100,'windowfocus');
+		// },true);
 
 		//获得焦点
 		this.vs_editor.onDidFocusEditorText((e) => {
@@ -400,7 +401,7 @@ let layer =
 					return this._sendToPanel(n, r, ...i);
 				}
 			}
-			(document.getElementById("tools") || this).transformTool = "move";
+			// (document.getElementById("tools") || this).transformTool = "move";
 			// 关闭cocosCreator 默认的tab键盘事件,不然会冲突
 			require(Editor.appPath + "/editor-framework/lib/renderer/ui/utils/focus-mgr.js").disabled = true;
 		});
