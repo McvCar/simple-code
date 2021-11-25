@@ -65,6 +65,7 @@ module.exports = {
     'theme': 'Theme',
     'language': 'Language',
     'newFileType': 'New File Format',
+    'mouseWheelScrollSensitivity':'Mouse Wheel Scroll Sensitivity',
     'fontSize': 'Font Size',
     'fontFamily': 'Font Family',
     'fontWeight': 'Font Weight',

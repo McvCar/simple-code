@@ -65,8 +65,8 @@ module.exports = {
 					// 定义变量类型
 					const nodeInfo = nodeInfos[i];
 					let symbolName = 'cc.Node';
-					if(widgetType && nodeInfo.compNames.indexOf(widgetType) != -1){
-						symbolName = widgetType
+					if(widgetType){
+						symbolName = nodeInfo.compNames.indexOf(widgetType) != -1 ? widgetType : symbolName
 					}else{
 						for (let i = 0; i < QUICK_LOAD_TYPE_ORDER.length; i++) 
 						{
@@ -754,6 +754,9 @@ module.exports = {
 						this.parent.ccMenuMgr.setMenuConfig({id:"cc-widget-comp-to-code",menuCfg:menuCfg})
 					});
 				}
+			}else{
+				this.parent.ccMenuMgr.setMenuConfig({id:"cc-widget-comp-to-code",menuCfg:undefined})
+				this.parent.ccMenuMgr.setMenuConfig({id:"cc-widget-assets-to-code",menuCfg:undefined})
 			}
 		})
 	},

@@ -758,6 +758,17 @@ module.exports = {
 					{ caption: ".ts", value: "ts" },
 				]
 			},
+			"mouseWheelScrollSensitivity": {
+				//字体大小
+				path: "mouseWheelScrollSensitivity",
+				type: "number",
+				defaultValue: process.platform == 'darwin' ? 1 : 2,
+				defaults: [
+					{ caption: "x1", value: 1 },
+					{ caption: "x2", value: 2 },
+					{ caption: "x3", value: 3 },
+				],
+			},
 			"fontSize": {
 				//字体大小
 				path: "fontSize",

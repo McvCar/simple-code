@@ -65,6 +65,7 @@ module.exports = {
     'theme': '主题',
     'language': '语言',
     'newFileType': '新建文件格式',
+    'mouseWheelScrollSensitivity':'鼠标滚轮速度',
     'fontSize': '字体大小',
     'fontFamily': '字体',
     'fontWeight': '字体粗细',

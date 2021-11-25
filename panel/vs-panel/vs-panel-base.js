@@ -137,6 +137,8 @@ class vsEditorPanel {
 				})})
 				monaco.languages.typescript.getJavaScriptWorker().then((func)=>{func().then((jsWr)=>{
 					this.jsWr = jsWr;// js文件静态解析器
+					this.jsWr.setEnableUpdate(false);
+					this.jsWr.setEnableUpdateScript(false);
 					if(this.tsWr && this.jsWr){
 						callback();
 					}
@@ -146,7 +148,7 @@ class vsEditorPanel {
 	}
 	// tab标签 右键菜单初始化
 	initContextMenu(){
-		this.menu = electron.remote.Menu.buildFromTemplate([
+		this.menu = require('@electron/remote').Menu.buildFromTemplate([
 			// 关闭
 			{label:fe.translate('close'),click:()=>
 			{
@@ -1243,7 +1245,7 @@ class vsEditorPanel {
 			e.preventDefault();
 			this.menu.currTabId = tabBg._id;
 			// 处于焦点时才能调用
-			if(electron.remote.BrowserWindow.getFocusedWindow()){ 
+			if(require('@electron/remote').BrowserWindow.getFocusedWindow()){ 
 				this.menu.popup()
 			}
 		})

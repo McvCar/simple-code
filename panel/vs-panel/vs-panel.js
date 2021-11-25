@@ -723,6 +723,12 @@ class EditorPanel extends VsEditorPanel{
 		
 		this.monaco.removeAllEvent();
 
+		// 移除Monaco事件
+		for (let i = 0; i < this.monaco_editor_event_listener.length; i++) {
+			const monacoEvent = this.monaco_editor_event_listener[i];
+			monacoEvent.dispose()
+		}
+
 		for (let i = 0; i < this.window_event_listener.length; i++) {
 			const event = this.window_event_listener[i];
 			window.removeEventListener(event.eventName,event.callback,event.option)
@@ -732,11 +738,6 @@ class EditorPanel extends VsEditorPanel{
 			document.body.removeEventListener(event.eventName,event.callback,event.option)
 		}
 		
-		// 移除Monaco事件
-		for (let i = 0; i < this.monaco_editor_event_listener.length; i++) {
-			const monacoEvent = this.monaco_editor_event_listener[i];
-			monacoEvent.dispose()
-		}
 		
 		// 移除ipc事件
 		for (let i = 0; i < this.listenIpcList.length; i++) {
@@ -1072,12 +1073,12 @@ exports.methods = methods;
 exports.ready = function(){ 
 	editorPanel = new EditorPanel(this);
 };
-exports.beforeClose = function(){ 
-	// 如果编辑器未初始化完成禁止移动
-	// if(editorPanel && !editorPanel.is_init_finish){
-	// 	return false;
-	// }
-}
+// exports.beforeClose = function(){ 
+// 	// 如果编辑器未初始化完成禁止移动
+// 	// if(editorPanel && !editorPanel.is_init_finish){
+// 	// 	return false;
+// 	// }
+// }
 exports.close = function(){ 
 	if(editorPanel){
 		editorPanel.onDestroy() 

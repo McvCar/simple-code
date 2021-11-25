@@ -105,7 +105,7 @@ class ccMenuMgr {
 	// 窗口销毁
 	onDestroy()
 	{
-		if(Editor.Menu.popup["__original_func__"]){
+		if(Editor && Editor.Menu && Editor.Menu.popup["__original_func__"]){
 			Editor.Menu.popup = Editor.Menu.popup["__original_func__"]
 			delete Editor.Menu.popup["__original_func__"];
 		}

@@ -215,10 +215,10 @@ module.exports = {
 			];
 			let menuCfg = {
 				layerMenu : [
-					{ label : "✎ 批量重命名", enabled:true, submenu:submenu,},
+					{ label : "批量重命名 ✎", enabled:true, submenu:submenu,},
 				],
 				assetMenu : [
-					{ label : "✎ 批量重命名", enabled:true, submenu:submenu,},
+					{ label : "批量重命名 ✎", enabled:true, submenu:submenu,},
 				],
 			}
 			this.parent.ccMenuMgr.setMenuConfig({id:"rename-ex",menuCfg:menuCfg});

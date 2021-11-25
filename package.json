@@ -1,7 +1,7 @@
 {
 	"name": "simple-code",
 	"package_version": 2,
-	"version": "3.2.3",
+	"version": "3.2.5",
 	"description": "快闪-代码编辑器",
 	"author": "嘉年华(mcv-cpu)",
 	"main": "./main.js",
@@ -95,8 +95,6 @@
 				"label": "i18n:simple-code.search-unused-assets",
 				"message": "cleanFile"
 			},
-			
-
 			{
 				"path": "i18n:simple-code.name/i18n:simple-code.edit",
 				"label": "i18n:simple-code.batch-rename",
@@ -259,7 +257,6 @@
 				"win": "alt+enter",
 				"mac": "alt+enter"
 			},
-			
 			{
 				"message": "addNodeComp",
 				"win": "alt+shift+enter",
@@ -397,7 +394,7 @@
 					"vsEditor.findCleanFileByDir"
 				]
 			},
-			"switchEditorWindow":{
+			"switchEditorWindow": {
 				"methods": [
 					"vsEditor.switchEditorWindow"
 				]
@@ -475,11 +472,16 @@
 			"main": "./panel/vs-panel/vs-panel.js",
 			"type": "dockable",
 			"title": "i18n:simple-code.name",
+			"flags": {
+				"resizable": true,
+				"save": true
+			},
 			"width": 400,
 			"height": 300
 		}
 	},
 	"dependencies": {
+		"@electron/remote": "^2.0.1",
 		"md5": "^2.3.0",
 		"plist": "^3.0.3",
 		"watch": "^1.0.2"

@@ -71,8 +71,8 @@ let Editor2D =
 		},
 		
 		getFocusedPanel:()=>{
-			if(!global.document) return null;
-
+			if(!global.document || !document.hasFocus()) return null;
+			
 			let dock = document.getElementById('dock')
 			if(!dock) return null;
 			return dock.shadowRoot.activeElement;

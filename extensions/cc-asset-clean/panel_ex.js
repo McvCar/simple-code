@@ -15,7 +15,7 @@ const referenceTypes = {
 
 // 搜索类型
 const searchTypes = {
-	"cc.ImageAsset":1, "cc.Prefab":1, "cc.Material":1, "cc.AnimationClip":1
+	"cc.ImageAsset":1, "cc.Prefab":1, "cc.Material":1, "cc.AnimationClip":1," cc.PhysicsMaterial":1,"cc.SpriteAtlas":1,
 }
 
 
@@ -160,21 +160,18 @@ module.exports = {
 		// 当前选中的对象
 		this.currSelectInfo = { type, uuid };
 
-		if (type == 'asset') {
-			// 资源菜单
-			if (!uuid) {
-				// 清除菜单
-				this.parent.ccMenuMgr.setMenuConfig({ id: "cc-assets-clean", menuCfg: undefined })
-			} else {
-				// 菜单内容
-				let menuCfg = {
-					assetMenu: [
-						{ type: 'separator' },
-						{ label: '搜索 未使用的资源 🔎 ', enabled: true, click:this.messages["findCleanFileByDir"].bind(this) }, // 快速生成拖拽资源
-					],
-				}
-				this.parent.ccMenuMgr.setMenuConfig({ id: "cc-assets-clean", menuCfg: menuCfg })
+		if (type != 'asset' || !uuid) {
+			// 清除菜单
+			this.parent.ccMenuMgr.setMenuConfig({ id: "cc-assets-clean", menuCfg: undefined })
+		} else {
+			// 菜单内容
+			let menuCfg = {
+				assetMenu: [
+					{ type: 'separator' },
+					{ label: '搜索 未使用的资源 🔎 ', enabled: true, click:this.messages["findCleanFileByDir"].bind(this) }, // 快速生成拖拽资源
+				],
 			}
+			this.parent.ccMenuMgr.setMenuConfig({ id: "cc-assets-clean", menuCfg: menuCfg })
 		}
 	},
 	messages: {

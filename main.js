@@ -1,6 +1,6 @@
 'use strict';
 const path      = require('path');
-const electron  = require('electron');
+// const electron  = require('electron');
 const exec 		= require('child_process').exec;
 let fs 			= require("fs");
 
