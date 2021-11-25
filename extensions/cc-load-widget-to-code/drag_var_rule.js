@@ -28,7 +28,7 @@ module.exports = {
 			return
 		}
 
-		/** 案例3: 获取node上的Button组件对象，并生成click函数并绑定  */
+		/** 案例3: 获取node上的Button组件对象，并生成click函数与绑定  */
 		// if(rule.widgetType == 'cc.Button'){
 		// 	// 生成click函数文本
 		// 	let node = cc.engine.getInstanceById(rule.nodeUuid); // 通过uuid从场景中获取节点对象
@@ -147,6 +147,25 @@ module.exports = {
 		// 			if(btnComp){
 		// 				rule.widgetType = 'cc.Button' // 成员变量类型强制改为Button
 		// 				rule.args = {act:"bindFunction"}
+		// 			}
+		// 		}
+		// 	}
+		// }
+		
+		/** 案例4: 将拖拽node的子节点也一起绑定脚本中 */
+		// for (let i = 0; i < rules.length; i++) {
+		// 	const rule = rules[i];
+		// 	if(rule.nodeUuid){
+		// 		let node = cc.engine.getInstanceById(rule.nodeUuid); // 通过uuid从场景中获取节点对象
+		// 		if(node){
+		// 			let childNode = node.children[0]
+		// 			if(childNode){
+		// 				// 新增生成规则
+		// 				rules.push({
+		// 					symbolName:rule.symbolName+"Child", // 变量名
+		// 					widgetType:'cc.Node', // 变量类型
+		// 					nodeUuid:childNode.uuid,
+		// 				})
 		// 			}
 		// 		}
 		// 	}
