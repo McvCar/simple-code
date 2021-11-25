@@ -1,12 +1,15 @@
 /**
  * 生成拖拽变量代码块规则
  * 修改后重启Creator生效
+ * 该脚本可通过开发者工具断点调试
  * Generate drag and drop variable code block rules
  * Restart Creator after modification takes effect
  */
 
 module.exports = {
-	
+	// 快速绑定组件优先顺序,不填默认为 cc.Node
+	QUICK_LOAD_TYPE_ORDER: ['cc.SkinnedMeshRenderer','cc.MeshRenderer','cc.Slider','cc.ProgressBar','cc.Toggle','dragonBones.ArmatureDisplay','sp.Skeleton','cc.Animation','cc.Sprite','cc.Label','cc.EditBox','cc.RichText'],
+
 	/**
 	 * 第4阶段
 	 * @description 最后给脚本组件成员变量赋值
@@ -20,26 +23,28 @@ module.exports = {
 	 * @returns 
 	 */
 	 setComponentVar(scriptComp,widgetType,symbolName,isArray,insertUuids,isAssets,rule){
-		// 使用例子 :
-		/**
 		// 是资源 || 是数组类型 || 选中的资源不存在 || 脚本里不存在该变量
 		if(isAssets || isArray || !insertUuids || !scriptComp.hasOwnProperty(symbolName)){
 			return
 		}
-		// 获得需要解析的node对象
-		let nodeUuid = insertUuids[0];
-		let node 	 = cc.engine.getInstanceById(nodeUuid);
-		if(!node){
-			return;
-		}
-		// 给脚本的成员赋值完成绑定组件
-		let comp = widgetType == 'cc.Node' ? node : node.getComponent(widgetType);
-		if(comp){
-			scriptComp[symbolName] = comp;
-		}
-		console.log('组件赋值',symbolName)
 
-		 */
+		/** 案例3: 获取node上的Button组件对象，并生成click函数并绑定  */
+		// if(rule.widgetType == 'cc.Button'){
+		// 	// 生成click函数文本
+		// 	let node = cc.engine.getInstanceById(rule.nodeUuid); // 通过uuid从场景中获取节点对象
+		// 	if(node){
+		// 		// 按钮绑定脚本click函数
+		// 		let btnComp = node.getComponent('cc.Button');
+		// 		btnComp.transition = cc.Button.Transition.SCALE;
+		// 		var eventHandler = new cc.Component.EventHandler();
+		// 		eventHandler.target = scriptComp.node;
+		// 		eventHandler.component = scriptComp.__classname__; // 这个是代码文件名
+		// 		eventHandler.handler = rule.symbolName+'Btn'; // click函数
+		// 		eventHandler.customEventData = symbolName;
+		// 		btnComp.clickEvents = [eventHandler];
+		// 	}
+		// }
+		
 	},
 
 	/**
@@ -53,6 +58,18 @@ module.exports = {
 	 * @returns {string} - 返回加工完成的代码文本
 	 */
 	processCode(codeText,fileUrl,rules,model,nodes){
+		
+		/** 案例3: 获取node上的Button组件对象，并生成click函数并绑定(测试使用的是ts脚本) */
+		// for (let i = 0; i < rules.length; i++) {
+		// 	const rule = rules[i];
+		// 	if(rule.widgetType == 'cc.Button'){
+		// 		// 生成click函数文本
+		// 		let funcText = `\n	${rule.symbolName}Btn(){}\n`;
+		// 		let ind = codeText.lastIndexOf('}')
+		// 		codeText = codeText.substring(0,ind) + funcText + codeText.substring(ind)
+		// 	}
+		// }
+
 		return codeText;
 	},
 
@@ -99,17 +116,46 @@ module.exports = {
 	},
 
 	/**
-	 * 拖拽node或asset,第1阶段（鼠标拖拽生成变量才会调用此函数）
-	 * @description 生成自定义绑定规则，根据 node.name 解析组件的绑定规则
-	 * @param {cc.Node} node - 场景上的 node
-	 * @returns {Array} 返回生成 成员变量规则 = {symbolName:'',widgetType:'',nodeUuid:'',args:['@','Sprite','name']}
+	 * 第1阶段,鼠标拖拽node或asset触发事件 
+	 * @description 修改 rules 内容实现自定义
+	 * @param {Array} rules - 生成脚本成员变量规则 , rules = [ {symbolName:'',widgetType:'',nodeUuid:'',assetUuid:'',args:['@','Sprite','name']} ](可写)
+	 * @param {boolean} isArray - 是否生成数组类型变量(可写)
+	 * @param {boolean} isQuick - 是否快速绑定模式(只读)
+	 * @returns {object} 返回生成 成员变量规则参数 
 	 */
-	dragWidgetStart(rules,isArray){
-		return {rules,isArray}
+	dragWidgetStart(rules,isArray,isQuick){
+		/** 案例1: 强制成员变量为数组类型 */
+		// isArray = true; 
+
+		/** 案例2: 强制变量名为test,组件类型为cc.Node */
+		// for (let i = 0; i < rules.length; i++) {
+		// 	const rule = rules[i];
+		// 	if(rule.nodeUuid){
+		// 		rule.symbolName = 'test'
+		// 		rule.widgetType = 'cc.Node'
+		// 		rule.args = '自定义参数'
+		// 	}
+		// }
+		
+		/** 案例3: 获取node上的Button组件对象，并生成click函数并绑定 */
+		// for (let i = 0; i < rules.length; i++) {
+		// 	const rule = rules[i];
+		// 	if(rule.nodeUuid){
+		// 		let node = cc.engine.getInstanceById(rule.nodeUuid); // 通过uuid从场景中获取节点对象
+		// 		if(node){
+		// 			let btnComp = node.getComponent('cc.Button');
+		// 			if(btnComp){
+		// 				rule.widgetType = 'cc.Button' // 成员变量类型强制改为Button
+		// 				rule.args = {act:"bindFunction"}
+		// 			}
+		// 		}
+		// 	}
+		// }
+		return {rules,isArray} // 只能返回纯数据，不允许传cc.xx对象
 	},
 
 	/**
-	 * 解析规则,第1阶段（Clrl+Shift+E 时才调用这里 ，直接拖拽生成变量不会走这里）
+	 * 第1阶段,解析规则（Clrl+Shift+E 时才调用这里 ，直接拖拽生成变量不会走这里）
 	 * @description 生成自定义绑定规则，根据 node.name 解析组件的绑定规则
 	 * @param {cc.Node} node - 场景上的 node
 	 * @returns {Array} 返回生成 成员变量规则 = {symbolName:'',widgetType:'',nodeUuid:'',args:['@','Sprite','name']}

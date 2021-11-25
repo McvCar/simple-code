@@ -179,7 +179,7 @@ module.exports = {
 				let rootNode = args.rootNodeUuid != null && cc.engine.getInstanceById(args.rootNodeUuid) || cc.director.getScene()
 				rules = require(USER_NEW_VAR_RULE).getCustomWidgetRule(args.url,bindNodeList,rootNode);
 			}catch (error) {
-				Editor.error('生成自定义绑定规则配置出错: ',error)
+				Editor.error('生成自定义绑定规则配置出错(getCustomWidgetRule): ',error)
 			}
 
 			event.reply(null,{rules,bindNodeList});
@@ -199,7 +199,21 @@ module.exports = {
 				let newCodeText = require(USER_NEW_VAR_RULE).processCode(args.codeText, args.dbUrl, args.rules, null,nodes)
 				event.reply(null,newCodeText);
 			} catch (error) {
-				Editor.error('生成自定义绑定规则配置出错: ',error)
+				Editor.error('自定义绑定规则配置出错(saveWidgetCodeFile): ',error)
+			}
+		},
+
+		// 配置拖拽规则
+		'loadWidgetRules'(event, args, parent){
+			try {
+				let bindNodeList = getCurrEditorFileBindNodes(args.scriptUuid, parent);
+				if(require(USER_NEW_VAR_RULE).dragWidgetStart){
+					args = require(USER_NEW_VAR_RULE).dragWidgetStart(args.rules, args.isArray,args.isQuick)
+				}
+				args.bindNodeList = bindNodeList;
+				event.reply(null,args);
+			} catch (error) {
+				Editor.error('自定义绑定规则配置出错(loadWidgetRules): ',error)
 			}
 		},
 

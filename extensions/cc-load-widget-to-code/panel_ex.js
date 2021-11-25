@@ -44,44 +44,49 @@ module.exports = {
 	insertWidgetAction(isQuick,widgetType,insertUuids)
 	{
 		let nodes = insertUuids || Editor.Selection.curSelection('node') || [];
-		isQuick = isQuick || nodes.length >1
-		Editor.Scene.callSceneScript('simple-code', 'getNodesInfo',nodes, (err, nodeInfos) => 
-		{ 
+		Editor.Scene.callSceneScript('simple-code', 'getNodesInfo',nodes, (err, nodeInfos) =>{ 
 			if(!nodeInfos.length) return;
 
+			// 生成规则
+			let rules = [];
+			// 变量是否定义为数组类型
+			let isArray = !isQuick && nodeInfos.length>1;
 			let codeInfo = this.getCurrEditorFileInfo();
-			if(isQuick)
-			{
-				// 加载多个变量
-				let names = [];
-				let symbolNames = [];
-				for (let i = 0; i < nodeInfos.length; i++) 
-				{
-					// 定义变量类型
-					const nodeInfo = nodeInfos[i];
-					let symbolName = 'cc.Node';
-					if(widgetType){
-						symbolName = nodeInfo.compNames.indexOf(widgetType) != -1 ? widgetType : symbolName;
-					}else{
-						for (let i = 0; i < QUICK_LOAD_TYPE_ORDER.length; i++) 
-						{
-							if( nodeInfo.compNames.indexOf(QUICK_LOAD_TYPE_ORDER[i]) != -1){
-								symbolName = QUICK_LOAD_TYPE_ORDER[i];
-								break;
-							}
+			// 加载多个变量
+			for (let i = 0; i < nodeInfos.length; i++) {
+				// 定义变量类型
+				const nodeInfo = nodeInfos[i];
+				let widgetType2 = 'cc.Node';
+				if(widgetType){
+					widgetType2 = nodeInfo.compNames.indexOf(widgetType) != -1 ? widgetType : widgetType2;
+				}else{
+					let orderList = require(USER_NEW_VAR_RULE).QUICK_LOAD_TYPE_ORDER || QUICK_LOAD_TYPE_ORDER;
+					for (let i = 0; i < orderList.length; i++) 
+					{
+						if( nodeInfo.compNames.indexOf(orderList[i]) != -1){
+							widgetType2 = orderList[i];
+							break;
 						}
 					}
-					names.push(nodeInfo.name);
-					symbolNames.push(symbolName);
 				}
-				this.loadWidgetsToCode(symbolNames,names,codeInfo,nodes);
-			}else{
+				
+				rules.push({
+					symbolName:nodeInfo.name,
+					widgetType:widgetType2,
+					nodeUuid:nodeInfo.uuid,
+				})
+			}
+
+			if(isArray || !isQuick){
 				// 加载单个变量
-				let defineName = widgetType.indexOf('.') != -1 ? nodeInfos[0].name  : widgetType
-				this.loadSymbolName((name)=>
+				let defineName = widgetType.indexOf('.') != -1 ? nodeInfos[0].name : widgetType
+				this.loadSymbolName((symbolName)=>
 				{
-					this.loadWidgetToCode(widgetType,name,codeInfo,insertUuids);
+					rules.forEach((v)=>v.symbolName = symbolName);// 修改变量名
+					this.loadWidgetRules(codeInfo,rules,isArray,false)
 				},defineName || '',codeInfo.symbols)
+			}else{
+				this.loadWidgetRules(codeInfo,rules,isArray,true)
 			}
 		})
 	},
@@ -97,40 +102,60 @@ module.exports = {
 			Editor.info("生成失败,由于Creator API限制,请点击一下需要拖动的资源然后再拖入")
 			return
 		}
+
+		// 生成规则
+		let rules = [];
+		// 变量是否定义为数组类型
+		let isArray = insertUuids.length > 1;
+		let index = 0;
 		
-		Editor.assetdb.queryInfoByUuid(insertUuids[0],(_,fileInfo)=>
-		{
-			if(fileInfo==null){
-				return;
-			}
+		// 读取默认规则配置
+		for (let i = 0; i < insertUuids.length; i++) {
+			Editor.assetdb.queryInfoByUuid(insertUuids[i],(_,fileInfo)=>
+			{
+				if(!fileInfo){
+					return;
+				}
+				
+				let widgetType = ASSETS_TYPE_MAP[fileInfo.type];
+				if(widgetType==null){
+					Editor.info('不支持插入的资源类型:',fileInfo.type,fileInfo)
+					return;
+				}
+				let file_ 	  = this.parent.fileMgr.getUriInfo(fileInfo.url);
+				let symbolName = file_.name;
+				if(file_.extname != ''){
+					symbolName = symbolName.substr(0,symbolName.lastIndexOf('.'));
+				}
+				rules.push({
+					symbolName:symbolName,
+					widgetType:widgetType,
+					assetUuid:insertUuids[i],
+				})
 
-			let widgetType = ASSETS_TYPE_MAP[fileInfo.type];
-			if(widgetType==null){
-				Editor.info('不支持插入的资源类型:',fileInfo.type,fileInfo)
-				return;
-			}
+				// 资源信息读取完再执行下面
+				index++;
+				if(index != insertUuids.length){
+					return;
+				}
 
-			let codeInfo = this.getCurrEditorFileInfo();
-			if(codeInfo == null){
-				return;
-			}
+				let codeInfo = this.getCurrEditorFileInfo();
+				if(codeInfo == null){
+					return;
+				}
 
-			let file_ 	  = this.parent.fileMgr.getUriInfo(fileInfo.url);
-			let symbolName = file_.name;
-			if(file_.extname != ''){
-				symbolName = symbolName.substr(0,symbolName.lastIndexOf('.'));
-			}
-			if(isQuick){
-				this.loadWidgetToCode(widgetType,symbolName,codeInfo,insertUuids,true);
-			}else{
 
-				this.loadSymbolName((symbolName)=>
-				{
-					// let list = Editor.Selection.curSelection('asset');
-					this.loadWidgetToCode(widgetType,symbolName,codeInfo,insertUuids,true);
-				},symbolName,codeInfo.symbols);
-			}
-		});
+				if(isQuick){
+					this.loadWidgetRules(codeInfo,rules,isArray,true)
+				}else{
+					this.loadSymbolName((symbolName)=>
+					{
+						rules.forEach((v)=>v.symbolName = symbolName);// 修改变量名
+						this.loadWidgetRules(codeInfo,rules,isArray,false)
+					},symbolName,codeInfo.symbols);
+				}
+			});
+		}
 	},
 
 	// 加载自定义的组件
@@ -144,155 +169,81 @@ module.exports = {
 
 		//1.获得生成组件规则
 		Editor.Scene.callSceneScript('simple-code', 'getCustomWidgetRule',{rootNodeUuid,fileUuid: codeInfo.editInfo.uuid,url: codeInfo.editInfo.url}, (err, args) => { 
+			let rules = args.rules;
+			this.loadWidgetRules(codeInfo,rules,false,true)
+		});
+	},
+
+	/**
+	 * 读取规则
+		1.获得当前打开的脚本是否该场景内节点绑定的
+		2.获得与当前脚本绑定的Nodes
+		3.往脚本添加组件类型字段
+		4.往脚本的类型字段写入当前选中的组件或资源
+	*/
+	loadWidgetRules(codeInfo,rules,isArray,isQuick){
+		if(codeInfo == null || rules == null){
+			return;
+		}
+
+		// 1.获得生成组件规则配置
+		Editor.Scene.callSceneScript('simple-code', 'loadWidgetRules',{ rules:rules, isArray:isArray, scriptUuid:codeInfo.editInfo.uuid, isQuick:isQuick}, (err, args) => { 
 			
 			// rules = [{symbolName:'',widgetType:'',nodeUuid:'',assetUuid:''}]
-			let rules = args.rules;
-			// if(rules.length == 0){
-			// 	alert("生成拖拽组件失败,当前场景Nodes没有可解析的 node.name")
-			// 	return;
-			// }
-			if(this.parent.file_info.uuid != codeInfo.editInfo.uuid) {
+			rules = args.rules;
+			isArray = args.isArray;
+			if(this.parent.file_info.uuid != codeInfo.editInfo.uuid || !rules || rules.length == 0) {
+				return;
+			}
+			if(!args.bindNodeList || args.bindNodeList.length == 0){
+				alert("生成拖拽组件失败,当前场景Nodes没有绑定当前编辑中的脚本")
 				return;
 			}
 
 			// 提供撤销
 			codeInfo.editInfo.vs_model.pushStackElement();
 			let oldCodeText = codeInfo.editInfo.vs_model.getValue();
+			let isAssets = rules[0].assetUuid != null;
 
-			for (let i = 0; i < rules.length; i++) 
-			{
-				let rule = rules[i];
-				let widgetType = rule.widgetType;
-				let symbolName = rule.symbolName;
-				let nodeUuids  = [ rule.nodeUuid ];
-				if(!rule || !rule.disableGenerated)
-				{
-					if(symbolName.match(/[a-zA-Z_$][\w$]*/) == null){
-						Editor.info('生成拖拽组件:变量命名不符合规范:',symbolName);
-						continue;
-					}
-					// 2.插入成员变量文本
-					symbolName = this.insertTextToModel(widgetType,symbolName,codeInfo,false,[rule]);
+			if(isArray){
+				// 数组类型成员变量
+				let insertUuids = []; // 绑定到数组变量的组件们
+				rules.forEach((v)=>{ insertUuids.push(v.nodeUuid || v.assetUuid) })
+				this.newTextAndBindWidget(codeInfo,args.bindNodeList,rules[0],insertUuids,isArray,isAssets)
+			}else{
+				// 普通类型成员变量
+				for (let i = 0; i < rules.length; i++) {
+					let rule = rules[i];
+					let isAssets = rule.assetUuid != null;
+					let insertUuids = [rule.nodeUuid || rule.assetUuid]
+					this.newTextAndBindWidget(codeInfo,args.bindNodeList,rule,insertUuids,isArray,isAssets)
 				}
-
-				setTimeout(()=>{
-					// 4.给成员变量赋值引用对象
-					this.insertWidgetInfo(args.bindNodeList,widgetType,symbolName,false,nodeUuids,false,rule);
-				},100);
 			}
 
 			// 3.保存刷新creator生成变量拖拽组件
 			this.saveFile(codeInfo.editInfo.vs_model,oldCodeText,rules);
-
 		});
 	},
 
-	// 加载多个组件到代码
-	loadWidgetsToCode(widgetTypes,symbolNames,codeInfo,insertUuids=null,isAssets=false){
-		if(this.parent.file_info == null || this.parent.file_info.uuid != codeInfo.editInfo.uuid ){
-			return;
-		}
-
-		//1.获得当前打开的脚本是否该场景内节点绑定的
-		//2.获得与当前脚本绑定的Nodes
-		//3.往脚本添加组件类型字段
-		//4.往脚本的类型字段写入当前选中的组件或资源
-		this.getCurrEditorFileBindNodes(codeInfo.editInfo.uuid, (bindNodeList)=>
+	// 创建脚本的成员变量并绑定组件到成员变量
+	newTextAndBindWidget(codeInfo,bindNodeList,rule,insertUuids,isArray,isAssets){
+		let widgetType = rule.widgetType;
+		let symbolName = rule.symbolName;
+		if(!rule.disableGenerated)
 		{
-			if(!bindNodeList || bindNodeList.length == 0){
-				alert("生成拖拽组件失败,当前场景Nodes没有绑定当前编辑中的脚本")
+			if(symbolName.match(/[a-zA-Z_$][\w$]*/) == null){
+				Editor.info('生成拖拽组件:变量命名不符合规范:',symbolName);
 				return;
 			}
-			if(this.parent.file_info.uuid != codeInfo.editInfo.uuid) {
-				return;
-			}
-
-			// 提供撤销
-			codeInfo.editInfo.vs_model.pushStackElement();
-			let oldCodeText = codeInfo.editInfo.vs_model.getValue();
-			let rules =  [ /* {symbolName:'',widgetType:'',nodeUuid:'',assetUuid:'',args:any} */ ];
-			for (let i = 0; i < symbolNames.length; i++) 
-			{
-				let widgetType = widgetTypes[i];
-				let symbolName = symbolNames[i];
-				let uuids 	   = [insertUuids[i]];
-				let rule = {
-					widgetType:widgetType,
-					symbolName:symbolName,
-					nodeUuid: isAssets ? undefined : insertUuids[i],
-					assetUuid: isAssets ? insertUuids[i] : undefined,
-				}
-				rules.push(rule)
-				if(!this.isNormalSymbolName(symbolName)){
-					alert('生成拖拽组件:变量命名不符合规范:'+symbolName);
-					continue;
-				}
-
-				// 插入成员变量文本
-				symbolName = this.insertTextToModel(widgetType,symbolName,codeInfo,false,[rule]);
-				setTimeout(()=>{
-					// 2.添加引用
-					this.insertWidgetInfo(bindNodeList,widgetType,symbolName,false,uuids,isAssets);
-				},100);
-			}
-			
-			// 1.保存刷新creator生成变量拖拽组件
-			this.saveFile(codeInfo.editInfo.vs_model,oldCodeText,rules);
-
-		});
-	},
-
-	// 加载单个或数组组件到代码
-	loadWidgetToCode(widgetType,symbolName,codeInfo,insertUuids=null,isAssets=false){
-		if(!this.isNormalSymbolName(symbolName)){
-			alert('生成拖拽组件:变量命名不符合规范:'+symbolName);
-			return;
-		}
-		if(this.parent.file_info == null || this.parent.file_info.uuid != codeInfo.editInfo.uuid ){
-			return;
+			// 2.插入成员变量文本
+			symbolName = this.insertTextToModel(widgetType,symbolName,codeInfo,isArray,rule);
+			rule.symbolName = symbolName;
 		}
 
-		//1.获得当前打开的脚本是否该场景内节点绑定的
-		//2.获得与当前脚本绑定的Nodes
-		//3.往脚本添加组件类型字段
-		//4.往脚本的类型字段写入当前选中的组件或资源
-		this.getCurrEditorFileBindNodes(codeInfo.editInfo.uuid, (bindNodeList)=>
-		{
-			if(!bindNodeList || bindNodeList.length == 0){
-				alert("生成拖拽组件失败,当前场景Nodes没有绑定当前编辑中的脚本")
-				return;
-			}
-			if(this.parent.file_info.uuid != codeInfo.editInfo.uuid) {
-				return;
-			}
-			let isArray = (insertUuids || Editor.Selection.curSelection(isAssets ? 'asset':'node') ).length>1 ;
-
-			// 提供撤销
-			codeInfo.editInfo.vs_model.pushStackElement();
-			let oldCodeText = codeInfo.editInfo.vs_model.getValue();
-			// 用于自定义规则
-			let rules = []
-			for (let i = 0; i < insertUuids.length; i++) {
-				rules.push({
-					widgetType:widgetType,
-					symbolName:symbolName,
-					nodeUuid: isAssets ? undefined : insertUuids[i],
-					assetUuid: isAssets ? insertUuids[i] : undefined,
-				});
-			}
-			// 插入成员变量文本 
-			symbolName = this.insertTextToModel(widgetType,symbolName,codeInfo,isArray,rules);
-			for (let i = 0; i < insertUuids.length; i++) {
-				rules[i].symbolName = symbolName;
-			}
-
-			// save
-			this.saveFile(codeInfo.editInfo.vs_model,oldCodeText,rules);
-
-			setTimeout(()=>{
-				this.insertWidgetInfo(bindNodeList,widgetType,symbolName,isArray,insertUuids,isAssets);
-			},100);
-		});
+		setTimeout(()=>{
+			// 4.给成员变量赋值引用对象
+			this.insertWidgetInfo(bindNodeList,widgetType,symbolName,isArray,insertUuids,isAssets,rule);
+		},100);
 	},
 
 	// 变量名是否正常
@@ -537,7 +488,7 @@ module.exports = {
 			}
 
 			// 变量 properties 对象位置
-			let findObj = text.match(/properties[	 ]{0,5}:[	 ]{0,5}[\n]{0,5}[	 ]{0,15}{[	 ]{0,5}/)
+			let findObj = text.match(/properties[	 ]{0,5}:[	 ]{0,5}[\n]{0,5}[	 ]{0,15}{/)
 			if(!findObj){
 				Editor.info('JS脚本缺少 properties:{}, 对象，无法自动拖拽组件')
 				return;
