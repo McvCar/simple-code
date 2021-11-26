@@ -5,7 +5,7 @@
  * 2.管理文件资源
  */
 const electron 		= require('electron')
-const electronRemote = parseFloat(process.versions.electron) < 14 ? electron.remote : require('@electron/remote')
+const electronRemote = parseFloat(process.versions.electron) < 13 ? electron.remote : require('@electron/remote')
 const fe 			= Editor2D.require('packages://simple-code/tools/tools.js');
 const config 		= Editor2D.require('packages://simple-code/config.js');
 const packageCfg 	= Editor2D.require('packages://simple-code/package.json');

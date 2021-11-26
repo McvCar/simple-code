@@ -104,7 +104,7 @@ class FileMgr{
 	
 	async getFileUrlInfoByUuidAsync(uuid) {
 		let url = await Editor2D.assetdb.uuidToUrl(uuid);
-		let fs_path = await Editor2D.assetdb.urlToFspath(url);
+		let fs_path = await Editor2D.assetdb.uuidToFspath(uuid);
 		if(url == null || fs_path == null) return;
 		fs_path = fs_path.replace(/\\/g,'/');
 
