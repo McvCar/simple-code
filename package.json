@@ -1,7 +1,7 @@
 {
 	"name": "simple-code",
 	"package_version": 2,
-	"version": "3.2.5",
+	"version": "3.2.6",
 	"description": "快闪-代码编辑器",
 	"author": "嘉年华(mcv-cpu)",
 	"main": "./main.js",
@@ -14,11 +14,6 @@
 				"path": "i18n:simple-code.name",
 				"label": "i18n:simple-code.open",
 				"message": "open"
-			},
-			{
-				"path": "i18n:simple-code.name",
-				"label": "i18n:simple-code.preview",
-				"message": "openPreview"
 			},
 			{
 				"path": "i18n:simple-code.name/i18n:simple-code.setting",

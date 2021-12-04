@@ -18,9 +18,9 @@
 
 -3. Vscode code editor function
 
--4. Game running preview window (shortcut key [**F11**])
+-4. Search for unused resources (In the Explorer right-click menu)
 
--5. Search for unused resources (for cleaning up unused files, shortcut [**Alt+L**])
+-5. Dragging resources or nodes to scripts automatically generates variables and bindings
 
 -6. Modifying the TS / JS file path in the resource manager of creator can automatically synchronize the code import / require reference path
 
@@ -40,13 +40,9 @@
 
 After selecting the folder, bind the shortcut key: Alt + [**0-9**] bind the specified number key label, press [**0~9**] to jump to the bound folder location)
 
--8. Select the file resource, press [**X**] to cut, and press [**C**] to paste the file. Quickly move files with quick directory
+-8. Shortcut node (press [**Alt+\~*] to save the selection status of all nodes in the current scene, and press [**\~*] to return to the previously saved node selection status)
 
--9. Shortcut node (press [**Alt+\~*] to save the selection status of all nodes in the current scene, and press [**\~*] to return to the previously saved node selection status)
-
--10. Batch select nodes with the same name (similar to batch select nodes with the same name by pressing **Ctrl+D** in vscode, and the operation is quick [**S**] or [**Alt+D**])
-
--11. Batch search the child nodes of the selected node (used to quickly batch select the nodes with specified names, quick operation [**F**])
+-9. Batch select nodes with the same name (similar to batch select nodes with the same name by pressing **Ctrl+D** in vscode, and the operation is quick [**S**] or [**Alt+D**])
 
 
 # Project management:
@@ -63,31 +59,29 @@ After selecting the folder, bind the shortcut key: Alt + [**0-9**] bind the spec
 
 -1. TS / JS code prompt function is better than vsode, and supports module code prompt introduced by import / require
 
--2. Built in creator.d.ts file, Cocos API prompt out of the box, support TS / JS
+-2. Support cross file prompt of function name in game project
 
--3. Support cross file prompt of function name in game project
+-3. Support variable reference location search and jump
 
--4. Support variable reference location search and jump
+-4. Support **Ctrl+click** to jump to the file location of object member declaration
 
--5. Support **Ctrl+click** to jump to the file location of object member declaration
+-5. Support JSON / JS / TS document format
 
--6. Support JSON / JS / TS document format
+-6. Remember to open the code before closing the creator, restart the creator to recover the code tag, and quickly enter the last working state;
 
--7. Remember to open the code before closing the creator, restart the creator to recover the code tag, and quickly enter the last working state;
+-7. Support [**Ctrl+Shift+O**] function jump... Other dozens of functions are the same as vscode, so I will not introduce them one by one
 
--8. Support [**Ctrl+Shift+O**] function jump... Other dozens of functions are the same as vscode, so I will not introduce them one by one
-
--9. Support to import user-defined XXXX_ Api.d.ts code declaration file,
+-8. Support to import user-defined XXXX_ Api.d.ts code declaration file,
 
 Usage: put the d.ts declaration file to the root directory of the project (at the same level as the assets folder), and then restart creator
 
--10. JS code function jump / prompt conversion function reaches the level of webstorm editor
+-9. JS code function jump / prompt conversion function reaches the level of webstorm editor
 
--11. Add rainbow bracket plug-in
+-10. Add rainbow bracket plug-in
 
--12. VIM mode supports multiple cursors
+-11. VIM mode supports multiple cursors
 
--13. Support **Ctrl+Shift+y** to open the console and input commands
+-12. Support **Ctrl+Shift+y** to open the console and input commands
 
 *Note: for large projects, it is recommended to change the compilation trigger mode to manual
 

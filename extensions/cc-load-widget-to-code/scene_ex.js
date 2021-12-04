@@ -210,6 +210,39 @@ module.exports = {
 
 			return {rules,bindNodeList};
 		},
+		
+		// 自定义保存的代码文本
+		'saveWidgetCodeFile'(args, parent){
+			try {
+				let nodes = []
+				for (let i = 0; i < args.rules.length; i++) {
+					const rule = args.rules[i];
+					if(rule.nodeUuid){
+						let node = parent.findNode(rule.nodeUuid);
+						nodes.push(node);
+					}
+				}
+				let newCodeText = require(USER_NEW_VAR_RULE).processCode(args.codeText, args.dbUrl, args.rules, null,nodes)
+				return newCodeText;
+			} catch (error) {
+				Editor.error('自定义绑定规则配置出错(saveWidgetCodeFile): ',error)
+				return newCodeText;
+			}
+		},
+
+		// 配置拖拽规则
+		'loadWidgetRules'(args, parent){
+			try {
+				let bindNodeList = parent.getEditFileBindNodes(args.scriptUuid);
+				if(require(USER_NEW_VAR_RULE).dragWidgetStart){
+					args = require(USER_NEW_VAR_RULE).dragWidgetStart(args.rules, args.isArray,args.isQuick)
+				}
+				args.bindNodeList = bindNodeList;
+			} catch (error) {
+				Editor.error('自定义绑定规则配置出错(loadWidgetRules): ',error)
+			}
+			return args;
+		},
 
 		'insertWidgetInfo'(args, parent) {
 			//1.获取绑定当前脚本的Node
