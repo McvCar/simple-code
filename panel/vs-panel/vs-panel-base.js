@@ -5,6 +5,7 @@
  * 2.管理文件资源
  */
 const electron 		= require('electron')
+const electronRemote = parseFloat(process.versions.electron) < 13 ? electron.remote : require('@electron/remote')
 const fe 			= Editor2D.require('packages://simple-code/tools/tools.js');
 const config 		= Editor2D.require('packages://simple-code/config.js');
 const packageCfg 	= Editor2D.require('packages://simple-code/package.json');
@@ -148,7 +149,7 @@ class vsEditorPanel {
 	}
 	// tab标签 右键菜单初始化
 	initContextMenu(){
-		this.menu = require('@electron/remote').Menu.buildFromTemplate([
+		this.menu = electronRemote.Menu.buildFromTemplate([
 			// 关闭
 			{label:fe.translate('close'),click:()=>
 			{
@@ -1245,7 +1246,7 @@ class vsEditorPanel {
 			e.preventDefault();
 			this.menu.currTabId = tabBg._id;
 			// 处于焦点时才能调用
-			if(require('@electron/remote').BrowserWindow.getFocusedWindow()){ 
+			if(electronRemote.BrowserWindow.getFocusedWindow()){ 
 				this.menu.popup()
 			}
 		})
