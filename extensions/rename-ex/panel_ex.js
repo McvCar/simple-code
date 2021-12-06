@@ -24,7 +24,8 @@ module.exports = {
 		// 键盘事件：重名
 		this.parent.addKeybodyEventByName('renameNodeOrFile',(e)=>
 		{
-			if (!this.parent.is_mouse_down ){
+			let panel = Editor2D.Panel.getFocusedPanel()
+			if (!this.parent.is_mouse_down && panel && (panel.name == 'assets' || panel.name == 'hierarchy') ){
 				this.openRename()
 				e.preventDefault();// 吞噬捕获事件
 			}

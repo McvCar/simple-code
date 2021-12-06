@@ -7,6 +7,7 @@ var path 	= require('path');
 var fs 		= require('fs');
 var md5     = require('md5');
 var config     = require('../../config');
+const Editor2D = require('../../tools/editor2D');
 const fe 	= Editor2D.require('packages://simple-code/tools/tools.js');
 
 
