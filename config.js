@@ -814,7 +814,7 @@ module.exports = {
 				type: "buttonBar",
 				defaultValue: "off",
 				items: [
-					{ caption: "on", value: "on" },
+					// { caption: "on", value: "on" },
 					{ caption: "off", value: "off" },
 				]
 			},

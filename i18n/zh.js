@@ -69,7 +69,7 @@ module.exports = {
     'fontSize': '字体大小',
     'fontFamily': '字体',
     'fontWeight': '字体粗细',
-    'wordWrap': '自动换行',
+    'wordWrap': '自动折词',
     'keyboardHandler': '快捷键习惯',
     'minimapStyle': '预览栏样式',
     'minimapSide': '预览栏位置',
