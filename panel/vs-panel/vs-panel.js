@@ -473,10 +473,10 @@ let layer = {
 		this.addWindowEventListener("focus", () => pressedKeys = {},true)
 		
 		// 阻挡冒泡creator的快捷键
-		this.$box.addEventListener("keydown", (e)=> {
-			let className = e.path[0] && e.path[0].className || ''
-			if (className.indexOf('monaco') != -1 && (e.key == "w" || e.key == "e" || e.key == "r" || e.key == "t")) e.preventDefault()
-		}, false);
+		// this.$box.addEventListener("keydown", (e)=> {
+		// 	let className = e.path[0] && e.path[0].className || ''
+		// 	if (className.indexOf('monaco') != -1 && (e.key == "w" || e.key == "e" || e.key == "r" || e.key == "t")) e.stopPropagation()
+		// }, false);
 
 		this.addKeybodyEvent([["Ctrl", "s"], ["Meta", "s"]], (e) => 
 		{
