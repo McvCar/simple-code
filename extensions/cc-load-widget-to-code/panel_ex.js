@@ -351,7 +351,7 @@ module.exports = {
 				text = this.insertScriptImportPath(text,vs_model.dbUrl,widgetType,codeInfo.isTs,ccModelue);
 				vs_model.setValue(text);
 			} catch (error) {
-				Editor.error('生成自定义绑定规则配置出错: ',error)
+				console.error('生成自定义绑定规则配置出错: ',error)
 			}
 		}
 
@@ -480,13 +480,14 @@ module.exports = {
 		{
 			let parseTs = (code_text, start_ind = 0)=>
 			{
-				let findObj = code_text.substr(start_ind).match(/@property\(.+\)[\s]{0,35}([\w$]+)[\s]{0,10}:[\s]{0,10}([\w$.]+)[\s]{0,5}[=]{0,1}.+/)
+				let findObj = code_text.substr(start_ind).match(/@property\(.+\)[\s]{0,35}([\w$.]{0,})[\s]{0,10}([\w$.]{0,})[\s]{0,10}:[\s]{0,10}([\w$.]+)[\s]{0,5}[=]{0,1}.+/)
 				if (findObj) 
 				{
 					let startPos = findObj.index + start_ind;
 					let endPos = startPos + findObj[0].length;
-					let symbolName = findObj[1]
-					let widgetType = findObj[2]
+					// let memberType = findObj[1]
+					let symbolName = findObj[2] == '' ? findObj[1] : findObj[2] // ndParent: Node 或 private ndParent: Node
+					let widgetType = findObj[3]
 					let isArray    = findObj[0].match(/\[[\s\S]*?\]/) != null;
 					let symbolInfo = { startPos, endPos, symbolName, widgetType, value: symbolName, meta: widgetType,text:findObj[0], isArray }
 					symbols.push(symbolInfo);

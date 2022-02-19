@@ -60,6 +60,7 @@ module.exports = {
 				// 3.检测组件类名是否存在
 				let comp = node.getComponent(scriptName);
 				if (comp) {
+					onComplete(args.saveUrl,data,node,scriptName);
 					return {};
 				}else{
 					// 4.不存在添加组件

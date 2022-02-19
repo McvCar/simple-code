@@ -44,6 +44,7 @@ let LoadAssetUuid =
 	},
 }
 
+
 /**
  * 加载组件或资源到code
  * @param {import('../../panel/scene-info')} parent 
@@ -62,14 +63,55 @@ let LoadAssetUuid =
  */
 let loadSelectedCompsOrAssets = async (parent,args) => 
 {
+	let uuids = [];
 	// 禁止绑定拽变量
-	if(args.rule && args.rule.disableGenerated){
-		return [];
+	let disableGenerated = args.rule && args.rule.disableGenerated
+	if(!disableGenerated){
+		// 获得绑定到脚本内的资源uuids
+		uuids = await getSelectedCompsOrAssets(parent,args)
 	}
 
+	// 将uuids组件或资源绑定到脚本
+	for (let i = 0; i < args.bindNodeList.length; i++) {
+		const element = args.bindNodeList[i];
+		const node = parent.findNode(element.node_uuid)
+		if(!node){
+			continue;
+		}
+
+		// 获得当前打开的脚本对象
+		let scriptComp = node.getComponent(element.comp_name);
+		if (!scriptComp) {
+			continue;
+		}
+
+		// 绑定的资源到脚本变量内
+		if(uuids.length != 0 && !disableGenerated){
+			if(args.isArray){
+				let values = []
+				for (let i = 0; i < uuids.length; i++) {
+					values.push({value:{uuid:uuids[i]}})
+				}
+				parent.setCompProperty(node, args.symbolName, values, args.widgetType, element.comp_name)
+			}else{
+				parent.setCompProperty(node, args.symbolName,{uuid:uuids[0]}, args.widgetType, element.comp_name)
+			}
+		}
+
+		// 调用用户规则
+		let ruleCode = require(USER_NEW_VAR_RULE)
+		if(ruleCode.setComponentVar){
+			ruleCode.setComponentVar(scriptComp,args.widgetType,args.symbolName,args.isArray,args.insertUuids,args.isAssets,args.rule);
+		}
+	}
+
+	return uuids;
+}
+
+let getSelectedCompsOrAssets = async (parent,args)=>{
+	const uuids = [];
 	// 获得绑定资源
 	let slsAssets = args.insertUuids && args.insertUuids.length ? args.insertUuids : Editor2D.Selection.curSelection(args.isAssets ? 'asset' : 'node');
-	const uuids = [];
 	if (args.isAssets) 
 	{
 		// 拖进来的资源
@@ -93,44 +135,6 @@ let loadSelectedCompsOrAssets = async (parent,args) =>
 			}
 		}
 	}
-
-	if(!uuids.length){
-		return uuids;
-	}
-
-	// 将uuids组件或资源绑定到脚本
-	for (let i = 0; i < args.bindNodeList.length; i++) {
-		const element = args.bindNodeList[i];
-		const node = parent.findNode(element.node_uuid)
-		if(!node){
-			continue;
-		}
-
-		// 获得当前打开的脚本对象
-		let scriptComp = node.getComponent(element.comp_name);
-		if (!scriptComp) {
-			continue;
-		}
-
-		if(args.isArray){
-			let values = []
-			for (let i = 0; i < uuids.length; i++) {
-				values.push({value:{uuid:uuids[i]}})
-			}
-			parent.setCompProperty(node, args.symbolName, values, args.widgetType, element.comp_name)
-		}else{
-			parent.setCompProperty(node, args.symbolName,{uuid:uuids[0]}, args.widgetType, element.comp_name)
-		}
-
-		// 调用用户规则
-		let ruleCode = require(USER_NEW_VAR_RULE)
-		if(ruleCode.setComponentVar){
-			ruleCode.setComponentVar(scriptComp,args.widgetType,args.symbolName,args.isArray,args.insertUuids,args.isAssets,args.rule);
-		}
-	}
-
-
-
 	return uuids;
 }
 
@@ -256,7 +260,7 @@ module.exports = {
 			let stop_func;
 			let chk_count = 0;
 			return new Promise((resolve,reject)=>{
-				stop_func = parent.setTimeoutToJS(() => 
+				stop_func = parent.setTimeoutToJS(async () => 
 				{
 					//等场景加载完脚本
 					let scriptNode = parent.findNode(args.bindNodeList[0].node_uuid)
@@ -265,15 +269,15 @@ module.exports = {
 					{
 						let scriptComp = scriptNode.getComponent(args.bindNodeList[0].comp_name)
 						if(!scriptComp) return;
-	
-						let isUpScene = scriptComp.hasOwnProperty(args.symbolName);// scriptComp.uuid != old_comp_uuid;
+						let disableGenerated = args.rule && args.rule.disableGenerated;
 						// *：组件uuid改变了说明场景已经刷新了一遍, scriptComp.uuid != old_comp_uuid 
+						let isUpScene = disableGenerated || scriptComp.hasOwnProperty(args.symbolName);// scriptComp.uuid != old_comp_uuid;
 						// 创建脚本瞬间添加的node组件会丢失,所以需要检测1次组件确定加载了
 						if (isUpScene)
 						{
 							stop_func();
 							// 绑定资源关系
-							let uuids = loadSelectedCompsOrAssets(parent,args);
+							let uuids = await loadSelectedCompsOrAssets(parent,args);
 							resolve(uuids);
 							return
 						}
