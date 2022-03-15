@@ -396,8 +396,9 @@ class FileMgr{
 	async assetsDeletedEvent(file)
 	{
 		let isOutside = file.uuid == 'outside';
+		let fsPath = fe.normPath(file.file);
 		// 删除缓存
-		delete this.parent.file_list_map[fe.normPath(file.file)];
+		delete this.parent.file_list_map[fsPath];
 		if(!isOutside) delete this.parent.file_list_uuid[file.uuid];
 
 		for (let i = this.parent.file_list_buffer.length-1; i >= 0 ; i--) {
@@ -411,16 +412,17 @@ class FileMgr{
 		let is_remove = false
 		
 		// 刷新编辑信息
-		let old_url = isOutside ? file.file : await Editor2D.assetdb.fspathToUrl(file.file) ;
+		let old_url = isOutside ? fsPath : await Editor2D.assetdb.fspathToUrl(file.file) ;
 		let id = this.parent.getTabIdByPath(old_url);
 		// 正在编辑的tab
 		if(id != null)
 		{
 			// 正在编辑的文件被删
 			let editInfo = this.parent.edit_list[id] 
-			if (editInfo && ( !isOutside && file.uuid == editInfo.uuid || isOutside && file.file == editInfo.path)) {
+			if (editInfo && ( !isOutside && file.uuid == editInfo.uuid || isOutside && fsPath == editInfo.path)) {
 				editInfo.uuid = "outside";
-				editInfo.path = isOutside ? file.file : unescape(Editor2D.url(editInfo.path));
+				editInfo.path = isOutside ? fsPath : fe.normPath(unescape(Editor2D.url(editInfo.path)));
+				editInfo.path = editInfo.path
 				editInfo.can_remove_model = 1;
 				if(editInfo.vs_model)
 				{
@@ -447,7 +449,7 @@ class FileMgr{
 			}
 		}else{
 			// 清缓存
-			let vs_model = this.parent.monaco.editor.getModel(this.parent.monaco.Uri.parse(this.fsPathToModelUrl(file.file)))
+			let vs_model = this.parent.monaco.editor.getModel(this.parent.monaco.Uri.parse(this.fsPathToModelUrl(fsPath)))
 			if(vs_model) {
 				vs_model.dispose()
 				is_remove = true;
