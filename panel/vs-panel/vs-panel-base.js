@@ -46,6 +46,7 @@ let layer =
 	// 启动事件
 	initVsEditor(callback) 
 	{
+		this.is_init_finish;
 		this.timer_map 			= {};
 		this.file_list_buffer  	= this.file_list_buffer || [];
 		this.file_list_map 	  	= this.file_list_map || {};
@@ -930,8 +931,8 @@ let layer =
 		this.runExtendFunc("onSaveFile",fileInfo);
 	},
 	
-	// 保存修改
-	saveFileFromDelayTime(isMandatorySaving = false, isMustCompile = false, id = -1) {
+	// 延迟保存修改
+	saveFileFromDelayTime(isMandatorySaving = false, isMustCompile = false, id = -1, formatOnSaveFile = true) {
 		id = id == -1 ? this.edit_id : id;
 		if(this.waitSaveIntervals[id]){
 			// 重复保存忽略
@@ -945,7 +946,7 @@ let layer =
 		},500,'isWaitSaveCodeInterval'+id);
 
 		// 保存后格式化文档
-		if(this.cfg.formatOnSaveFile){
+		if(formatOnSaveFile && this.cfg.formatOnSaveFile){
 			this.vs_editor.trigger('anything','editor.action.formatDocument')
 			setTimeout(()=>{
 				this.saveFile(isMandatorySaving,isMustCompile,id);
@@ -1269,7 +1270,7 @@ let layer =
 		let file_info = this.edit_list[id];
 		if (tabBg == null || !file_info.enabled_close) return;//Editor.info("不存在页面:"+id);
 
-		if (file_info.is_need_save && !confirm(file_info.path + " 文件被修改是否丢弃修改?")) return;
+		if (!file_info.can_remove_model && file_info.is_need_save && !confirm(file_info.path + " 文件被修改是否丢弃修改?")) return;
 
 		// 记录本次打开位置
 		let file_name = this.edit_list[id].path
@@ -1319,6 +1320,7 @@ let layer =
 	// 切换编辑tab页面
 	setTabPage(id, is_new_page = false) {
 		if (!this.getTabDiv(id)) return;
+		let old_id = this.edit_id;
 
 		// 高亮选中
 		let list = this.getTabList()
@@ -1336,6 +1338,9 @@ let layer =
 		this.upTitle(id)
 		this.readFile(this.edit_list[id]);
 		this.vs_editor.updateOptions({ lineNumbers: this.cfg.is_cmd_mode || this.edit_id != 0 ? "on" : 'off' });
+		if(this.is_init_finish) {
+			this.onSwitchTab(old_id,id);
+		}
 		return this.edit_list[id];
 	},
 
@@ -1629,6 +1634,11 @@ let layer =
 
 	// 窗口失去焦点
 	onBlur(){
+
+	},
+
+	// 正在切换页面标签栏
+	onSwitchTab(oldEditId = -1,newEditId){
 
 	},
 

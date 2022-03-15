@@ -379,6 +379,10 @@ class FileMgr{
 				let item = this.newFileInfo(urlI.extname, urlI.name, v.url, v.uuid,fsPath);
 				this.parent.file_list_buffer.push(item);
 				this.parent.file_list_map[fsPath] = item;
+				let edit_id = this.parent.getTabIdByPath(fsPath);
+				if(edit_id != null){
+					this.parent.closeTab(edit_id); // 被删的文件重新添加
+				}
 				this.parent.loadAssetAndCompleter(item.meta, item.extname,!isOutside);
 			}
 		})
@@ -397,7 +401,8 @@ class FileMgr{
 		{
 			let isOutside = v.uuid == 'outside';
 			// 删除缓存
-			delete this.parent.file_list_map[fe.normPath(v.path)];
+			let fsPath = fe.normPath(v.path);
+			delete this.parent.file_list_map[fsPath];
 			for (let i = this.parent.file_list_buffer.length-1; i >= 0 ; i--) {
 				let item = this.parent.file_list_buffer[i];
 				if ( !isOutside && item.uuid == v.uuid || isOutside && v.url == item.meta ) {
@@ -409,16 +414,16 @@ class FileMgr{
 			let is_remove = false
 			
 			// 刷新编辑信息
-			let old_url = isOutside ? v.path : Editor.remote.assetdb.fspathToUrl(v.path) ;
+			let old_url = isOutside ? fsPath : Editor.remote.assetdb.fspathToUrl(v.path) ;
 			let id = this.parent.getTabIdByPath(old_url);
 			// 正在编辑的tab
 			if(id != null)
 			{
 				// 正在编辑的文件被删
 				let editInfo = this.parent.edit_list[id] 
-				if (editInfo && ( !isOutside && v.uuid == editInfo.uuid || isOutside && v.path == editInfo.path)) {
+				if (editInfo && ( !isOutside && v.uuid == editInfo.uuid || isOutside && fsPath == editInfo.path)) {
 					editInfo.uuid = "outside";
-					editInfo.path = isOutside ? v.path : unescape(Editor.url(editInfo.path));
+					editInfo.path = isOutside ? fsPath : fe.normPath(unescape(Editor.url(editInfo.path)));
 					editInfo.can_remove_model = 1;
 					if(editInfo.vs_model)
 					{
@@ -445,7 +450,7 @@ class FileMgr{
 				}
 			}else{
 				// 清缓存
-				let vs_model = this.parent.monaco.editor.getModel(this.parent.monaco.Uri.parse(this.fsPathToModelUrl(v.path)))
+				let vs_model = this.parent.monaco.editor.getModel(this.parent.monaco.Uri.parse(this.fsPathToModelUrl(fsPath)))
 				if(vs_model) vs_model.dispose()
 			}
 

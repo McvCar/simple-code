@@ -902,6 +902,16 @@ module.exports = {
 					{ caption: tools.translate('ManualComp' /*"手动编译"*/), value: "manual" },
 				]
 			},
+			"autoSaveFile": {
+				// 加载代码方式
+				path: "autoSaveFile",
+				type: "select",
+				defaultValue: "off",
+				items: [
+					{ caption: tools.T('关闭','off'), value: "off" },
+					{ caption: tools.T('窗口失去焦点时','When the window loses focus'), value: "blur" },
+				]
+			},
 			"readCodeMode": {
 				// 加载代码方式
 				path: "readCodeMode",
@@ -973,7 +983,7 @@ module.exports = {
 		},
 		More: {
 			"autoLayoutMin": {
-				// 自动窗口最小高度占比%
+				// 自动窗口 最小高度占比%
 				path: "autoLayoutMin",
 				type: "number",
 				defaultValue: 10,
@@ -987,7 +997,7 @@ module.exports = {
 			},
 
 			"autoLayoutMax": {
-				// 自动窗口最大高度占比%
+				// 自动窗口 最大高度占比%
 				path: "autoLayoutMax",
 				type: "number",
 				defaultValue: 80,
@@ -1000,7 +1010,7 @@ module.exports = {
 			},
 
 			"autoLayoutDt": {
-				// 自动窗口过渡动画时间
+				// 自动窗口 过渡动画时间
 				path: "autoLayoutDt",
 				type: "number",
 				defaultValue: 0,
@@ -1012,7 +1022,7 @@ module.exports = {
 			},
 
 			"autoLayoutDelay": {
-				// 自动窗口过渡动作延迟
+				// 自动窗口 过渡动作延迟
 				path: "autoLayoutDelay",
 				type: "number",
 				defaultValue: 0.1,
