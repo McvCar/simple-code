@@ -247,10 +247,25 @@ class EditorPanel extends VsEditorPanel{
 	initBindEvent() {
 
 		// 失去焦点，编译代码
-		this.panel.addEventListener('blur', () => {
-			if(this.cfg.codeCompileMode == 'blur'){
-				this.refreshSaveFild(false)
-			}
+		this.panel.addEventListener('blur', () => 
+		{
+			if(this.cfg.autoSaveFile == 'blur'){
+                let oldEditId = this.edit_id || -1;
+                // 失去焦点自動保存文件，延迟为了防止点击node切换时切换不了标签
+                this.setTimeoutById(()=>{
+                    if (!this.getTabDiv(oldEditId)) return;
+                    this.saveFileFromDelayTime(false,false,oldEditId,false);
+                     // 失去焦点時編譯文件
+                    if(this.cfg.codeCompileMode == 'blur'){
+                        this.refreshSaveFild(false)
+                    }
+                },500,'autoSaveFileInterval_'+oldEditId);
+
+            }else{
+                if(this.cfg.codeCompileMode == 'blur'){
+                    this.refreshSaveFild(false) // 失去焦点時編譯文件
+                }
+            }
 		},false);
 
 		// 手动编译
@@ -930,6 +945,19 @@ class EditorPanel extends VsEditorPanel{
 		this.runExtendFunc('onAssetsMovedEvent',file)
 	}
 
+    
+    // 正在切换页面标签栏
+    onSwitchTab(oldEditId = -1,newEditId){
+        super.onSwitchTab(oldEditId,newEditId);
+        if (!this.getTabDiv(oldEditId)){
+            return;
+        } 
+
+        if(this.cfg.autoSaveFile == 'blur'){
+            // 失去焦点自動保存文件
+            this.saveFileFromDelayTime(false,false,oldEditId,false);
+        }
+    }
 
 	// 检查更新
 	async checkUpdate() {

@@ -88,7 +88,7 @@ module.exports = {
     'whenBlur': 'After The Blur',
     'ManualComp': 'Manually Compile',
 
-
+    'autoSaveFile': 'Auto Save',
     'readCodeMode': 'Read Code Mode',
     'auto' :'Auto',
     'allImport' :'All Loading(JS recommend)',

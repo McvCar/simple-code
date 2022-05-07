@@ -99,9 +99,8 @@ module.exports = {
                 args.type = type;
                 args.uuid = uuid;
 
-                Editor2D.Scene.callSceneScript('simple-code','new-js-file',args,(err, event) => {
-                    this.parent.openActiveFile(true,false);
-                });
+                this.newScriptFile(args);
+                
 
             } catch (error) {
                 Editor.error(
@@ -113,6 +112,112 @@ module.exports = {
                 );
             }
         });
+    },
+
+    async newScriptFile(args)
+    {
+        // 1.检查node是否存在
+        let nodeInfo = await Editor.Message.request('scene','query-node',args.uuid);
+        if (!nodeInfo || args.type != "node") {
+            Editor.log("该功能需要您选中一个节点后再执行才能创建脚本与绑定节点")
+            Editor2D.Scene.callSceneScript('simple-code','new-file-complete',args,false);
+            return;
+        }
+
+        // 2.假设脚本已经存在，尝试绑定到node
+        let isSucceed = await this.tryBindScriptToNode(args);
+        if(isSucceed)
+        {
+            this.parent.openActiveFile(true,false);
+            args.data = fs.readFileSync(args.saveFspath).toString();
+            Editor2D.Scene.callSceneScript('simple-code','new-file-complete',args,true); // 通知自定义事件
+        }else
+        {
+            // 2.脚本不存在创建脚本文件
+            Editor2D.Scene.callSceneScript('simple-code','get-new-file-data',args,(err, textData) => {
+                args.data = textData
+				Editor2D.assetdb.create(args.saveUrl, args.data, (err, results) => {
+					if (err) {
+                        Editor2D.Scene.callSceneScript('simple-code','new-file-complete',args,false);
+                    }
+					else{
+                        // 3.等待creator编译新建的脚本后再绑定到node
+                        this.bindScriptToNode(args,0);
+                        Editor2D.Scene.callSceneScript('simple-code','new-file-complete',args,false);
+					}
+				})
+            });
+        }
+
+        // Editor2D.Scene.callSceneScript('simple-code','new-js-file',args,(err, eventArgs) => {
+        //     // 如果脚本不存在创建文件后需要绑定到Node
+        //     if(eventArgs.isNeedBindScript){
+        //         this.bindScriptToNode(eventArgs)
+        //     }else{
+        //         this.parent.openActiveFile(true,false);
+        //     }
+        // });
+    },
+
+    
+    async tryBindScriptToNode(args){
+        // 1.检测脚本文件存在
+        let fileUuid = await Editor2D.assetdb.urlToUuid(args.saveUrl);
+        if(fileUuid) 
+        {
+            let nodeInfo = await Editor.Message.request('scene','query-node',args.uuid);
+            args.scriptName = await Editor.Message.request('scene','query-script-name',fileUuid);
+            if(args.scriptName && nodeInfo)
+            {
+                // 脚本已绑定在Node上退出处理
+                if(this.getNodeCompByName(nodeInfo,args.scriptName)){
+                    return true;
+                }
+
+				// 2.绑定脚本到node
+				await Editor.Message.request('scene','create-component',{
+					uuid: args.uuid,
+					component: args.scriptName,
+				});
+
+                // 3.检查脚本是否绑定成功
+                nodeInfo = await Editor.Message.request('scene','query-node',args.uuid);
+                if(this.getNodeCompByName(nodeInfo,args.scriptName)){
+                    this.parent.scriptHint(fileUuid);
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    },
+
+    // 绑定脚本到Node
+    async bindScriptToNode(args,tryIndex=0)
+    {
+        let isSucceed = await this.tryBindScriptToNode(args);
+        if(isSucceed){
+            this.parent.openActiveFile(true,false);
+            Editor2D.Scene.callSceneScript('simple-code','new-file-complete',args,true); // 通知自定义事件
+
+        }else if( tryIndex++ < 15 ){
+            // 如果脚本没有绑定成功，则延迟1秒等待Creator编译完脚本再尝试，总共尝试15次
+            this.parent.setTimeout(this.bindScriptToNode.bind(this,args,tryIndex),1);
+        }else{
+            // 添加失败，超时
+            Editor2D.Scene.callSceneScript('simple-code','new-file-complete',args,false); // 通知自定义事件
+        }
+    },
+
+    getNodeCompByName(nodeInfo,compName){
+        if(nodeInfo && nodeInfo.__comps__){
+            for (let i = 0; i < nodeInfo.__comps__.length; i++) {
+                const comp = nodeInfo.__comps__[i];
+                if(comp.type == compName){
+                    return comp;
+                }
+            }
+        }
     },
 
 

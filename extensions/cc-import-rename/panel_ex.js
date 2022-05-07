@@ -117,7 +117,7 @@ module.exports = {
 	{
 		let saveList = []
 		let hintText = '是否同步以下脚本文件的 import、require路径:\n';
-		let logText  = '修正import路径完成,如果组件丢失脚本请重启creator,修改如下:'
+		let logText  = '修正import路径完成,如果组件丢失脚本请重启creator。修改详情:'
 		for (const m_path in usedPaths) 
 		{
 			const model = usedPaths[m_path];

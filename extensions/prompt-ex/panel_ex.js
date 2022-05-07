@@ -225,23 +225,33 @@ module.exports = {
 	onDestroy(){
 
 	},
-
-
+	
 	// 打开组件列表
-	openodeCompList(){
+	async openodeCompList(){
 		// 下拉框选中后操作事件
 		let onSearchAccept = (data)=>
 		{
 			// 获得选中的节点
 			Editor2D.Scene.callSceneScript('simple-code', 'set-node-comp' ,data.item.value);
 		}
-		
-		Editor2D.Scene.callSceneScript('simple-code', 'get-comps' ,"", (err, args)=>
+
+		let list = []
+		let comps = await Editor.Message.request('scene','query-components')
+		comps.forEach((obj)=>
 		{
-			// 打开搜索框: 文件定位转跳
-			let list = JSON.parse(args)
-			this.parent.ace.openSearchBox("",list,(data)=>onSearchAccept(data),null,null,'openNodeComp');
-		});
+			if(!obj.path.startsWith("hidden:")){
+				let name = obj["name"]
+				let item_cfg   = {
+					value: name , // 命令
+					meta: name, // 描述
+					score: 0,//搜索优先级
+					matchMask: 0,
+					exactMatch: 1,
+				};
+				list.push(item_cfg)
+			}
+		})
+		this.parent.ace.openSearchBox("",list,(data)=>onSearchAccept(data),null,null,'openNodeComp');
 	},
 
 

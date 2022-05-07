@@ -906,6 +906,16 @@ module.exports = {
 					{ caption: tools.translate('ManualComp' /*"手动编译"*/), value: "manual" },
 				]
 			},
+			"autoSaveFile": {
+                // 加载代码方式
+                path: "autoSaveFile",
+                type: "select",
+                defaultValue: "off",
+                items: [
+                    { caption: tools.T('关闭','off'), value: "off" },
+                    { caption: tools.T('窗口失去焦点时','When the window loses focus'), value: "blur" },
+                ]
+            },
 			"readCodeMode": {
 				// 加载代码方式
 				path: "readCodeMode",

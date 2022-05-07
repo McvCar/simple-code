@@ -257,9 +257,7 @@ module.exports = {
 
 	insertWidgetInfo(bindNodeList,widgetType,symbolName,isArray,insertUuids,isAssets,rule){
 		let args = {bindNodeList,widgetType,symbolName,isArray,insertUuids,isAssets,rule}
-		Editor2D.Scene.callSceneScript('simple-code', 'insertWidgetInfo',args, (err, isEnd) => { 
-			// console.log('生成完成.',isEnd)
-		});
+		Editor2D.Scene.callSceneScript('simple-code', 'insertWidgetInfo',args);
 	},
 
 	getCurrEditorFileBindNodes(uuid,calback){
@@ -497,6 +495,9 @@ module.exports = {
 			parseTs(text)
 		}else
 		{
+			return symbols; // Creator 3.x后不再支持JS脚本作为组件
+
+			/*
 			// JS 解析代码格式是否正常的,
 			let esprima = Editor2D.require('packages://simple-code/node_modules/esprima/esprima')
 			try {
@@ -569,6 +570,7 @@ module.exports = {
 					symbolInfo.endPos +=start_ind;
 				}
 			}
+			*/
 		}
 		symbols.ccModelue = isTs ? this.getCodeCcImports(text) : {modules:[]};
 		return symbols;

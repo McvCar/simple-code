@@ -72,6 +72,7 @@ class vsEditorPanel {
 		});
 	}	
 	initEditorStartData(){
+		this.is_init_finish;
 		this.timeout_index 		= 0;
 		this.timer_map 			= {};
 		this.file_list_buffer  	= this.file_list_buffer || [];
@@ -955,7 +956,7 @@ class vsEditorPanel {
 	}
 	
 	// 保存修改
-	saveFileFromDelayTime(isMandatorySaving = false, isMustCompile = false, id = -1) {
+	saveFileFromDelayTime(isMandatorySaving = false, isMustCompile = false, id = -1, formatOnSaveFile = true) {
 		id = id == -1 ? this.edit_id : id;
 		if(this.waitSaveIntervals[id]){
 			// 重复保存忽略
@@ -969,7 +970,7 @@ class vsEditorPanel {
 		},500,'isWaitSaveCodeInterval'+id);
 
 		// 保存后格式化文档
-		if(this.cfg.formatOnSaveFile){
+		if(formatOnSaveFile && this.cfg.formatOnSaveFile){
 			this.vs_editor.trigger('anything','editor.action.formatDocument')
 			setTimeout(()=>{
 				this.saveFile(isMandatorySaving,isMustCompile,id);
@@ -1342,7 +1343,8 @@ class vsEditorPanel {
 	// 切换编辑tab页面
 	setTabPage(id, is_new_page = false) {
 		if (!this.getTabDiv(id)) return;
-
+        let old_id = this.edit_id;
+		
 		// 高亮选中
 		let list = this.getTabList()
 		for (var i = 0; i < list.length; i++) {
@@ -1359,6 +1361,9 @@ class vsEditorPanel {
 		this.upTitle(id)
 		this.readFile(this.edit_list[id]);
 		this.vs_editor.updateOptions({ lineNumbers: this.cfg.is_cmd_mode || this.edit_id != 0 ? "on" : 'off' });
+		if(this.is_init_finish) {
+            this.onSwitchTab(old_id,id);
+        }
 		return this.edit_list[id];
 	}
 
@@ -1665,6 +1670,11 @@ class vsEditorPanel {
 	onBlur(){
 	}
 
+	// 正在切换页面标签栏
+	onSwitchTab(oldEditId = -1,newEditId){
+
+	}
+	
 	// 页面关闭
 	onDestroy() {
 

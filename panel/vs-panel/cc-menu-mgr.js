@@ -82,7 +82,7 @@ class ccMenuMgr {
 		if(!firstMenu || !firstMenu.submenu || !firstMenu.submenu.length){
 			return
 		}
-		let menuType = MENU_PANEL_TYPE[firstMenu.submenu[0].label || firstMenu.submenu[0].template];
+		let menuType = MENU_PANEL_TYPE[firstMenu.submenu[0].label || firstMenu.submenu[0].template] || MENU_PANEL_TYPE[firstMenu.submenu[0].message];
 		this.parent.onCCMenuPopup(menuType);
 		for (const id in this.menuCfgs) 
 		{

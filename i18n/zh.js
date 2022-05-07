@@ -87,7 +87,8 @@ module.exports = {
     'whenSave': '保存后',
     'whenBlur': '退出编辑后',
     'ManualComp': '手动编译',
-
+    
+    'autoSaveFile': '自动保存方式',
     'readCodeMode': '加载代码方式',
     'auto' :'自动',
     'allImport' :'全部加载',

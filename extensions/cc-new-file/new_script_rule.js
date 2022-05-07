@@ -63,8 +63,13 @@ module.exports = {
 	 * @param {string} saveUrl - 保存路径
 	 * @param {string} originText - 脚本代码内容
 	 * @param {cc.Node} bindNode - 当前脚本绑定的 node
+	 * @param {boolean} isSucceed - 绑定脚本到Node成功
 	 */
- 	onComplete(saveUrl,originText,bindNode,jsFileName){
+ 	onComplete(saveUrl,originText,bindNode,jsFileName,isSucceed){
+		 if(!isSucceed){
+			 // 绑定脚本到Node失败
+			 return;
+		 }
 		// scene环境运行,打印日志请用 console.warn('打印') ;
 
 		// 获得已绑定node的组件

@@ -259,34 +259,35 @@ module.exports = {
 			// 定时检测creator加载新建文件缓存没
 			let stop_func;
 			let chk_count = 0;
-			return new Promise((resolve,reject)=>{
-				stop_func = parent.setTimeoutToJS(async () => 
+			// return new Promise((resolve,reject)=>{
+			// });
+			
+			stop_func = parent.setTimeoutToJS(async () => 
+			{
+				//等场景加载完脚本
+				let scriptNode = parent.findNode(args.bindNodeList[0].node_uuid)
+				chk_count++;
+				if (scriptNode && !scriptNode._objFlags) 
 				{
-					//等场景加载完脚本
-					let scriptNode = parent.findNode(args.bindNodeList[0].node_uuid)
-					chk_count++;
-					if (scriptNode && !scriptNode._objFlags) 
+					let scriptComp = scriptNode.getComponent(args.bindNodeList[0].comp_name)
+					if(!scriptComp) return;
+					let disableGenerated = args.rule && args.rule.disableGenerated;
+					// *：组件uuid改变了说明场景已经刷新了一遍, scriptComp.uuid != old_comp_uuid 
+					let isUpScene = disableGenerated || scriptComp.hasOwnProperty(args.symbolName);// scriptComp.uuid != old_comp_uuid;
+					// 创建脚本瞬间添加的node组件会丢失,所以需要检测1次组件确定加载了
+					if (isUpScene)
 					{
-						let scriptComp = scriptNode.getComponent(args.bindNodeList[0].comp_name)
-						if(!scriptComp) return;
-						let disableGenerated = args.rule && args.rule.disableGenerated;
-						// *：组件uuid改变了说明场景已经刷新了一遍, scriptComp.uuid != old_comp_uuid 
-						let isUpScene = disableGenerated || scriptComp.hasOwnProperty(args.symbolName);// scriptComp.uuid != old_comp_uuid;
-						// 创建脚本瞬间添加的node组件会丢失,所以需要检测1次组件确定加载了
-						if (isUpScene)
-						{
-							stop_func();
-							// 绑定资源关系
-							let uuids = await loadSelectedCompsOrAssets(parent,args);
-							resolve(uuids);
-							return
-						}
+						stop_func();
+						// 绑定资源关系
+						let uuids = await loadSelectedCompsOrAssets(parent,args);
+						resolve(uuids);
+						return
 					}
-					if(chk_count == 15){
-						reject();
-					}
-				}, 1, { count: 15 })
-			});
+				}
+				if(chk_count == 15){
+					reject();
+				}
+			}, 1, { count: 15 })
 		},
 
 	}
