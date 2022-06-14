@@ -4,7 +4,7 @@
  * 2.管理文件资源
  */
 const electron 		= require('electron')
-const fe 			= Editor.require('packages://simple-code/tools/tools.js');
+const fe 			= require('../../tools/tools');
 const config 		= Editor.require('packages://simple-code/config.js');
 const packageCfg 	= Editor.require('packages://simple-code/package.json');
 const fs 	= require('fs');
@@ -53,6 +53,7 @@ let layer =
 		this.window_event_listener = []
 		this.fileMgr 			= new fileMgr(this);
 		this.enableUpdateTs 	= false;
+		this.isInitEditorScene	= false; // 检测creator场景是否初始化完成
 		this.menu  = null;
 		this.initVsCode(() => {
 			this.initEditorData();
@@ -348,6 +349,23 @@ let layer =
 		}
 	},
 
+	// 检测Creator场景编辑器窗口是否初始化了
+	clickCreatorSceneInitState(){
+		if(this.isInitEditorScene){
+			return;
+		}
+		
+		Editor.Ipc.sendToPanel('scene', 'scene:query-hierarchy', (error, sceneID, hierarchy) => {
+			if(hierarchy && hierarchy.length > 0){
+				this.isInitEditorScene = true;
+				this.openActiveFile()
+				Editor.log(fe.T(`${fe.translate('name')}: 所有功能初始化成功`, `${fe.translate('name')}: Init editor success`));
+			}{
+				this.setTimeoutById(this.clickCreatorSceneInitState.bind(this),1000,'clickCreatorSceneInitState');
+			}
+		});
+	},
+
 
 	initSceneData(callback) {
 		setTimeout(()=>
@@ -370,7 +388,8 @@ let layer =
 					}
 				}
 			}
-			this.openActiveFile();
+			// this.openActiveFile();
+			this.clickCreatorSceneInitState();
 			if(showId){
 				this.setTabPage(showId)
 			}
@@ -1377,6 +1396,10 @@ let layer =
 
 	// 打开node上的文件到编辑器
 	openActiveFile(isShow,isCloseUnmodifiedTabs = true) {
+		if(!this.isInitEditorScene){
+			return ;
+		}
+		
 		// 获得当前焦点uuid的信息
 		Editor.Scene.callSceneScript('simple-code', 'get-active-uuid', "", (err, event) => {
 			if (!event) {
@@ -1573,7 +1596,11 @@ let layer =
 		return Editor.Panel.getFocusedPanel() == Editor.Panel.find('simple-code');
 	},
 
-	// 调用原生JS的定时器
+	isHasOpenSceneWindow(){
+		return this.isInitEditorScene;
+	},
+
+	// 调用原生JS的定时器,统一管理定时器,统一释放
 	setTimeoutById(func,time,id='com') 
 	{
 		// 之前有定时器先停掉

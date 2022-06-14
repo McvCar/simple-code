@@ -611,6 +611,9 @@ let layer = {
 
 	// 刷新场景所有的子节点信息缓存
 	upCurrSceneChildrenInfo() {
+		if(!this.isInitEditorScene){
+			return
+		}
 		// 从场景获得代码数据
 		Editor.Scene.callSceneScript('simple-code', 'scene-children-info', "", (err, data) => {
 			if (!data || data == "") return;
@@ -743,6 +746,9 @@ let layer = {
 	 * @param type = node | asset 
 	 * */ 
 	onEditorSelection(type,uuid){
+		if(!this.isInitEditorScene){
+			return;
+		}
 		this.onRefreshCreatorMenu(type,uuid);
 		this.runExtendFunc('onEditorSelection',type,uuid);
 	},
@@ -752,6 +758,9 @@ let layer = {
 	 * @param type = node | asset 
 	 * */ 
 	 onEditorSelectionHoverin(type,uuid){
+		if(!this.isInitEditorScene){
+			return;
+		}
 		this.onRefreshCreatorMenu(type,uuid);
 		this.runExtendFunc('onEditorSelectionHoverin',type,uuid)
 	},
