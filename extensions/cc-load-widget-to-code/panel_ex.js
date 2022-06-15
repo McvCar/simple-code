@@ -623,10 +623,10 @@ module.exports = {
 	 */
 	onDrag(e,dragArgs,mouseDownItem){
 		let panel = Editor2D.Panel.getFocusedPanel()
-		if(!panel) return;
+		// if(!panel) return;
 
 		// 获得拖拽的组件资源uuid
-		let type = dragArgs.type || panel.id
+		let type = dragArgs.type || panel && panel.id
 
 		if(type == 'asset' || type == 'assets'){
 			let uuids = this.getSelections('asset',mouseDownItem);
