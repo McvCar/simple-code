@@ -1677,7 +1677,6 @@ class vsEditorPanel {
 	
 	// 页面关闭
 	onDestroy() {
-
 	}
 
 };

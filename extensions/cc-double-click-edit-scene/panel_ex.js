@@ -35,7 +35,7 @@ module.exports = {
 
 			Editor2D.Scene.callSceneScript('simple-code', 'getCurrNodeLabelInfo',{},(err, labelInfo) => 
 			{ 
-				if(!labelInfo){
+				if(!labelInfo || !labelInfo.uuid){
 					return
 				}
 				this.editString((string)=>{

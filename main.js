@@ -1,6 +1,6 @@
 'use strict';
 const path      = require('path');
-// const electron  = require('electron');
+const electron  = require('electron');
 const exec 		= require('child_process').exec;
 let fs 			= require("fs");
 
@@ -29,7 +29,7 @@ let methods = {
 		this.runExtendFunc("onLoad",this);
 		global._simpleCodeMain = this;
 	},
-
+	
 	// 2.4.4 发现保存后不会刷新
 	unload () {
 		delete global._simpleCodeMain
@@ -129,6 +129,30 @@ let methods = {
 	'refresh-preview'(){
 		Editor2D.Ipc.sendToPanel('simple-code.preview','refresh-preview');
 	},
+
+	'injectScriptToMainWindow'(code){
+		let mainWin = this.getMainWebContents();
+		let isSuccess = false;
+		if(mainWin){
+			let result = mainWin.executeJavaScript(code);
+			isSuccess = true;
+			return {isSuccess, result};
+		}
+		return {isSuccess};
+	},
+	
+	// 获得主窗口
+	getMainWebContents(){
+		let allwins = electron.BrowserWindow.getAllWindows();
+		for (let i = 0; i < allwins.length; i++) {
+			const win = allwins[i];
+			if(win.title && win.title.startsWith('Cocos Creator')){
+				return win.webContents;
+			}
+		}
+		
+		return;
+	}
 }
 
 methods.initExtend();

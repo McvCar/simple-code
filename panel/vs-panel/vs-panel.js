@@ -9,6 +9,7 @@ const path 			= require("path");
 const electron 		= require('electron');
 const tools 		= require('../../tools/tools');
 const ccMenuMgr		= require('./cc-menu-mgr.js');
+const injectScriptService = require('./inject-script-service');
 tools.initI18t();
 
 // 加载编辑器里的 node_modules,有些公共库需要用的如：md5
@@ -29,50 +30,6 @@ const prsPath = Editor.Project && Editor.Project.path ? Editor.Project.path : Ed
 
 let _scripts = [];
 let isShowUpdate = false;
-exports.style = ``;
-exports.template = `
-<div id="box">
-	<div id="editorA"></div>
-	<div id="editorB"></div>
-	<div id="layoutTab" class="layout horizontal titleBarFontSize">
-		<div id="tabList" class="layout horizontal">
-			<img src=file://${Editor2D.url("packages://simple-code/panel/images/settingIco.png")} id="waitIco" class="turnAnim"></img> <span></span> <span></span>
-			<div id="title0" class="closeTab">
-				<div class="tabTitle"><nobr>无文件<nobr></div>
-				<div class="closeBtn"><nobr> x <nobr></div>
-			</div>
-
-		</div>
-		<div id="toolsPanel" class="layout horizontal">
-			<ui-checkbox id="lockChk">${tools.translate('lock-tab')}</ui-checkbox>
-			<ui-checkbox id="lockWindowChk">${tools.translate('lock-win')}</ui-checkbox>
-			<ui-button id="manualCompile" class="">${tools.translate('manual-compile')}</ui-button>
-			<ui-button id="gotoFileBtn" class="">${tools.translate('goto-file-btn')}</ui-button>
-			<ui-button id="settingBtn" class="">${tools.translate('set')}</ui-button>
-		</div>
-	</div>
-	<div id="overlay" class="overlay"></div>
-	<div id="dropBg" class="dropBg"></div>
-</div>
-`;
-exports.$ = {
-	lockChk: '#lockChk',
-	lockWindowChk: '#lockWindowChk',
-	layoutTab: '#layoutTab',
-	manualCompile: '#manualCompile',
-	settingBtn: '#settingBtn',
-	// resetBtn: '#resetBtn',
-	gotoFileBtn: '#gotoFileBtn',
-	editorA: '#editorA',
-	editorB: '#editorB',
-	title0: '#title0',
-	tabList: '#tabList',
-	box: '#box',
-	waitIco: '#waitIco',
-	overlay: '#overlay',
-	dropBg:'#dropBg',
-	toolsPanel: '#toolsPanel',
-};
 
 // 编辑器面板
 class EditorPanel extends VsEditorPanel{
@@ -155,6 +112,7 @@ class EditorPanel extends VsEditorPanel{
 		this.pro_cfg 			= config.getProjectLocalStorage();
 		this.ace				= new acePanel(this);
 		this.ccMenuMgr			= new ccMenuMgr(this);
+		this.injectScriptService = new injectScriptService();
 	}
 
 	// 是否刚升级
@@ -319,71 +277,71 @@ class EditorPanel extends VsEditorPanel{
 		});
 		
 		// 鼠标进过nodeTree或assets item
-		let oldPathDom;
-		let oldItem;
-		let onSelectionHoverin = (e,isMouseDown)=>{
-			if(!isMouseDown && e.path[0] == oldPathDom){
-				return;
-			}
-			oldPathDom = e.path[0];
-			// 读取当前鼠标所在位置的资源或Node列表信息
-			for (let i = 0; i < Math.min(5,e.path.length); i++) {
-				let vueObj = e.path[i].__vue__;
-				if(vueObj)
-				{
-					let itemInfo;
-					if(vueObj.asset){
-						itemInfo = {type:'asset',uuid:vueObj.asset.uuid}
-					}else if(vueObj.node){
-						itemInfo = {type:'node',uuid:vueObj.node.uuid}
-					}
-					// 鼠标移动经过节点树或资源目录时触发
-					if(itemInfo){
-						if(!isMouseDown && oldItem && oldItem.uuid == itemInfo.uuid){
-							return;
-						}
-						oldItem = itemInfo;
-						if(isMouseDown) this.mouseDownItem = itemInfo; // 记录鼠标所在位置资源信息
-						this.onEditorSelectionHoverin(itemInfo.type,itemInfo.uuid);
-						return;
-					}	
-				}
-			}
-			if(oldItem != null){
-				oldItem = undefined;
-				this.onEditorSelectionHoverin();
-			}
-		}
+		// let oldPathDom;
+		// let oldItem;
+		// let onSelectionHoverin = (e,isMouseDown)=>{
+		// 	if(!isMouseDown && e.path[0] == oldPathDom){
+		// 		return;
+		// 	}
+		// 	oldPathDom = e.path[0];
+		// 	// 读取当前鼠标所在位置的资源或Node列表信息
+		// 	for (let i = 0; i < Math.min(5,e.path.length); i++) {
+		// 		let vueObj = e.path[i].__vue__;
+		// 		if(vueObj)
+		// 		{
+		// 			let itemInfo;
+		// 			if(vueObj.asset){
+		// 				itemInfo = {type:'asset',uuid:vueObj.asset.uuid}
+		// 			}else if(vueObj.node){
+		// 				itemInfo = {type:'node',uuid:vueObj.node.uuid}
+		// 			}
+		// 			// 鼠标移动经过节点树或资源目录时触发
+		// 			if(itemInfo){
+		// 				if(!isMouseDown && oldItem && oldItem.uuid == itemInfo.uuid){
+		// 					return;
+		// 				}
+		// 				oldItem = itemInfo;
+		// 				if(isMouseDown) this.mouseDownItem = itemInfo; // 记录鼠标所在位置资源信息
+		// 				this.onEditorSelectionHoverin(itemInfo.type,itemInfo.uuid);
+		// 				return;
+		// 			}	
+		// 		}
+		// 	}
+		// 	if(oldItem != null){
+		// 		oldItem = undefined;
+		// 		this.onEditorSelectionHoverin();
+		// 	}
+		// }
 		
 		// 记录鼠标位置,用于菜单位置
 		let mousemove = (e)=>{
-			onSelectionHoverin(e);
+			// onSelectionHoverin(e);
 			this.mouse_pos = {y:e.clientY,x:e.clientX}
 		}
 		this.addWindowEventListener('mousemove',mousemove,true)
 
-		// 用于触发双击事件、刷新creator菜单事件
-		let mousedown = (e)=>{
-			let now_time =  new Date().getTime();
-			if(this._mousedown_time == null || now_time - this._mousedown_time>300){
-				this._mousedown_time = new Date().getTime()
-			}else{
-				// 双击事件分发
-				let mouse_pos = {y:e.clientY,x:e.clientX}
-				this.onMouseDoubleClick(mouse_pos);
-			}
+		//// 用于触发双击事件、刷新creator菜单事件
+		// let mousedown = (e)=>{
+		// 	let now_time =  new Date().getTime();
+		// 	if(this._mousedown_time == null || now_time - this._mousedown_time>300){
+		// 		this._mousedown_time = new Date().getTime()
+		// 	}else{
+		// 		// 双击事件分发
+		// 		let mouse_pos = {y:e.clientY,x:e.clientX}
+		// 		this.onMouseDoubleClick(mouse_pos);
+		// 	}
 
-			if(!this.isFocused()){
-				this._isMoveDown = true
-				this.setTimeoutById(()=>this._isMoveDown = false,2000,'mousedow')
-			}
-			onSelectionHoverin(e,true);
-			this.is_mouse_down = true;
-		}
-		this.addWindowEventListener('mousedown',mousedown,true)
-		this.addWindowEventListener('mouseup',()=>{
-			this.is_mouse_down = false;
-		},true)
+		// 	if(!this.isFocused()){
+		// 		this._isMoveDown = true
+		// 		this.setTimeoutById(()=>this._isMoveDown = false,2000,'mousedow')
+		// 	}
+		// 	onSelectionHoverin(e,true);
+		// 	this.is_mouse_down = true;
+		// }
+		// this.addWindowEventListener('mousedown',mousedown,true)
+		// this.addWindowEventListener('mouseup',()=>{
+		// 	this.is_mouse_down = false;
+		// },true)
 
 
 
@@ -777,6 +735,7 @@ class EditorPanel extends VsEditorPanel{
 		if(this.menu && this.menu.destroy) this.menu.destroy()
 		this.menu = null;
 		this.ccMenuMgr.onDestroy()
+		this.injectScriptService.onDestroy();
 
 		// 手动编译的文件
 		this.refreshSaveFild();
@@ -978,6 +937,7 @@ class EditorPanel extends VsEditorPanel{
 
 
 let messages = {
+	
 
 	// 场景保存
 	'scene:save'(event) {
@@ -1059,7 +1019,37 @@ let messages = {
 		} else if (info.cmd == "setting") {
 			this.ace.openMenu();
 		}
-	}
+	},
+
+	'simple-code:on-mouse-double-click'(mousePos){
+		if(mousePos){
+			this.onMouseDoubleClick(mousePos)
+		}
+	},
+	
+	'simple-code:on-mouse-click'(mousePos,name){
+		this.is_mouse_down = true;
+		if(!this.isFocused()){
+			this._isMoveDown = true
+			this.setTimeoutById(()=>this._isMoveDown = false,2000,'mousedow')
+		}
+	},
+	
+	'simple-code:on-mouse-up'(mousePos){
+		this.is_mouse_down = false;
+	},
+	
+	'simple-code:on-editor-selection-hoverin'(itemInfo, isMouseDown){
+		if(isMouseDown){
+			this.mouseDownItem = itemInfo || this.mouseDownItem;
+		}
+		let type, uuid;
+		if(itemInfo){
+			type = itemInfo.type;
+			uuid = itemInfo.uuid;
+		}
+		this.onEditorSelectionHoverin(type,uuid);
+	},
 };
 
 // 升级插件后必须清除 require 缓存，否则升级插件后require对象是旧的缓存
@@ -1094,31 +1084,141 @@ for (const key in messages) {
 }
 
 
-exports.EditorPanel = EditorPanel;
-exports.methods = methods;
+// 兼容creator 3.3之前的版本
+Editor.Panel.define = Editor.Panel.define || function(options) { return options }
+
+// exports.methods = methods;
 // layer.initExtend();
 // tools.extendTo(layer,VsEditorPanel);
-exports.ready = function(){ 
-	editorPanel = new EditorPanel(this);
-};
+// exports.ready = function(){ 
+// 	editorPanel = new EditorPanel(this);
+// };
 // exports.beforeClose = function(){ 
 // 	// 如果编辑器未初始化完成禁止移动
 // 	// if(editorPanel && !editorPanel.is_init_finish){
 // 	// 	return false;
 // 	// }
 // }
-exports.close = function(){ 
-	if(editorPanel){
-		editorPanel.onDestroy() 
-	}
-};
+// exports.close = function(){ 
+// 	if(editorPanel){
+// 		editorPanel.onDestroy() 
+// 	}
+// };
 // 监听面板事件
-exports.linsteners = {
-    // 面板显示的时候触发的钩子
-    show() {
-		editorPanel.upLayout()
-	},
-    // 面板隐藏的时候触发的钩子
-    hide() {},
-};
+// exports.linsteners = {
+//     // 面板显示的时候触发的钩子
+//     show() {
+// 		editorPanel.upLayout()
+// 	},
+//     // 面板隐藏的时候触发的钩子
+//     hide() {},
+// };
 
+// exports.style = ``;
+// exports.template = `
+// <div id="box">
+// 	<div id="editorA"></div>
+// 	<div id="editorB"></div>
+// 	<div id="layoutTab" class="layout horizontal titleBarFontSize">
+// 		<div id="tabList" class="layout horizontal">
+// 			<img src=file://${Editor2D.url("packages://simple-code/panel/images/settingIco.png")} id="waitIco" class="turnAnim"></img> <span></span> <span></span>
+// 			<div id="title0" class="closeTab">
+// 				<div class="tabTitle"><nobr>无文件<nobr></div>
+// 				<div class="closeBtn"><nobr> x <nobr></div>
+// 			</div>
+
+// 		</div>
+// 		<div id="toolsPanel" class="layout horizontal">
+// 			<ui-checkbox id="lockChk">${tools.translate('lock-tab')}</ui-checkbox>
+// 			<ui-checkbox id="lockWindowChk">${tools.translate('lock-win')}</ui-checkbox>
+// 			<ui-button id="manualCompile" class="">${tools.translate('manual-compile')}</ui-button>
+// 			<ui-button id="gotoFileBtn" class="">${tools.translate('goto-file-btn')}</ui-button>
+// 			<ui-button id="settingBtn" class="">${tools.translate('set')}</ui-button>
+// 		</div>
+// 	</div>
+// 	<div id="overlay" class="overlay"></div>
+// 	<div id="dropBg" class="dropBg"></div>
+// </div>
+// `;
+// exports.$ = {
+// 	lockChk: '#lockChk',
+// 	lockWindowChk: '#lockWindowChk',
+// 	layoutTab: '#layoutTab',
+// 	manualCompile: '#manualCompile',
+// 	settingBtn: '#settingBtn',
+// 	// resetBtn: '#resetBtn',
+// 	gotoFileBtn: '#gotoFileBtn',
+// 	editorA: '#editorA',
+// 	editorB: '#editorB',
+// 	title0: '#title0',
+// 	tabList: '#tabList',
+// 	box: '#box',
+// 	waitIco: '#waitIco',
+// 	overlay: '#overlay',
+// 	dropBg:'#dropBg',
+// 	toolsPanel: '#toolsPanel',
+// };
+
+// exports.EditorPanel = EditorPanel;
+
+module.exports = Editor.Panel.define({
+    listeners: {
+        show() { editorPanel.upLayout(); },
+        hide() { },
+    },
+    template: `
+		<div id="box">
+			<div id="editorA"></div>
+			<div id="editorB"></div>
+			<div id="layoutTab" class="layout horizontal titleBarFontSize">
+				<div id="tabList" class="layout horizontal">
+					<img src=file://${Editor2D.url("packages://simple-code/panel/images/settingIco.png")} id="waitIco" class="turnAnim"></img> <span></span> <span></span>
+					<div id="title0" class="closeTab">
+						<div class="tabTitle"><nobr>无文件<nobr></div>
+						<div class="closeBtn"><nobr> x <nobr></div>
+					</div>
+		
+				</div>
+				<div id="toolsPanel" class="layout horizontal">
+					<ui-checkbox id="lockChk">${tools.translate('lock-tab')}</ui-checkbox>
+					<ui-checkbox id="lockWindowChk">${tools.translate('lock-win')}</ui-checkbox>
+					<ui-button id="manualCompile" class="">${tools.translate('manual-compile')}</ui-button>
+					<ui-button id="gotoFileBtn" class="">${tools.translate('goto-file-btn')}</ui-button>
+					<ui-button id="settingBtn" class="">${tools.translate('set')}</ui-button>
+				</div>
+			</div>
+			<div id="overlay" class="overlay"></div>
+			<div id="dropBg" class="dropBg"></div>
+		</div>
+		`,
+    style: ``,
+    $: {
+		lockChk: '#lockChk',
+		lockWindowChk: '#lockWindowChk',
+		layoutTab: '#layoutTab',
+		manualCompile: '#manualCompile',
+		settingBtn: '#settingBtn',
+		// resetBtn: '#resetBtn',
+		gotoFileBtn: '#gotoFileBtn',
+		editorA: '#editorA',
+		editorB: '#editorB',
+		title0: '#title0',
+		tabList: '#tabList',
+		box: '#box',
+		waitIco: '#waitIco',
+		overlay: '#overlay',
+		dropBg:'#dropBg',
+		toolsPanel: '#toolsPanel',
+    },
+	
+    methods: methods,
+    ready() {
+        editorPanel = new EditorPanel(this);
+    },
+    close() { 
+		if(editorPanel){
+			editorPanel.onDestroy() 
+		}
+	},
+    beforeClose() { },
+});

@@ -144,7 +144,7 @@ module.exports = {
 
 		this.parent.addKeybodyEventByName('getNodeTreeTag',(e)=>
 		{
-		    if (this._select_nodes)
+		    if (this._select_nodes && !this.parent.is_mouse_down)
 		    {
 		    	Editor2D.Selection.select('node', this._select_nodes);
 				e.preventDefault();// 吞噬捕获事件
@@ -154,7 +154,8 @@ module.exports = {
 		// 全选节点
 		this.parent.addKeybodyEventByName('quickAddNextNode',(e)=>
 		{
-			if (!this.inputTypeChk(e)){
+			
+			if (!this.inputTypeChk(e) && !this.parent.is_mouse_down){
 				e.preventDefault();// 吞噬捕获事件
 				Editor2D.Scene.callSceneScript('simple-code', 'select-node' ,"");
 			}

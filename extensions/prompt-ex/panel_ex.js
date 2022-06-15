@@ -57,13 +57,14 @@ module.exports = {
 			}
 		},0)
 
-		// 绑定页面全局快捷键事件,注意: 区分大小写 Control = ctrl
+		// 绑定页面全局快捷键事件：ctrl+p
 		this.parent.addKeybodyEventByName('gotoScriptFile',(e)=>
 		{
 			if(this.parent.is_mouse_down) return;
 			// 搜索转跳
 			this.searchCmd("findJsFileAndOpen");
 			e.preventDefault();// 吞噬捕获事件
+			e.stopPropagation();// 停止冒泡
 			return false;
 		},2)
 

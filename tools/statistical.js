@@ -9,7 +9,7 @@ module.exports = {
 				if(!post_data) {
 					return
 				}
-				
+				post_data.version = Editor.App ? Editor.App.version : "?";
 				tools.httpPost('120.77.174.207','/logincount',8081,post_data);
 			});
 		}
