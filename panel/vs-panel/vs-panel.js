@@ -691,6 +691,8 @@ class EditorPanel extends VsEditorPanel{
 		// console.log("释放")
 		if(this._is_destroy || this.edit_list == null) return;
 		this._is_destroy = true;
+		this.tsWr.closeWorker();
+		this.jsWr.closeWorker();
 		super.onDestroy();
 		this.runExtendFunc("onDestroy");
 		
@@ -777,10 +779,10 @@ class EditorPanel extends VsEditorPanel{
 			this.closeTab(id);
 		});
 		
-		this.tsWr.setEnableUpdate(false);
-		this.jsWr.setEnableUpdate(false);
-		this.tsWr.setEnableUpdateScript(false);
-		this.jsWr.setEnableUpdateScript(false);
+		// this.tsWr.setEnableUpdate(false);
+		// this.jsWr.setEnableUpdate(false); // 
+		// this.tsWr.setEnableUpdateScript(false);
+		// this.jsWr.setEnableUpdateScript(false);
 		let models = this.monaco.editor.getModels();
 		for (const key in models) {
 			const model = models[key];
@@ -790,7 +792,7 @@ class EditorPanel extends VsEditorPanel{
 
 		this.saveOptions();
 	}
-
+	
 
 
 	initExtend() 
