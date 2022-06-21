@@ -481,6 +481,11 @@ class FileMgr{
 		 // 检查文件移动位置没有
 		let isMoveFile = false;
 		if(!isOutside){
+			if(file.uuid.indexOf('@') != -1){
+				// console.log('不是文件,不处理:',file.url)
+				return false
+			}
+			
 			let item = this.parent.file_list_uuid[file.uuid];
 			if(item.url != file.url){
 				file.srcPath = item.fsPath;
