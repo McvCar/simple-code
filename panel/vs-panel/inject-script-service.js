@@ -1,5 +1,5 @@
 /**
- * 注入脚本代码到主窗口运行提供服务
+ * 注入脚本代码到Creator主窗口运行提供服务
  */
 
 const electron = parseFloat(process.versions.electron) < 13 ? require('electron').remote : require('@electron/remote')
@@ -86,16 +86,15 @@ class injectScriptService{
 
 	}
 
-	// 获得主窗口
+	// 获得Creator主窗口
 	getMainWebContents(){
 		let allwins = electron.BrowserWindow.getAllWindows();
 		for (let i = 0; i < allwins.length; i++) {
 			const win = allwins[i];
-			if(win.title && win.title.startsWith('Cocos Creator')){
+			if(win.title && win.title.includes('Cocos Creator')){
 				return win.webContents;
 			}
 		}
-		
 		return;
 	}
 }

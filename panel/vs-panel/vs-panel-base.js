@@ -106,13 +106,6 @@ class vsEditorPanel {
 		// vs代码路径
 		vsLoader.require.config({ 'vs/nls': { availableLanguages: { '*': fe.getLanguage() == 'zh' ? 'zh-cn' : '' } }, paths: { 'vs': Editor2D.url('packages://simple-code/panel/vs-panel/monaco-editor/dev/vs', 'utf8') } });
 		
-		// vsLoader.require(['vs/editor/standalone/browser/standaloneCodeServiceImpl'], (StandaloneCodeEditorServiceImpl) => 
-		// {
-		// 	StandaloneCodeEditorServiceImpl.prototype.doOpenEditor = function (editor, input) {
-		// 		console.log('重写：',input);
-		// 	}
-		// });
-		
 		// 创建vs编辑器，api参考 monaco.d.ts文件
 		vsLoader.require(['vs/editor/editor.main'], (monaco) => 
 		{

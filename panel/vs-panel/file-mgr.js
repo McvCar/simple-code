@@ -395,6 +395,10 @@ class FileMgr{
 	 */ 
 	async assetsDeletedEvent(file)
 	{
+		if(!file.file){
+			// console.log('非文件，不处理:',file.url);
+			return;
+		}
 		let isOutside = file.uuid == 'outside';
 		let fsPath = fe.normPath(file.file);
 		// 删除缓存

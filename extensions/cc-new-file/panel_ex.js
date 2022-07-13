@@ -202,7 +202,7 @@ module.exports = {
 
         }else if( tryIndex++ < 15 ){
             // 如果脚本没有绑定成功，则延迟1秒等待Creator编译完脚本再尝试，总共尝试15次
-            this.parent.setTimeout(this.bindScriptToNode.bind(this,args,tryIndex),1);
+            this.parent.setTimeout(this.bindScriptToNode.bind(this,args,tryIndex),1000);
         }else{
             // 添加失败，超时
             Editor2D.Scene.callSceneScript('simple-code','new-file-complete',args,false); // 通知自定义事件

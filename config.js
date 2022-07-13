@@ -987,7 +987,7 @@ module.exports = {
 		},
 		More: {
 			"autoLayoutMax": {
-				// 自动窗口最大高度占比%
+				// 自动窗口 最大高度占比%
 				path: "autoLayoutMax",
 				type: "number",
 				defaultValue: 85,
@@ -1001,7 +1001,7 @@ module.exports = {
 			},
 
 			"autoLayoutMin": {
-				// 自动窗口最小高度占比%
+				// 自动窗口 最小高度占比%
 				path: "autoLayoutMin",
 				type: "number",
 				defaultValue: 20,
@@ -1015,7 +1015,7 @@ module.exports = {
 			},
 
 			"autoLayoutDt": {
-				// 自动窗口过渡动画时间
+				// 自动窗口 过渡动画时间
 				path: "autoLayoutDt",
 				type: "number",
 				defaultValue: 0,
@@ -1027,7 +1027,7 @@ module.exports = {
 			},
 
 			"autoLayoutDelay": {
-				// 自动窗口过渡动作延迟
+				// 自动窗口 过渡动作延迟
 				path: "autoLayoutDelay",
 				type: "number",
 				defaultValue: 0.1,

@@ -83,8 +83,29 @@ Usage: put the d.ts declaration file to the root directory of the project (at th
 
 -12. Support **Ctrl+Shift+y** to open the console and input commands
 
+  
+The following functions will not work when running in a separate window:
+
+- Batch rename [D]
+
+- Batch binding component [G]
+
+- Batch insert prefabricated nodes [A]
+
+- Batch search for children of the selected node [F]
+
+- Quickly open Scene or Prefab, shortcut keys [V]
+
+- Searches for unused resources
+
+- Double-click Label to edit
+
+- New script and bind Node(menu option missing)
+
+ 
+
 *Note: for large projects, it is recommended to change the compilation trigger mode to manual
 
-QQ group: 569081407
+e-mail: 1039359608@qq.com
 
 ^If you think it's easy to use, I'd like to give you a high praise and support. Thank you for your support^
