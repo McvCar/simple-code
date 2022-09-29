@@ -171,9 +171,10 @@ module.exports = {
 	*/
 	loadWidgetRules(codeInfo,rules,isArray,isQuick){
 		if(codeInfo == null || rules == null){
+			console.log('生成拖拽组件失败: codeInfo == null || rules == null');
 			return;
 		}
-
+		
 		// 1.获得生成组件规则配置
 		Editor2D.Scene.callSceneScript('simple-code', 'loadWidgetRules',{ rules:rules, isArray:isArray, scriptUuid:codeInfo.editInfo.uuid, isQuick:isQuick}, (err,args) => { 
 			
@@ -181,6 +182,7 @@ module.exports = {
 			rules = args.rules;
 			isArray = args.isArray;
 			if(this.parent.file_info.uuid != codeInfo.editInfo.uuid || !rules || rules.length == 0) {
+				console.log('生成拖拽组件失败: 脚本未绑定Node或rules字段不存在');
 				return;
 			}
 			if(!args.bindNodeList || args.bindNodeList.length == 0){
@@ -220,7 +222,7 @@ module.exports = {
 		if(!rule.disableGenerated)
 		{
 			if(symbolName.match(/[a-zA-Z_$][\w$]*/) == null){
-				Editor.info('生成拖拽组件:变量命名不符合规范:',symbolName);
+				console.log('生成拖拽组件失败:变量命名不符合规范:',symbolName);
 				return;
 			}
 			// 2.插入成员变量文本
@@ -237,6 +239,7 @@ module.exports = {
 	// 加载自定义的组件
 	loadCustomWidgetsToCode(codeInfo){
 		if(this.parent.file_info == null || this.parent.file_info.uuid != codeInfo.editInfo.uuid ){
+			console.log('生成拖拽组件:当前编辑中脚本未绑定Node');
 			return;
 		}
 		let info = Editor2D.Selection.curGlobalActivate();

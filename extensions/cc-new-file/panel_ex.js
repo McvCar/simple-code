@@ -167,6 +167,7 @@ module.exports = {
         {
             let nodeInfo = await Editor.Message.request('scene','query-node',args.uuid);
             args.scriptName = await Editor.Message.request('scene','query-script-name',fileUuid);
+            args.fileUuid = fileUuid
             if(args.scriptName && nodeInfo)
             {
                 // 脚本已绑定在Node上退出处理
@@ -175,9 +176,10 @@ module.exports = {
                 }
 
 				// 2.绑定脚本到node
+                let compId = tools.compareVersion(Editor.App.version,'3.6.0') == -1 ? args.scriptName : Editor.Utils.UUID.compressUUID(fileUuid)
 				await Editor.Message.request('scene','create-component',{
 					uuid: args.uuid,
-					component: args.scriptName,
+					component: compId,
 				});
 
                 // 3.检查脚本是否绑定成功

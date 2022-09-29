@@ -165,6 +165,7 @@ class AcePanel{
 					for (let n = 0; n < itemList.length; n++) {
 						let now_item = itemList[n];
 						if (commands[i].value == now_item.value) {
+							commands[i] = now_item
 							isNot = false
 							break;
 						}

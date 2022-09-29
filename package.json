@@ -1,9 +1,9 @@
 {
 	"name": "simple-code",
 	"package_version": 2,
-	"version": "3.3.8",
+	"version": "3.3.9",
 	"description": "快闪-代码编辑器",
-	"author": "嘉年华(mcv-cpu)",
+	"author": "嘉年华",
 	"main": "./main.js",
 	"contributions": {
 		"scene": {

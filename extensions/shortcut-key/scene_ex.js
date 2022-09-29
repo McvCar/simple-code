@@ -72,7 +72,7 @@ module.exports = {
 		    if (nodes && nodes.length != 0)
 		    {
 				let node = parent.findNode(nodes[0]);
-				let active = parent.findNode(nodes[0]).active;
+				let active = node.active;
 				parent.setCompProperty(node,'active',!active);
 				// for (let i = 0; i < nodes.length; i++) 
 				// {

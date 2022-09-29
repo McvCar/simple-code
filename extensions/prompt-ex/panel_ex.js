@@ -233,7 +233,7 @@ module.exports = {
 		let onSearchAccept = (data)=>
 		{
 			// 获得选中的节点
-			Editor2D.Scene.callSceneScript('simple-code', 'set-node-comp' ,data.item.value);
+			Editor2D.Scene.callSceneScript('simple-code', 'set-node-comp' ,data.item.meta || data.item.value);
 		}
 
 		let list = []
@@ -244,10 +244,10 @@ module.exports = {
 				let name = obj["name"]
 				let item_cfg   = {
 					value: name , // 命令
-					meta: name, // 描述
+					meta: obj['cid'] || name, // 描述
 					score: 0,//搜索优先级
-					matchMask: 0,
-					exactMatch: 1,
+					matchMask: 0,
+					exactMatch: 1,
 				};
 				list.push(item_cfg)
 			}

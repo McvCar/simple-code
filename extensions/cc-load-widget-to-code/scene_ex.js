@@ -201,6 +201,7 @@ module.exports = {
 			 */
 			let bindNodeList = parent.getEditFileBindNodes(args.fileUuid);
 			if(!bindNodeList.length) {
+				console.error('生成自定义绑定规则配置出错: 当前Node未绑定任何脚本')
 				return {rules:[],bindNodeList};
 			}
 
@@ -209,9 +210,9 @@ module.exports = {
 				let rootNode = args.rootNodeUuid != null && parent.findNode(args.rootNodeUuid) || cc.director.getScene()
 				rules = require(USER_NEW_VAR_RULE).getCustomWidgetRule(args.url,bindNodeList,rootNode);
 			}catch (error) {
-				Editor.error('生成自定义绑定规则配置出错: ',error)
+				console.error('生成自定义绑定规则配置出错: ',error)
 			}
-
+			
 			return {rules,bindNodeList};
 		},
 		
@@ -229,7 +230,7 @@ module.exports = {
 				let newCodeText = require(USER_NEW_VAR_RULE).processCode(args.codeText, args.dbUrl, args.rules, null,nodes)
 				return newCodeText;
 			} catch (error) {
-				Editor.error('自定义绑定规则配置出错(saveWidgetCodeFile): ',error)
+				console.error('自定义绑定规则配置出错(saveWidgetCodeFile): ',error)
 				return newCodeText;
 			}
 		},
@@ -243,7 +244,7 @@ module.exports = {
 				}
 				args.bindNodeList = bindNodeList;
 			} catch (error) {
-				Editor.error('自定义绑定规则配置出错(loadWidgetRules): ',error)
+				console.error('自定义绑定规则配置出错(loadWidgetRules): ',error)
 			}
 			return args;
 		},
