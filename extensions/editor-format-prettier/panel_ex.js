@@ -6,9 +6,9 @@
 
 const tools = require('../../tools/tools');
 const path 	= require("path");
-const prsPath = Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
+const config = require('../../config');
 const OLD_PRETTIER_CONFIG_FILE = path.join(__dirname,'prettier.config.js')
-const PRETTIER_CONFIG_FILE 	   = path.join(prsPath,'local','prettier.config.js');
+const PRETTIER_CONFIG_FILE 	   = path.join(config.cfgFileDir,'prettier.config.js');
 
 module.exports = {
 	/** @type import('../../panel/vs-panel/vs-panel').EditorPanel */

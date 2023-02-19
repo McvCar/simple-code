@@ -91,7 +91,8 @@ class injectScriptService{
 		let allwins = electron.BrowserWindow.getAllWindows();
 		for (let i = 0; i < allwins.length; i++) {
 			const win = allwins[i];
-			if(win.title && win.title.includes('Cocos Creator')){
+			const url = win.getURL()
+			if(url.includes('windows/main.html') || win.title && win.title.includes('Cocos Creator')){
 				return win.webContents;
 			}
 		}

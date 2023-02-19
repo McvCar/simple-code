@@ -3,15 +3,18 @@ const path 	= require("path");
 const fs 	= require("fs");
 const tools = require("./tools/tools");
 const cacheDir = path.join(Editor.App.home,'',"simple-code-profiles");
+const version = Number(Editor.App.version.split('.')[0] + '.' + Editor.App.version.split('.')[1]);
+const prsPath = Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath;
 
 // 基础配置
-module.exports = {
-	
+let config = {
+	/** @type {number} creator版本如: 3.7 */
+	editorVersion : version,
 	cacheDir : cacheDir,
-	
-	// 项目目录
-	prsPath : Editor.Project && Editor.Project.path ? Editor.Project.path : Editor.remote.projectPath,
 
+	// 项目目录
+	prsPath : prsPath,
+	cfgFileDir : (version < 3.7 ? path.join(prsPath,'local') : path.join(prsPath,'simple-code', 'settings')),
 	cfgMap : {},
 	
 	// vs编辑器选项
@@ -933,9 +936,9 @@ module.exports = {
 				defaultValue: false,
 			},
 			"renameConverImportPath": {
-				// 重命名同步修改import路径
+				// 重命名同步修改import路径, creator3.7版本后默认关闭
 				path: "renameConverImportPath",
-				defaultValue: true,
+				defaultValue: version < 3.7 ? true : false,
 			},
 			"enabledJsGlobalSugges": {
 				// JS模糊输入提示/函数跳转
@@ -1112,7 +1115,7 @@ module.exports = {
 			return this.pro_cfg;
 		}
 		const fe 	= Editor2D.require('packages://simple-code/tools/tools.js');
-		const savePath = path.join(this.prsPath,'local','simple-code-config.json');
+		const savePath = path.join(this.cfgFileDir,'simple-code-config.json');
 		try {
 			this.pro_cfg = fe.isFileExit(savePath) ? require(savePath) : {};
 		} catch (error) {
@@ -1136,7 +1139,7 @@ module.exports = {
 	
 	// 保存配置
 	saveStorage(){
-		const savePath = path.join(this.prsPath,'local','simple-code-config.json')
+		const savePath = path.join(this.cfgFileDir,'simple-code-config.json')
 		fs.writeFileSync(savePath,JSON.stringify(this.pro_cfg || {})) // 跟着项目走的配置
 		tools.createDir(this.cfgPath)
 		fs.writeFileSync(this.cfgPath,JSON.stringify(this.cfg || {})) // 全局配置
@@ -1188,4 +1191,11 @@ module.exports = {
 	getUserConfigPath(filePath){
 		return path.join(cacheDir,'configs',path.basename(filePath));
 	},
+
+	init(){
+		tools.createDir(this.cfgFileDir)
+	}
 }
+config.init();
+
+module.exports = config;

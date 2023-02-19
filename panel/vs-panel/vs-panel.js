@@ -530,7 +530,9 @@ class EditorPanel extends VsEditorPanel{
 			e.preventDefault();// 吞噬捕获事件
 			// 保存刷新浏览器
 			if (await Editor.Profile.getConfig("preview", "general.auto_refresh")){
-				Editor.Message.send('preview','reload-terminal')
+				this.setTimeoutById(() => {
+					Editor.Message.send('preview','reload-terminal')
+				}, 1000, "reload-terminal");
 			}
 		}, 1, "keydown");
 

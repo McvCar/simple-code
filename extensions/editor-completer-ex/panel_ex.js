@@ -11,7 +11,8 @@ var fs 		= require('fs');
 module.exports = {
 	/** @type import('../../panel/vs-panel/vs-panel').EditorPanel */
 	parent : null,
-
+	/** @type import('./editor-completion').default */
+	completor: null,
 
 	// 
 	ready(parent){
@@ -67,6 +68,7 @@ module.exports = {
 		this.completor.addCustomCompleter("switch (key)","switch (${1:key}) {\n	case value:\n		\n		break;\n\n	default:\n		break;\n}",'',27,true)
 		this.completor.addCustomCompleter("try catch","try {\n		${2: }	\n} catch (${1:error}) {\n ${3: }\n}",'try catch(err)',27,true)
 		this.completor.addCustomCompleter("import  from; ",'import ${1:model} from"${2:model}"','',27,true)
+		this.completor.addCustomCompleter("import * as cc from \"cc\"; ",'import * as cc from \"cc\";','',27,true)
 	},
 
 	onSaveFile(fileInfo){
