@@ -716,11 +716,14 @@ let layer = {
 			this.closeTab(id);
 		});
 		
-		// let models = this.monaco.editor.getModels();
-		// for (const key in models) {
-		// 	const model = models[key];
-		// 	if(model) model.dispose();
-		// }
+		// 延迟清除缓存，如果creator窗口被关闭就不需要清除
+		let models = this.monaco.editor.getModels();
+		setTimeout(()=>{
+			for (const key in models) {
+				const model = models[key];
+				if(model) model.dispose();
+			}
+		},0.01)
 
 		this.saveOptions();
 	},
