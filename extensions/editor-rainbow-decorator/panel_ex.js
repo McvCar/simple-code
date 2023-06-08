@@ -5,7 +5,7 @@
 'use strict';
 const path 			= require('path');
 const fs 			= require('fs');
-const Editor2D 		= require('../../tools/Editor2D');
+const Editor2D 		= require('../../tools/editor2D');
 let COLOR;
 // COLOR 			= [
 //     "rgba(255,255,255,0.01)",

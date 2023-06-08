@@ -1,6 +1,6 @@
 'use strict';
 clearRequireCache()
-const Editor2D = require('../tools/Editor2D.js');
+const Editor2D = require('../tools/editor2D.js');
 Editor2D.analogApi();
 
 const path 		= require('path');
