@@ -39,13 +39,11 @@ define('vscode-nls/vscode-nls',["require", "exports"], function (require, export
 define('vscode-nls', ['vscode-nls/vscode-nls'], function (main) { return main; });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
-        define('vscode-languageserver-types/main',["require", "exports"], factory);
-    }
+    // if (typeof module === "object" && typeof module.exports === "object") {
+    //     var v = factory(require, exports);
+    //     if (v !== undefined) module.exports = v;
+    // }
+    define('vscode-languageserver-types/main',["require", "exports"], factory);
 })(function (require, exports) {
     /* --------------------------------------------------------------------------------------------
      * Copyright (c) Microsoft Corporation. All rights reserved.
@@ -1580,11 +1578,7 @@ define('vscode-nls', ['vscode-nls/vscode-nls'], function (main) { return main; }
 define('vscode-languageserver-types', ['vscode-languageserver-types/main'], function (main) { return main; });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-languageserver-textdocument/main',["require", "exports"], factory);
     }
 })(function (require, exports) {
@@ -1877,11 +1871,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-html-languageservice/htmlLanguageTypes',["require", "exports", "vscode-languageserver-types", "vscode-languageserver-textdocument", "vscode-languageserver-types"], factory);
     }
 })(function (require, exports) {
@@ -1972,11 +1962,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-html-languageservice/parser/htmlScanner',["require", "exports", "vscode-nls", "../htmlLanguageTypes"], factory);
     }
 })(function (require, exports) {
@@ -2392,11 +2378,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-html-languageservice/utils/arrays',["require", "exports"], factory);
     }
 })(function (require, exports) {
@@ -2450,11 +2432,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-html-languageservice/languageFacts/fact',["require", "exports", "../utils/arrays"], factory);
     }
 })(function (require, exports) {
@@ -2475,11 +2453,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-html-languageservice/parser/htmlParser',["require", "exports", "./htmlScanner", "../utils/arrays", "../htmlLanguageTypes", "../languageFacts/fact"], factory);
     }
 })(function (require, exports) {
@@ -2658,11 +2632,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-html-languageservice/parser/htmlEntities',["require", "exports"], factory);
     }
 })(function (require, exports) {
@@ -4913,11 +4883,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-html-languageservice/utils/strings',["require", "exports"], factory);
     }
 })(function (require, exports) {
@@ -4992,11 +4958,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-html-languageservice/utils/object',["require", "exports"], factory);
     }
 })(function (require, exports) {
@@ -5018,11 +4980,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-html-languageservice/utils/markup',["require", "exports"], factory);
     }
 })(function (require, exports) {
@@ -5052,11 +5010,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-html-languageservice/languageFacts/dataProvider',["require", "exports", "../utils/markup"], factory);
     }
 })(function (require, exports) {
@@ -5218,11 +5172,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-html-languageservice/services/pathCompletion',["require", "exports", "../htmlLanguageTypes", "../utils/strings"], factory);
     }
 })(function (require, exports) {
@@ -5460,11 +5410,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-html-languageservice/services/htmlCompletion',["require", "exports", "vscode-languageserver-types", "../parser/htmlScanner", "../htmlLanguageTypes", "../parser/htmlEntities", "vscode-nls", "../utils/strings", "../languageFacts/fact", "../utils/object", "../languageFacts/dataProvider", "./pathCompletion"], factory);
     }
 })(function (require, exports) {
@@ -6008,11 +5954,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-html-languageservice/services/htmlHover',["require", "exports", "../parser/htmlScanner", "vscode-languageserver-types", "../htmlLanguageTypes", "../utils/object", "../languageFacts/dataProvider"], factory);
     }
 })(function (require, exports) {
@@ -6226,11 +6168,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-html-languageservice/beautify/beautify',["require", "exports"], factory);
     }
 })(function (require, exports) {
@@ -11076,11 +11014,7 @@ if (typeof define === "function" && define.amd) {
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-html-languageservice/services/htmlFormatter',["require", "exports", "vscode-languageserver-types", "../beautify/beautify-html", "../utils/strings"], factory);
     }
 })(function (require, exports) {
@@ -11248,11 +11182,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-uri/index',["require", "exports"], factory);
     }
 })(function (require, exports) {
@@ -11897,11 +11827,7 @@ define('vscode-uri', ['vscode-uri/index'], function (main) { return main; });
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-html-languageservice/services/htmlLinks',["require", "exports", "../parser/htmlScanner", "vscode-languageserver-types", "../utils/strings", "vscode-uri", "../htmlLanguageTypes"], factory);
     }
 })(function (require, exports) {
@@ -12047,11 +11973,7 @@ define('vscode-uri', ['vscode-uri/index'], function (main) { return main; });
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-html-languageservice/services/htmlHighlighting',["require", "exports", "../parser/htmlScanner", "vscode-languageserver-types", "../htmlLanguageTypes"], factory);
     }
 })(function (require, exports) {
@@ -12105,11 +12027,7 @@ define('vscode-uri', ['vscode-uri/index'], function (main) { return main; });
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-html-languageservice/services/htmlSymbolsProvider',["require", "exports", "vscode-languageserver-types"], factory);
     }
 })(function (require, exports) {
@@ -12160,11 +12078,7 @@ define('vscode-uri', ['vscode-uri/index'], function (main) { return main; });
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-html-languageservice/services/htmlRename',["require", "exports"], factory);
     }
 })(function (require, exports) {
@@ -12227,11 +12141,7 @@ define('vscode-uri', ['vscode-uri/index'], function (main) { return main; });
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-html-languageservice/services/htmlMatchingTagPosition',["require", "exports"], factory);
     }
 })(function (require, exports) {
@@ -12267,11 +12177,7 @@ define('vscode-uri', ['vscode-uri/index'], function (main) { return main; });
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-html-languageservice/services/htmlSyncedRegions',["require", "exports", "vscode-languageserver-types"], factory);
     }
 })(function (require, exports) {
@@ -12306,11 +12212,7 @@ define('vscode-uri', ['vscode-uri/index'], function (main) { return main; });
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-html-languageservice/services/htmlFolding',["require", "exports", "vscode-languageserver-types", "../htmlLanguageTypes", "../parser/htmlScanner", "../languageFacts/fact"], factory);
     }
 })(function (require, exports) {
@@ -12483,11 +12385,7 @@ define('vscode-uri', ['vscode-uri/index'], function (main) { return main; });
 });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-html-languageservice/services/htmlSelectionRange',["require", "exports", "vscode-languageserver-types", "../parser/htmlScanner", "../parser/htmlParser", "../htmlLanguageTypes"], factory);
     }
 })(function (require, exports) {
@@ -12673,11 +12571,7 @@ define('vscode-uri', ['vscode-uri/index'], function (main) { return main; });
  *--------------------------------------------------------------------------------------------*/
 // file generated from vscode-web-custom-data NPM package
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-html-languageservice/languageFacts/data/webCustomData',["require", "exports"], factory);
     }
 })(function (require, exports) {
@@ -18600,11 +18494,7 @@ define('vscode-uri', ['vscode-uri/index'], function (main) { return main; });
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-html-languageservice/languageFacts/dataManager',["require", "exports", "./dataProvider", "./data/webCustomData"], factory);
     }
 })(function (require, exports) {
@@ -18649,11 +18539,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-html-languageservice/htmlLanguageService',["require", "exports", "./parser/htmlScanner", "./parser/htmlParser", "./services/htmlCompletion", "./services/htmlHover", "./services/htmlFormatter", "./services/htmlLinks", "./services/htmlHighlighting", "./services/htmlSymbolsProvider", "./services/htmlRename", "./services/htmlMatchingTagPosition", "./services/htmlSyncedRegions", "./services/htmlFolding", "./services/htmlSelectionRange", "./languageFacts/dataProvider", "./languageFacts/dataManager", "./languageFacts/data/webCustomData", "./htmlLanguageTypes"], factory);
     }
 })(function (require, exports) {

@@ -13121,19 +13121,9 @@ var ts;
         }
         return ts.createTextSpanFromBounds(pos, errorNode.end);
     }
-    
-    var ambientModuleSymbolRegex = /^".+"$/;
     ts.getErrorSpanForNode = getErrorSpanForNode;
     function isExternalOrCommonJsModule(file) {
-        // 修改：修复引入cc.d.ts 类型识别错误
-        let ret = (file.externalModuleIndicator || file.commonJsModuleIndicator) !== undefined;
-        if(ret && file.locals && file.fileName.endsWith('d.ts')){
-            let hasAmbient = false;
-            file.locals.forEach((_,name)=> ambientModuleSymbolRegex.test(name) && (hasAmbient = true));
-            ret = !hasAmbient;
-        }
-
-        return ret;
+        return (file.externalModuleIndicator || file.commonJsModuleIndicator) !== undefined;
     }
     ts.isExternalOrCommonJsModule = isExternalOrCommonJsModule;
     function isJsonSourceFile(file) {
@@ -27549,11 +27539,7 @@ var ts;
             // this is quite rare comparing to other nodes and createNode should be as fast as possible
             var sourceFile = factory.createSourceFile(statements, endOfFileToken, flags);
             ts.setTextRangePosWidth(sourceFile, 0, sourceText.length);
-            
-            if(!fileName.endsWith('d.ts')){
-                setExternalModuleIndicator(sourceFile);
-            }
-
+            setExternalModuleIndicator(sourceFile);
             // If we parsed this as an external module, it may contain top-level await
             if (!isDeclarationFile && isExternalModule(sourceFile) && sourceFile.transformFlags & 8388608 /* ContainsPossibleTopLevelAwait */) {
                 sourceFile = reparseTopLevelAwait(sourceFile);
@@ -146719,9 +146705,9 @@ if (typeof process === "undefined" || process.browser) {
     //@ts-ignore
     globalThis.toolsVersion = ts.versionMajorMinor;
 }
-if (typeof module !== "undefined" && module.exports) {
-    module.exports = ts;
-}
+// if (typeof module !== "undefined" && module.exports) {
+//     module.exports = ts;
+// }
 var ts;
 (function (ts) {
     // The following are deprecations for the public API. Deprecated exports are removed from the compiler itself

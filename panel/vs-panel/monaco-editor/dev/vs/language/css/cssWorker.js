@@ -1,11 +1,5 @@
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
-        define('vscode-css-languageservice/parser/cssScanner',["require", "exports"], factory);
-    }
+    define('vscode-css-languageservice/parser/cssScanner',["require", "exports"], factory);
 })(function (require, exports) {
     /*---------------------------------------------------------------------------------------------
      *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -574,11 +568,7 @@
 });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/utils/strings',["require", "exports"], factory);
     }
 })(function (require, exports) {
@@ -697,11 +687,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/parser/cssNodes',["require", "exports", "../utils/strings"], factory);
     }
 })(function (require, exports) {
@@ -2680,11 +2666,7 @@ define('vscode-nls/vscode-nls',["require", "exports"], function (require, export
 define('vscode-nls', ['vscode-nls/vscode-nls'], function (main) { return main; });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/parser/cssErrors',["require", "exports", "vscode-nls"], factory);
     }
 })(function (require, exports) {
@@ -2742,11 +2724,7 @@ define('vscode-nls', ['vscode-nls/vscode-nls'], function (main) { return main; }
 });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/languageFacts/entry',["require", "exports"], factory);
     }
 })(function (require, exports) {
@@ -2886,11 +2864,7 @@ define('vscode-nls', ['vscode-nls/vscode-nls'], function (main) { return main; }
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/languageFacts/colors',["require", "exports", "../parser/cssNodes", "vscode-nls"], factory);
     }
 })(function (require, exports) {
@@ -3306,11 +3280,7 @@ define('vscode-nls', ['vscode-nls/vscode-nls'], function (main) { return main; }
 });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/languageFacts/builtinData',["require", "exports"], factory);
     }
 })(function (require, exports) {
@@ -3456,11 +3426,7 @@ define('vscode-nls', ['vscode-nls/vscode-nls'], function (main) { return main; }
 });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/languageFacts/facts',["require", "exports", "./entry", "./colors", "./builtinData"], factory);
     }
 })(function (require, exports) {
@@ -3479,11 +3445,7 @@ define('vscode-nls', ['vscode-nls/vscode-nls'], function (main) { return main; }
 });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/utils/objects',["require", "exports"], factory);
     }
 })(function (require, exports) {
@@ -3511,11 +3473,7 @@ var __spreadArrays = (this && this.__spreadArrays) || function () {
     return r;
 };
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/parser/cssParser',["require", "exports", "./cssScanner", "./cssNodes", "./cssErrors", "../languageFacts/facts", "../utils/objects"], factory);
     }
 })(function (require, exports) {
@@ -4980,11 +4938,7 @@ var __spreadArrays = (this && this.__spreadArrays) || function () {
 });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/utils/arrays',["require", "exports"], factory);
     }
 })(function (require, exports) {
@@ -5054,11 +5008,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/parser/cssSymbolScope',["require", "exports", "./cssNodes", "../utils/arrays"], factory);
     }
 })(function (require, exports) {
@@ -5392,11 +5342,7 @@ var __extends = (this && this.__extends) || (function () {
 });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-languageserver-types/main',["require", "exports"], factory);
     }
 })(function (require, exports) {
@@ -6933,11 +6879,7 @@ var __extends = (this && this.__extends) || (function () {
 define('vscode-languageserver-types', ['vscode-languageserver-types/main'], function (main) { return main; });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-languageserver-textdocument/main',["require", "exports"], factory);
     }
 })(function (require, exports) {
@@ -7216,11 +7158,7 @@ define('vscode-languageserver-types', ['vscode-languageserver-types/main'], func
 define('vscode-languageserver-textdocument', ['vscode-languageserver-textdocument/main'], function (main) { return main; });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/cssLanguageTypes',["require", "exports", "vscode-languageserver-types", "vscode-languageserver-textdocument", "vscode-languageserver-types"], factory);
     }
 })(function (require, exports) {
@@ -7287,11 +7225,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-uri/index',["require", "exports"], factory);
     }
 })(function (require, exports) {
@@ -7936,11 +7870,7 @@ define('vscode-uri', ['vscode-uri/index'], function (main) { return main; });
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/utils/resources',["require", "exports", "vscode-uri"], factory);
     }
 })(function (require, exports) {
@@ -8071,11 +8001,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/services/pathCompletion',["require", "exports", "../cssLanguageTypes", "../utils/strings", "../utils/resources"], factory);
     }
 })(function (require, exports) {
@@ -8311,11 +8237,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/services/cssCompletion',["require", "exports", "../parser/cssNodes", "../parser/cssSymbolScope", "../languageFacts/facts", "../utils/strings", "../cssLanguageTypes", "vscode-nls", "../utils/objects", "./pathCompletion"], factory);
     }
 })(function (require, exports) {
@@ -9422,11 +9344,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/services/selectorPrinting',["require", "exports", "../parser/cssNodes", "../parser/cssScanner", "vscode-nls"], factory);
     }
 })(function (require, exports) {
@@ -9914,11 +9832,7 @@ var __extends = (this && this.__extends) || (function () {
 });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/services/cssHover',["require", "exports", "../parser/cssNodes", "../languageFacts/facts", "./selectorPrinting", "../utils/strings", "../cssLanguageTypes", "../utils/objects"], factory);
     }
 })(function (require, exports) {
@@ -10109,11 +10023,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/services/cssNavigation',["require", "exports", "../cssLanguageTypes", "vscode-nls", "../parser/cssNodes", "../parser/cssSymbolScope", "../languageFacts/facts", "../utils/strings", "../utils/resources"], factory);
     }
 })(function (require, exports) {
@@ -10504,11 +10414,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/services/lintRules',["require", "exports", "../parser/cssNodes", "vscode-nls"], factory);
     }
 })(function (require, exports) {
@@ -10599,11 +10505,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/services/cssCodeActions',["require", "exports", "../parser/cssNodes", "../utils/strings", "../services/lintRules", "../cssLanguageTypes", "vscode-nls"], factory);
     }
 })(function (require, exports) {
@@ -10692,11 +10594,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/services/lintUtil',["require", "exports", "../utils/arrays"], factory);
     }
 })(function (require, exports) {
@@ -10910,11 +10808,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/services/lint',["require", "exports", "../languageFacts/facts", "./lintRules", "../parser/cssNodes", "./lintUtil", "../utils/arrays", "vscode-nls"], factory);
     }
 })(function (require, exports) {
@@ -11466,11 +11360,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/services/cssValidation',["require", "exports", "../parser/cssNodes", "./lintRules", "./lint", "../cssLanguageTypes"], factory);
     }
 })(function (require, exports) {
@@ -11535,11 +11425,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/parser/scssScanner',["require", "exports", "./cssScanner"], factory);
     }
 })(function (require, exports) {
@@ -11648,11 +11534,7 @@ var __extends = (this && this.__extends) || (function () {
 });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/parser/scssErrors',["require", "exports", "vscode-nls"], factory);
     }
 })(function (require, exports) {
@@ -11693,11 +11575,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/parser/scssParser',["require", "exports", "./scssScanner", "./cssScanner", "./cssParser", "./cssNodes", "./scssErrors", "./cssErrors"], factory);
     }
 })(function (require, exports) {
@@ -12491,11 +12369,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/services/scssCompletion',["require", "exports", "./cssCompletion", "../parser/cssNodes", "../cssLanguageTypes", "vscode-nls"], factory);
     }
 })(function (require, exports) {
@@ -12879,11 +12753,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/parser/lessScanner',["require", "exports", "./cssScanner"], factory);
     }
 })(function (require, exports) {
@@ -12967,11 +12837,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/parser/lessParser',["require", "exports", "./lessScanner", "./cssScanner", "./cssParser", "./cssNodes", "./cssErrors"], factory);
     }
 })(function (require, exports) {
@@ -13717,11 +13583,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/services/lessCompletion',["require", "exports", "./cssCompletion", "../cssLanguageTypes", "vscode-nls"], factory);
     }
 })(function (require, exports) {
@@ -14111,11 +13973,7 @@ var __extends = (this && this.__extends) || (function () {
 });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/services/cssFolding',["require", "exports", "../parser/cssScanner", "../parser/scssScanner", "../parser/lessScanner"], factory);
     }
 })(function (require, exports) {
@@ -14322,11 +14180,7 @@ var __extends = (this && this.__extends) || (function () {
  *--------------------------------------------------------------------------------------------*/
 // file generated from vscode-web-custom-data NPM package
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/data/webCustomData',["require", "exports"], factory);
     }
 })(function (require, exports) {
@@ -35837,11 +35691,7 @@ var __extends = (this && this.__extends) || (function () {
 });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/languageFacts/dataProvider',["require", "exports"], factory);
     }
 })(function (require, exports) {
@@ -35928,11 +35778,7 @@ var __extends = (this && this.__extends) || (function () {
 });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/languageFacts/dataManager',["require", "exports", "../utils/objects", "../data/webCustomData", "./dataProvider"], factory);
     }
 })(function (require, exports) {
@@ -36032,11 +35878,7 @@ var __extends = (this && this.__extends) || (function () {
 });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/services/cssSelectionRange',["require", "exports", "../cssLanguageTypes", "../parser/cssNodes"], factory);
     }
 })(function (require, exports) {
@@ -36141,11 +35983,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/services/scssNavigation',["require", "exports", "./cssNavigation", "../parser/cssNodes", "vscode-uri", "../utils/strings", "../utils/resources"], factory);
     }
 })(function (require, exports) {
@@ -36257,11 +36095,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-css-languageservice/cssLanguageService',["require", "exports", "./parser/cssParser", "./services/cssCompletion", "./services/cssHover", "./services/cssNavigation", "./services/cssCodeActions", "./services/cssValidation", "./parser/scssParser", "./services/scssCompletion", "./parser/lessParser", "./services/lessCompletion", "./services/cssFolding", "./languageFacts/dataManager", "./languageFacts/dataProvider", "./services/cssSelectionRange", "./services/scssNavigation", "./data/webCustomData", "./cssLanguageTypes"], factory);
     }
 })(function (require, exports) {

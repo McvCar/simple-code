@@ -1,9 +1,5 @@
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('jsonc-parser/impl/scanner',["require", "exports"], factory);
     }
 })(function (require, exports) {
@@ -376,11 +372,7 @@
 });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('jsonc-parser/impl/format',["require", "exports", "./scanner"], factory);
     }
 })(function (require, exports) {
@@ -585,11 +577,7 @@
 });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('jsonc-parser/impl/parser',["require", "exports", "./scanner"], factory);
     }
 })(function (require, exports) {
@@ -1235,11 +1223,7 @@
 });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('jsonc-parser/impl/edit',["require", "exports", "./format", "./parser"], factory);
     }
 })(function (require, exports) {
@@ -1438,11 +1422,7 @@
 });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('jsonc-parser/main',["require", "exports", "./impl/format", "./impl/edit", "./impl/scanner", "./impl/parser"], factory);
     }
 })(function (require, exports) {
@@ -1577,11 +1557,7 @@ define('jsonc-parser', ['jsonc-parser/main'], function (main) { return main; });
 *  Licensed under the MIT License. See License.txt in the project root for license information.
 *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-json-languageservice/utils/objects',["require", "exports"], factory);
     }
 })(function (require, exports) {
@@ -1657,11 +1633,7 @@ define('jsonc-parser', ['jsonc-parser/main'], function (main) { return main; });
 });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-languageserver-types/main',["require", "exports"], factory);
     }
 })(function (require, exports) {
@@ -3198,11 +3170,7 @@ define('jsonc-parser', ['jsonc-parser/main'], function (main) { return main; });
 define('vscode-languageserver-types', ['vscode-languageserver-types/main'], function (main) { return main; });
 
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-languageserver-textdocument/main',["require", "exports"], factory);
     }
 })(function (require, exports) {
@@ -3485,11 +3453,7 @@ define('vscode-languageserver-textdocument', ['vscode-languageserver-textdocumen
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-json-languageservice/jsonLanguageTypes',["require", "exports", "vscode-languageserver-types", "vscode-languageserver-textdocument"], factory);
     }
 })(function (require, exports) {
@@ -3620,11 +3584,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-json-languageservice/parser/jsonParser',["require", "exports", "jsonc-parser", "../utils/objects", "../jsonLanguageTypes", "vscode-nls"], factory);
     }
 })(function (require, exports) {
@@ -4861,11 +4821,7 @@ var __extends = (this && this.__extends) || (function () {
 *  Licensed under the MIT License. See License.txt in the project root for license information.
 *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-json-languageservice/utils/json',["require", "exports"], factory);
     }
 })(function (require, exports) {
@@ -4918,11 +4874,7 @@ var __extends = (this && this.__extends) || (function () {
 *  Licensed under the MIT License. See License.txt in the project root for license information.
 *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-json-languageservice/utils/strings',["require", "exports"], factory);
     }
 })(function (require, exports) {
@@ -4980,11 +4932,7 @@ var __extends = (this && this.__extends) || (function () {
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-json-languageservice/services/jsonCompletion',["require", "exports", "../parser/jsonParser", "jsonc-parser", "../utils/json", "../utils/strings", "../utils/objects", "../jsonLanguageTypes", "vscode-nls"], factory);
     }
 })(function (require, exports) {
@@ -5923,11 +5871,7 @@ var __extends = (this && this.__extends) || (function () {
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-json-languageservice/services/jsonHover',["require", "exports", "../parser/jsonParser", "../jsonLanguageTypes"], factory);
     }
 })(function (require, exports) {
@@ -6058,11 +6002,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-uri/index',["require", "exports"], factory);
     }
 })(function (require, exports) {
@@ -6707,11 +6647,7 @@ define('vscode-uri', ['vscode-uri/index'], function (main) { return main; });
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-json-languageservice/services/jsonSchemaService',["require", "exports", "jsonc-parser", "vscode-uri", "../utils/strings", "../parser/jsonParser", "vscode-nls"], factory);
     }
 })(function (require, exports) {
@@ -7235,11 +7171,7 @@ define('vscode-uri', ['vscode-uri/index'], function (main) { return main; });
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-json-languageservice/services/jsonValidation',["require", "exports", "./jsonSchemaService", "../jsonLanguageTypes", "vscode-nls", "../utils/objects"], factory);
     }
 })(function (require, exports) {
@@ -7393,11 +7325,7 @@ define('vscode-uri', ['vscode-uri/index'], function (main) { return main; });
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-json-languageservice/utils/colors',["require", "exports"], factory);
     }
 })(function (require, exports) {
@@ -7479,11 +7407,7 @@ define('vscode-uri', ['vscode-uri/index'], function (main) { return main; });
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-json-languageservice/services/jsonDocumentSymbols',["require", "exports", "../parser/jsonParser", "../utils/strings", "../utils/colors", "../jsonLanguageTypes"], factory);
     }
 })(function (require, exports) {
@@ -7753,11 +7677,7 @@ define('vscode-uri', ['vscode-uri/index'], function (main) { return main; });
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-json-languageservice/services/configuration',["require", "exports", "vscode-nls"], factory);
     }
 })(function (require, exports) {
@@ -8297,11 +8217,7 @@ define('vscode-uri', ['vscode-uri/index'], function (main) { return main; });
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-json-languageservice/services/jsonFolding',["require", "exports", "jsonc-parser", "../jsonLanguageTypes"], factory);
     }
 })(function (require, exports) {
@@ -8433,11 +8349,7 @@ define('vscode-uri', ['vscode-uri/index'], function (main) { return main; });
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-json-languageservice/services/jsonSelectionRanges',["require", "exports", "../jsonLanguageTypes", "jsonc-parser"], factory);
     }
 })(function (require, exports) {
@@ -8509,11 +8421,7 @@ define('vscode-uri', ['vscode-uri/index'], function (main) { return main; });
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-json-languageservice/services/jsonDefinition',["require", "exports", "../jsonLanguageTypes"], factory);
     }
 })(function (require, exports) {
@@ -8617,11 +8525,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) __createBinding(exports, m, p);
 };
 (function (factory) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
+    if (typeof define === "function" && define.amd) {
         define('vscode-json-languageservice/jsonLanguageService',["require", "exports", "./services/jsonCompletion", "./services/jsonHover", "./services/jsonValidation", "./services/jsonDocumentSymbols", "./parser/jsonParser", "./services/configuration", "./services/jsonSchemaService", "./services/jsonFolding", "./services/jsonSelectionRanges", "jsonc-parser", "./jsonLanguageTypes", "./services/jsonDefinition", "./jsonLanguageTypes"], factory);
     }
 })(function (require, exports) {

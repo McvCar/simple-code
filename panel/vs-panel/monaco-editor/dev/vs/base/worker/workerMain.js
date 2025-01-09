@@ -85,9 +85,9 @@ var AMDLoader;
             }
             this._detected = true;
             this._isWindows = Environment._isWindows();
-            this._isNode = (typeof module !== 'undefined' && !!module.exports);
-            this._isElectronRenderer = (typeof process !== 'undefined' && typeof process.versions !== 'undefined' && typeof process.versions.electron !== 'undefined' && process.type === 'renderer');
             this._isWebWorker = (typeof AMDLoader.global.importScripts === 'function');
+            this._isNode = !this._isWebWorker && (typeof module !== 'undefined' && !!module.exports); // 修复 cocos 3.8.5 在此位置判断为nodejs环境导致加载错误，兼容旧版改为false
+            this._isElectronRenderer = (typeof process !== 'undefined' && typeof process.versions !== 'undefined' && typeof process.versions.electron !== 'undefined' && process.type === 'renderer');
         };
         Environment._isWindows = function () {
             if (typeof navigator !== 'undefined') {
@@ -244,6 +244,10 @@ var AMDLoader;
         return Utilities;
     }());
     AMDLoader.Utilities = Utilities;
+    // 修复 cocos 3.8.5 在此位置判断为module环境导致加载错误，兼容旧版改为null
+    if(globalThis.module){
+        globalThis.module = null;
+    }
 })(AMDLoader || (AMDLoader = {}));
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.

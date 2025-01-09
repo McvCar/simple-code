@@ -1,3 +1,4 @@
+let tempArr = []
 let Service = {
 
     load(){
@@ -21,6 +22,7 @@ let Service = {
 
     // 鼠标经过nodeTree或assets item
     onSelectionHoverin(e,isMouseDown){
+        e.path =  e.path || this.getPaths(e);
         if(!isMouseDown && e.path[0] == this.oldPathDom){
             return;
         }
@@ -51,6 +53,49 @@ let Service = {
         if(this.oldItem != null){
             this.oldItem = undefined;
             this.onEditorSelectionHoverin(null,isMouseDown);
+        }
+    },
+
+    getPaths(e){
+        // 获取鼠标当前的位置
+        const x = e.clientX;
+        const y = e.clientY;
+        
+        // 使用 document.elementFromPoint 获取当前鼠标所在的元素
+        const element = document.elementFromPoint(x, y);
+        
+        // 检查是否获取到了元素
+        if (element) {
+        
+            // 如果需要获取 Shadow DOM 内部的元素，可以递归查找
+            function findShadowRootElement(el) {
+                if (el.shadowRoot) {
+                    // 在 Shadow Root 中查找鼠标所在的元素
+                    const shadowElement = el.shadowRoot.elementFromPoint(x, y);
+                    if (shadowElement) {
+                        return shadowElement.shadowRoot && shadowElement != el ? findShadowRootElement(shadowElement) : shadowElement; 
+                    } else {
+                        // 如果没有在 Shadow Root 中找到，则递归查找 Shadow Root 的子元素
+                        for (let child of el.shadowRoot.children) {
+                            const result = findShadowRootElement(child);
+                            if (result) {
+                                return result;
+                            }
+                        }
+                    }
+                }
+                return el;
+            }
+        
+            let finalElement = findShadowRootElement(element);
+            let paths = [];
+            while(finalElement != null){
+                paths.push(finalElement);
+                finalElement = finalElement.parentNode
+            }
+            return paths
+        } else {
+            return []
         }
     },
 
