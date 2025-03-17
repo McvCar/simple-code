@@ -95,10 +95,22 @@ module.exports = {
 		return panel && panel.name == 'scene';
 	},
 
+	getDeepActiveElement() {
+		let element = document.activeElement;
+	
+		// 递归检查 Shadow DOM
+		while (element && element.shadowRoot && element.shadowRoot.activeElement) {
+			element = element.shadowRoot.activeElement;
+		}
+	
+		return element;
+	},
+
 	// 不是输入状态是时
 	inputTypeChk(e){
-		if (e.path[0] ){
-			let type = e.path[0].type ;
+		let el = this.getDeepActiveElement();
+		if (el){
+			let type = el.type ;
 			if ( inputType[type]){
 				return true
 			}
